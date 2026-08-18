@@ -27,7 +27,7 @@ class FakeAsyncProvider:
         return ProviderJob(provider_job_id=provider_job_id, state="completed")
 
     def output_refs(self, provider_job_id: str) -> tuple[dict[str, str], ...]:
-        return (("filename",),)  # replaced below by valid provider references
+        return ()
 
     def cancel(self, provider_job_id: str) -> ProviderJob:
         return ProviderJob(provider_job_id=provider_job_id, state="cancelled")
