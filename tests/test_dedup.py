@@ -31,11 +31,11 @@ def test_identical_fingerprints_are_duplicates(tmp_path: Path) -> None:
     assert result.classification == "duplicate"
 
 
-def test_different_fingerprint_is_distinct(tmp_path: Path) -> None:
+def test_different_spatial_pattern_is_distinct(tmp_path: Path) -> None:
     left = tmp_path / "left.pgm"
     right = tmp_path / "right.pgm"
-    _write_pgm(left, [[0, 0], [0, 0]])
-    _write_pgm(right, [[255, 255], [255, 255]])
+    _write_pgm(left, [[0, 0], [255, 255]])
+    _write_pgm(right, [[0, 255], [0, 255]])
     result = compare_fingerprints(average_hash(left, hash_size=4), average_hash(right, hash_size=4))
     assert result.similarity < 0.90
     assert result.classification == "distinct"
