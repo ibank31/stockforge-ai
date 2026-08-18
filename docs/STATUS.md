@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-**v0.1 Core Foundation**
+**v0.1 Core Foundation → Asset Registry**
 
 ## Completed
 
@@ -13,14 +13,21 @@
 - SQLite initialization
 - Project creation and listing
 - Project workspace layout
+- Versioned project manifest
+- Atomic manifest writes
+- Project creation rollback handling
 - Initial pytest coverage
 - GitHub Actions CI
+- Persistent asset registry
+- Asset UUID and project ownership
+- Asset lifecycle status contract
+- File path validation and SHA-256 checksum support
+- Asset CLI create/list commands
 
 ## Next
 
-1. Config command
-2. Asset registry
-3. Job model and persistent queue
-4. Plugin contract and registry
-5. Pipeline definition/runner
-6. ComfyUI adapter
+1. Job model and persistent queue
+2. Plugin contract and registry
+3. Pipeline definition/runner
+4. Config command and provider configuration
+5. ComfyUI adapter
