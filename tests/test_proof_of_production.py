@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from stockforge.generation import GenerationRequest, GenerationResult, ImageGenerator
 from stockforge.proof_of_production import ProductionProofError, run_production_proof
@@ -14,6 +14,11 @@ class FakeProductionGenerator(ImageGenerator):
         output = self.output_path
         output.parent.mkdir(parents=True, exist_ok=True)
         image = Image.new("RGB", (2000, 2000), (120, 130, 140))
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((0, 0, 999, 999), fill=(30, 70, 120))
+        draw.rectangle((1000, 0, 1999, 999), fill=(190, 150, 80))
+        draw.rectangle((0, 1000, 999, 1999), fill=(80, 150, 100))
+        draw.rectangle((1000, 1000, 1999, 1999), fill=(170, 80, 90))
         image.save(output, format="PNG")
         return GenerationResult(
             status="succeeded",
@@ -57,7 +62,7 @@ def test_production_proof_runs_generation_to_artifact_qa_and_dedup(tmp_path: Pat
     assert result.artifact.kind == "generated_image"
     assert len(result.artifact.sha256) == 64
     assert result.structural_qa.status == "warn"
-    assert result.visual_qa.status == "warn"
+    assert result.visual_qa.status == "pass"
     assert result.duplicate_classification == "no_comparison"
 
 
