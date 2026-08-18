@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-**v0.1 Core Foundation → Asset Registry → Persistent Job Queue → Plugin Contract**
+**v0.1 Core Foundation → Asset Registry → Persistent Job Queue → Plugin Contract → Pipeline Engine**
 
 ## Completed
 
@@ -35,10 +35,15 @@
 - Capability-based plugin discovery
 - Plugin API version validation
 - Plugin trust-boundary documentation
+- Versioned pipeline definition
+- Deterministic sequential pipeline runner
+- Pipeline capability validation
+- Pipeline execution error boundary
+- Pipeline contract documentation
 
 ## Next
 
-1. Pipeline definition and runner
+1. Artifact/provenance model
 2. Provider configuration and secret handling
 3. ComfyUI generator adapter
 4. Image QA pipeline
