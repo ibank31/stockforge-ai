@@ -229,8 +229,8 @@ class Database:
     @staticmethod
     def _execution_from_row(row: sqlite3.Row) -> GenerationExecutionRecord:
         data: dict[str, Any] = dict(row)
-        data["artifact_ids"] = tuple(json.loads(data.pop("artifact_ids_json")))
-        data["input_artifact_ids"] = tuple(json.loads(data.pop("input_artifact_ids_json")))
+        data["artifact_ids"] = json.loads(data.pop("artifact_ids_json"))
+        data["input_artifact_ids"] = json.loads(data.pop("input_artifact_ids_json"))
         data["parameters"] = json.loads(data.pop("parameters_json"))
         data.pop("created_at", None)
-        return GenerationExecutionRecord.from_dict({**data, "schema_version": data["schema_version"]})
+        return GenerationExecutionRecord.from_dict(data)
