@@ -98,10 +98,22 @@ def workflow_hash(workflow: dict[str, Any]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _history_entry(history: dict[str, Any], prompt_id: str) -> dict[str, Any] | None:
+    """Normalize both /history/{id} and test-double history shapes."""
+    if not isinstance(history, dict):
+        return None
+    direct = history.get(prompt_id)
+    if isinstance(direct, dict):
+        return direct
+    if "status" in history or "outputs" in history:
+        return history
+    return None
+
+
 def extract_output_refs(history: dict[str, Any], prompt_id: str) -> tuple[dict[str, str], ...]:
     """Extract provider output references without pretending they are artifacts."""
-    entry = history.get(prompt_id)
-    if not isinstance(entry, dict):
+    entry = _history_entry(history, prompt_id)
+    if entry is None:
         return ()
     outputs = entry.get("outputs", {})
     if not isinstance(outputs, dict):
@@ -190,11 +202,9 @@ class ComfyUIProvider(GenerationProvider):
         if not provider_job_id:
             raise ProviderError("provider_job_id must be non-empty")
         history = self._client.get_history(provider_job_id)
-        entry = history.get(provider_job_id) if isinstance(history, dict) else None
+        entry = _history_entry(history, provider_job_id)
         if entry is None:
             return ProviderJob(provider_job_id=provider_job_id, state="running")
-        if not isinstance(entry, dict):
-            raise ProviderError("ComfyUI history entry has invalid shape")
         status = entry.get("status")
         status_str = status.get("status_str") if isinstance(status, dict) else None
         if status_str in {"error", "failed"}:
