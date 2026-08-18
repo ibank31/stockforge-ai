@@ -2,21 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import uuid4
 
-from .database import Database
 from .job import Job, JobError
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+from .job_database import JobDatabase
 
 
 class JobManager:
     """Coordinates durable job creation and worker-facing queue operations."""
 
-    def __init__(self, database: Database) -> None:
+    def __init__(self, database: JobDatabase) -> None:
         self.database = database
 
     def create(
