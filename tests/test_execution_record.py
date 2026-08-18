@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -25,7 +26,8 @@ def test_failed_requires_structured_error() -> None:
 def test_database_round_trip(tmp_path: Path) -> None:
     database = Database(tmp_path / "stockforge.db")
     database.initialize()
-    project_id = "project-1"
+    project_id = str(uuid4())
+    database.create_project(project_id, "demo", tmp_path / "project")
     record = GenerationExecutionRecord.create(
         project_id,
         state="succeeded",
