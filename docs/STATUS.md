@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-**v0.1 Core Foundation → Asset Registry**
+**v0.1 Core Foundation → Asset Registry → Persistent Job Queue**
 
 ## Completed
 
@@ -23,11 +23,17 @@
 - Asset lifecycle status contract
 - File path validation and SHA-256 checksum support
 - Asset CLI create/list commands
+- Persistent job model
+- Durable SQLite-backed job queue
+- Priority ordering
+- Atomic worker claiming
+- Attempt counting and bounded retries
+- Job completion, failure, and cancellation
+- Job CLI create/list/claim/complete/fail/cancel commands
 
 ## Next
 
-1. Job model and persistent queue
-2. Plugin contract and registry
-3. Pipeline definition/runner
-4. Config command and provider configuration
-5. ComfyUI adapter
+1. Plugin contract and registry
+2. Pipeline definition/runner
+3. Config command and provider configuration
+4. ComfyUI adapter
