@@ -93,7 +93,7 @@ class ProvenanceRecord:
         allowed = {
             "id", "artifact_id", "project_id", "operation", "job_id", "pipeline_id", "pipeline_version",
             "step_id", "plugin_id", "plugin_version", "model_id", "model_version", "workflow_hash",
-            "prompt_hash", "parameters", "created_at", "schema_version",
+            "prompt_hash", "input_artifact_ids", "parameters", "created_at", "schema_version",
         }
         if set(data) != allowed:
             missing = allowed - set(data)
