@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-**v0.1 Core Foundation → Asset Registry → Persistent Job Queue**
+**v0.1 Core Foundation → Asset Registry → Persistent Job Queue → Plugin Contract**
 
 ## Completed
 
@@ -30,10 +30,16 @@
 - Attempt counting and bounded retries
 - Job completion, failure, and cancellation
 - Job CLI create/list/claim/complete/fail/cancel commands
+- Vendor-neutral plugin descriptor and API contract
+- Plugin registry with deterministic lookup
+- Capability-based plugin discovery
+- Plugin API version validation
+- Plugin trust-boundary documentation
 
 ## Next
 
-1. Plugin contract and registry
-2. Pipeline definition/runner
-3. Config command and provider configuration
-4. ComfyUI adapter
+1. Pipeline definition and runner
+2. Provider configuration and secret handling
+3. ComfyUI generator adapter
+4. Image QA pipeline
+5. Stock metadata and marketplace export
