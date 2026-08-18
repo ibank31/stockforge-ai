@@ -14,7 +14,7 @@ from .generation import GenerationRequest, GenerationResult
 from .plugin import PluginDescriptor
 
 PROVIDER_API_VERSION = "1"
-PROVIDER_STATES = frozenset({"submitted", "running", "succeeded", "failed", "cancelled"})
+PROVIDER_STATES = frozenset({"submitted", "running", "completed", "succeeded", "failed", "cancelled"})
 
 
 class ProviderRuntimeError(RuntimeError):
