@@ -41,10 +41,11 @@ def init() -> None:
 @app.command()
 def doctor() -> None:
     """Check the local environment."""
-    for check in run_doctor():
+    checks = run_doctor()
+    for check in checks:
         icon = "OK" if check.ok else "FAIL"
         typer.echo(f"[{icon}] {check.name}: {check.detail}")
-    raise typer.Exit(code=0 if all(check.ok for check in run_doctor()) else 1)
+    raise typer.Exit(code=0 if all(check.ok for check in checks) else 1)
 
 
 @project_app.command("create")
