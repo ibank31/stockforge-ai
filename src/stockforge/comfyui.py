@@ -139,13 +139,16 @@ class ComfyUIProvider(GenerationProvider):
     ) -> None:
         if not config.enabled:
             raise ProviderError(f"Provider {config.id!r} is disabled")
-        if not config.endpoint:
-            raise ProviderConfigError("ComfyUI provider requires an endpoint")
         timeout = float(config.options.get("timeout_seconds", 60))
-        api_key = config.resolve_secret()
         self.config = config
         self._client_id = client_id or str(uuid.uuid4())
-        self._client = client or ComfyUIHttpClient(config.endpoint, api_key=api_key, timeout=timeout)
+        if client is None:
+            if not config.endpoint:
+                raise ProviderConfigError("ComfyUI provider requires an endpoint")
+            api_key = config.resolve_secret()
+            self._client = ComfyUIHttpClient(config.endpoint, api_key=api_key, timeout=timeout)
+        else:
+            self._client = client
         self._poll_interval = float(config.options.get("poll_interval_seconds", 1.0))
         if self._poll_interval <= 0:
             raise ProviderError("poll_interval_seconds must be positive")
