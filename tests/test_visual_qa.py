@@ -55,10 +55,10 @@ def test_visual_qa_warns_long_filename(tmp_path: Path) -> None:
 
 def test_visual_qa_fails_when_structural_qa_fails(tmp_path: Path) -> None:
     path = tmp_path / "broken.png"
-    structural = structural_report(path)
     structural = ImageQAReport(
         "fail",
         str(path),
+        None,
         None,
         None,
         None,
