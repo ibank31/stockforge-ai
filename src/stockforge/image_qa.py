@@ -160,7 +160,7 @@ def inspect_image(path: Path, *, policy: ImageQAPolicy | None = None) -> ImageQA
 
     if image_format is None:
         checks["format"] = "fail"
-        return ImageQAReport("fail", str(image_path), None, None, None, size_bytes, checks)
+        return ImageQAReport("fail", str(image_path), None, None, None, size_bytes, checks, QA_SCHEMA_VERSION)
     checks["format"] = "pass" if image_format in policy.allowed_formats else "fail"
 
     width: int | None = None
