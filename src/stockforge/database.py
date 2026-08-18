@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from uuid import uuid4
 
 
 SCHEMA = """
@@ -36,8 +35,7 @@ class Database:
         with self.connect() as conn:
             conn.executescript(SCHEMA)
 
-    def create_project(self, name: str, project_path: Path) -> dict:
-        project_id = str(uuid4())
+    def create_project(self, project_id: str, name: str, project_path: Path) -> dict:
         with self.connect() as conn:
             conn.execute(
                 "INSERT INTO projects (id, name, path) VALUES (?, ?, ?)",
