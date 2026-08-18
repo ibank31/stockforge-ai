@@ -61,6 +61,38 @@ class GenerationExecutionRecord:
             **kwargs,
         )
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "GenerationExecutionRecord":
+        if not isinstance(data, dict):
+            raise ExecutionRecordError("Execution record must be a JSON object")
+        allowed = {
+            "schema_version", "id", "project_id", "operation", "state", "job_id", "provider_id",
+            "provider_job_id", "pipeline_id", "pipeline_version", "step_id", "plugin_id", "plugin_version",
+            "model_id", "model_version", "workflow_hash", "prompt_hash", "artifact_ids",
+            "input_artifact_ids", "parameters", "error_code", "error_message",
+        }
+        if set(data) != allowed:
+            missing = allowed - set(data)
+            extra = set(data) - allowed
+            details = []
+            if missing:
+                details.append("missing: " + ", ".join(sorted(missing)))
+            if extra:
+                details.append("unexpected: " + ", ".join(sorted(extra)))
+            raise ExecutionRecordError("Invalid execution record fields (" + "; ".join(details) + ")")
+        if not isinstance(data["artifact_ids"], list) or not isinstance(data["input_artifact_ids"], list):
+            raise ExecutionRecordError("artifact_ids and input_artifact_ids must be arrays")
+        return cls(
+            id=data["id"], project_id=data["project_id"], operation=data["operation"], state=data["state"],
+            job_id=data["job_id"], provider_id=data["provider_id"], provider_job_id=data["provider_job_id"],
+            pipeline_id=data["pipeline_id"], pipeline_version=data["pipeline_version"], step_id=data["step_id"],
+            plugin_id=data["plugin_id"], plugin_version=data["plugin_version"], model_id=data["model_id"],
+            model_version=data["model_version"], workflow_hash=data["workflow_hash"], prompt_hash=data["prompt_hash"],
+            artifact_ids=tuple(data["artifact_ids"]), input_artifact_ids=tuple(data["input_artifact_ids"]),
+            parameters=data["parameters"], error_code=data["error_code"], error_message=data["error_message"],
+            schema_version=data["schema_version"],
+        )
+
     def __post_init__(self) -> None:
         if not self.id or not self.project_id or not self.operation:
             raise ExecutionRecordError("id, project_id, and operation must be non-empty")
@@ -83,28 +115,15 @@ class GenerationExecutionRecord:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": self.schema_version,
-            "id": self.id,
-            "project_id": self.project_id,
-            "operation": self.operation,
-            "state": self.state,
-            "job_id": self.job_id,
-            "provider_id": self.provider_id,
-            "provider_job_id": self.provider_job_id,
-            "pipeline_id": self.pipeline_id,
-            "pipeline_version": self.pipeline_version,
-            "step_id": self.step_id,
-            "plugin_id": self.plugin_id,
-            "plugin_version": self.plugin_version,
-            "model_id": self.model_id,
-            "model_version": self.model_version,
-            "workflow_hash": self.workflow_hash,
-            "prompt_hash": self.prompt_hash,
-            "artifact_ids": list(self.artifact_ids),
-            "input_artifact_ids": list(self.input_artifact_ids),
-            "parameters": self.parameters,
-            "error_code": self.error_code,
-            "error_message": self.error_message,
+            "schema_version": self.schema_version, "id": self.id, "project_id": self.project_id,
+            "operation": self.operation, "state": self.state, "job_id": self.job_id,
+            "provider_id": self.provider_id, "provider_job_id": self.provider_job_id,
+            "pipeline_id": self.pipeline_id, "pipeline_version": self.pipeline_version,
+            "step_id": self.step_id, "plugin_id": self.plugin_id, "plugin_version": self.plugin_version,
+            "model_id": self.model_id, "model_version": self.model_version,
+            "workflow_hash": self.workflow_hash, "prompt_hash": self.prompt_hash,
+            "artifact_ids": list(self.artifact_ids), "input_artifact_ids": list(self.input_artifact_ids),
+            "parameters": self.parameters, "error_code": self.error_code, "error_message": self.error_message,
         }
 
     def json(self) -> str:
