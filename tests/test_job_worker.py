@@ -41,7 +41,6 @@ def test_worker_claims_orchestrates_and_completes_job(tmp_path: Path) -> None:
     provider_root = tmp_path / "provider"
     project_root.mkdir()
     provider_root.mkdir()
-    # The ingestion contract expects a real image file, not arbitrary bytes with a PNG suffix.
     Image.new("RGB", (2000, 2000), (128, 128, 128)).save(provider_root / "generated.png", format="PNG")
 
     database = JobDatabase(project_root / "stockforge.db")
@@ -65,7 +64,7 @@ def test_worker_claims_orchestrates_and_completes_job(tmp_path: Path) -> None:
     result = worker.run_once()
 
     assert result is not None
-    assert result.status == "succeeded"
+    assert result.status == "succeeded", result.result
     persisted = database.get_job(job.id)
     assert persisted.status == "succeeded"
     assert persisted.result is not None
