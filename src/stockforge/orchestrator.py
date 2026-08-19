@@ -71,6 +71,7 @@ class GenerationOrchestrator:
         error_code: str | None = None
         error_message: str | None = None
         sync_provider_result = False
+        input_artifact_ids = tuple(request.input_artifact_ids)
 
         try:
             submit = getattr(self.provider, "submit", None)
@@ -150,7 +151,7 @@ class GenerationOrchestrator:
                 model_id=request.model_id,
                 model_version=request.model_version,
                 workflow_hash=request.workflow_hash,
-                input_artifact_ids=request.input_artifact_ids,
+                input_artifact_ids=input_artifact_ids,
                 parameters=dict(request.parameters),
                 error_code=error_code,
                 error_message=error_message,
@@ -171,7 +172,7 @@ class GenerationOrchestrator:
             model_version=result.model_version or request.model_version,
             workflow_hash=result.workflow_hash or request.workflow_hash,
             artifact_ids=result.artifact_ids,
-            input_artifact_ids=request.input_artifact_ids,
+            input_artifact_ids=input_artifact_ids,
             parameters=dict(result.parameters),
         )
 
