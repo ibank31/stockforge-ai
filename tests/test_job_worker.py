@@ -13,7 +13,8 @@ class FakeProvider:
     @property
     def descriptor(self)->PluginDescriptor:
         return PluginDescriptor(id="fake.worker",name="Worker Fake",version="1.0",kind="generator",capabilities=frozenset({"image.generate","generation.async"}))
-    def submit(self,request:GenerationRequest)->ProviderJob: return ProviderJob(provider_job_id="worker-job",state="submitted")
+    def submit(self,request:GenerationRequest,*,provider_job_id:str|None=None)->ProviderJob:
+        return ProviderJob(provider_job_id=provider_job_id or "worker-job",state="submitted")
     def wait(self,provider_job_id:str,*,timeout_seconds:float)->ProviderJob: return ProviderJob(provider_job_id=provider_job_id,state="completed")
     def output_refs(self,provider_job_id:str)->tuple[dict[str,str],...]: return ({"filename":"generated.png","subfolder":"","type":"output","node_id":"1"},)
     def cancel(self,provider_job_id:str)->ProviderJob: return ProviderJob(provider_job_id=provider_job_id,state="cancelled")

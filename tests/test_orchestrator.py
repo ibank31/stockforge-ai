@@ -10,10 +10,15 @@ from stockforge.plugin import PluginDescriptor
 
 
 class FakeAsyncProvider:
+    def __init__(self) -> None:
+        self.submitted_provider_job_id = None
+
     @property
     def descriptor(self) -> PluginDescriptor:
         return PluginDescriptor(id="fake.generator", name="Fake Generator", version="1.0", kind="generator", capabilities=frozenset({"image.generate", "generation.async"}))
-    def submit(self, request: GenerationRequest) -> ProviderJob: return ProviderJob(provider_job_id="job-1", state="submitted")
+    def submit(self, request: GenerationRequest, *, provider_job_id: str | None = None) -> ProviderJob:
+        self.submitted_provider_job_id = provider_job_id
+        return ProviderJob(provider_job_id=provider_job_id or "job-1", state="submitted")
     def wait(self, provider_job_id: str, *, timeout_seconds: float) -> ProviderJob: return ProviderJob(provider_job_id=provider_job_id, state="completed")
     def output_refs(self, provider_job_id: str) -> tuple[dict[str, str], ...]: return ()
     def cancel(self, provider_job_id: str) -> ProviderJob: return ProviderJob(provider_job_id=provider_job_id, state="cancelled")
@@ -39,8 +44,9 @@ def make_request() -> GenerationRequest:
 def test_async_provider_output_is_ingested_and_recorded(tmp_path: Path) -> None:
     project_root = tmp_path / "project"; provider_root = tmp_path / "provider"; project_root.mkdir(); provider_root.mkdir(); (provider_root / "generated.png").write_bytes(b"PNG test output")
     database = Database(project_root / "stockforge.db"); database.initialize(); project_id = "project-1"; database.create_project(project_id, "demo", project_root)
-    result = GenerationOrchestrator(database, project_id=project_id, project_root=project_root, provider_root=provider_root, provider=FakeAsyncProviderWithOutput()).run(make_request())
-    assert len(result.artifacts) == 1; assert result.execution.state == "succeeded"; assert result.execution.provider_job_id == "job-1"; assert result.execution.artifact_ids == (result.artifacts[0].id,); assert database.get_artifact(result.artifacts[0].id) is not None; persisted = database.get_execution(result.execution.id); assert persisted is not None; assert persisted.state == "succeeded"; assert persisted.artifact_ids == result.execution.artifact_ids
+    provider = FakeAsyncProviderWithOutput()
+    result = GenerationOrchestrator(database, project_id=project_id, project_root=project_root, provider_root=provider_root, provider=provider).run(make_request())
+    assert len(result.artifacts) == 1; assert result.execution.state == "succeeded"; assert result.execution.provider_job_id == provider.submitted_provider_job_id == result.execution.id; assert result.execution.artifact_ids == (result.artifacts[0].id,); assert database.get_artifact(result.artifacts[0].id) is not None; persisted = database.get_execution(result.execution.id); assert persisted is not None; assert persisted.state == "succeeded"; assert persisted.artifact_ids == result.execution.artifact_ids
 
 
 def test_async_provider_without_outputs_is_recorded_as_failure(tmp_path: Path) -> None:

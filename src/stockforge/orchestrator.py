@@ -31,7 +31,8 @@ class GenerationOrchestrator:
             execution=self.database.update_execution(GenerationExecutionRecord.from_dict({**execution.to_dict(),"state":"running"}))
             submit=getattr(self.provider,"submit",None); wait=getattr(self.provider,"wait",None); output_refs=getattr(self.provider,"output_refs",None)
             if callable(submit) and callable(wait) and callable(output_refs):
-                job=submit(request); provider_job_id=job.provider_job_id
+                job=submit(request, provider_job_id=execution.id)
+                provider_job_id=job.provider_job_id
                 execution=self.database.update_execution(GenerationExecutionRecord.from_dict({**execution.to_dict(),"provider_job_id":provider_job_id}))
                 terminal=wait(provider_job_id,timeout_seconds=timeout_seconds)
                 if terminal.state=="failed": error_code=terminal.error_code or "PROVIDER_EXECUTION_FAILED"; error_message=terminal.error_message or "Provider execution failed"

@@ -54,8 +54,8 @@ class GenerationProvider(Protocol):
         """Run a generation to completion for providers with synchronous execution."""
         ...
 
-    def submit(self, request: GenerationRequest) -> ProviderJob:
-        """Start asynchronous execution and return provider job identity."""
+    def submit(self, request: GenerationRequest, *, provider_job_id: str | None = None) -> ProviderJob:
+        """Start asynchronous execution, optionally reusing a durable provider identity."""
         ...
 
     def status(self, provider_job_id: str) -> ProviderJob:
