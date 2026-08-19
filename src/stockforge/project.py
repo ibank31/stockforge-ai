@@ -25,7 +25,7 @@ class ProjectManager:
         if not _NAME_RE.fullmatch(name):
             raise ValueError("Project name must be 1-64 characters and use letters, numbers, ., _, or -.")
 
-        project_path = self.config.workspace / "projects" / name
+        project_path = self.config.project_root / name
         if project_path.exists():
             raise FileExistsError(f"Project already exists: {name}")
 
