@@ -102,7 +102,7 @@ class GenerationJobOrchestrator:
                 self._replace_execution(
                     execution,
                     state="succeeded",
-                    artifact_ids=tuple(a.id for a in artifacts),
+                    artifact_ids=[a.id for a in artifacts],
                 ),
             )
             final = self.database.get_execution(execution.id)
