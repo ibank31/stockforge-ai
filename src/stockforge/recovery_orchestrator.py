@@ -51,10 +51,11 @@ class RecoveryGenerationOrchestrator:
 
         provider_job_id = execution.provider_job_id
         try:
+            submit = getattr(self.provider, "submit", None)
+            wait = getattr(self.provider, "wait", None)
             if provider_job_id is None:
                 execution = self.database.update_execution(GenerationExecutionRecord.from_dict({**execution.to_dict(), "state": "running"}))
-                submit = getattr(self.provider, "submit", None)
-                if not callable(submit): raise OrchestrationError("PROVIDER_NOT_ASYNC")
+                if not callable(submit) or not callable(wait): raise OrchestrationError("PROVIDER_NOT_RESUMABLE")
                 try:
                     provider_job = submit(request, provider_job_id=execution.id)
                 except TypeError as exc:
@@ -63,7 +64,6 @@ class RecoveryGenerationOrchestrator:
                 provider_job_id = provider_job.provider_job_id
                 execution = self.database.update_execution(GenerationExecutionRecord.from_dict({**execution.to_dict(), "provider_job_id": provider_job_id}))
 
-            wait = getattr(self.provider, "wait", None)
             if not callable(wait): raise OrchestrationError("PROVIDER_NOT_RESUMABLE")
             terminal = wait(provider_job_id, timeout_seconds=timeout_seconds)
             if terminal.state == "failed": raise OrchestrationError(f"{terminal.error_code or 'PROVIDER_EXECUTION_FAILED'}: {terminal.error_message or 'Provider execution failed'}")
