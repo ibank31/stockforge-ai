@@ -19,6 +19,7 @@ PROJECT_ID = "1c4d2f42-9b13-4d57-bf7d-8b5f0b0f1a10"
 
 def test_init_and_project_create(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / ".stockforge"))
+    monkeypatch.delenv("STOCKFORGE_PROJECT_ROOT", raising=False)
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
 
@@ -64,6 +65,7 @@ def test_manifest_rejects_unknown_schema():
 
 def test_project_name_validation(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / ".stockforge"))
+    monkeypatch.delenv("STOCKFORGE_PROJECT_ROOT", raising=False)
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
     result = runner.invoke(app, ["project", "create", "bad name"])
@@ -73,6 +75,7 @@ def test_project_name_validation(tmp_path: Path, monkeypatch):
 
 def test_asset_registry_create_and_list(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / ".stockforge"))
+    monkeypatch.delenv("STOCKFORGE_PROJECT_ROOT", raising=False)
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
     assert runner.invoke(app, ["project", "create", "demo"]).exit_code == 0
@@ -227,6 +230,7 @@ def test_job_model_rejects_non_json_payload():
 
 def test_job_cli_create_list_claim(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / ".stockforge"))
+    monkeypatch.delenv("STOCKFORGE_PROJECT_ROOT", raising=False)
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
     assert runner.invoke(app, ["project", "create", "demo"]).exit_code == 0
