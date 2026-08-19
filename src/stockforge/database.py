@@ -170,6 +170,74 @@ class Database:
             )
         return artifact
 
+    def create_artifacts_and_execution(
+        self,
+        artifacts: tuple[Artifact, ...],
+        execution: GenerationExecutionRecord,
+    ) -> tuple[tuple[Artifact, ...], GenerationExecutionRecord]:
+        """Atomically register artifacts and their final execution record.
+
+        Exact SHA-256 duplicates are treated as an expected idempotent outcome:
+        the existing artifact is reused. A relative-path collision with a
+        different checksum remains an error. If any operation fails, neither
+        artifact rows nor the execution row are committed.
+        """
+        actual_artifacts: list[Artifact] = []
+        with self.connect() as conn:
+            for artifact in artifacts:
+                record = artifact.to_dict()
+                existing = conn.execute(
+                    "SELECT * FROM artifacts WHERE project_id = ? AND sha256 = ?",
+                    (record["project_id"], record["sha256"]),
+                ).fetchone()
+                if existing is not None:
+                    actual_artifacts.append(self._artifact_from_row(existing))
+                    continue
+
+                path_collision = conn.execute(
+                    "SELECT id FROM artifacts WHERE project_id = ? AND relative_path = ?",
+                    (record["project_id"], record["relative_path"]),
+                ).fetchone()
+                if path_collision is not None:
+                    raise sqlite3.IntegrityError(
+                        f"Artifact relative path already belongs to a different artifact: {record['relative_path']}"
+                    )
+
+                conn.execute(
+                    """INSERT INTO artifacts
+                    (id, project_id, kind, relative_path, mime_type, size_bytes, sha256, metadata_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        record["id"], record["project_id"], record["kind"], record["relative_path"],
+                        record["mime_type"], record["size_bytes"], record["sha256"],
+                        json.dumps(record["metadata"], ensure_ascii=False, sort_keys=True),
+                    ),
+                )
+                actual_artifacts.append(artifact)
+
+            execution_data = execution.to_dict()
+            execution_data["artifact_ids"] = [artifact.id for artifact in actual_artifacts]
+            actual_execution = GenerationExecutionRecord.from_dict(execution_data)
+            data = actual_execution.to_dict()
+            conn.execute(
+                """INSERT INTO generation_executions
+                (id, project_id, operation, state, job_id, provider_id, provider_job_id,
+                 pipeline_id, pipeline_version, step_id, plugin_id, plugin_version,
+                 model_id, model_version, workflow_hash, prompt_hash, artifact_ids_json,
+                 input_artifact_ids_json, parameters_json, error_code, error_message, schema_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    data["id"], data["project_id"], data["operation"], data["state"], data["job_id"],
+                    data["provider_id"], data["provider_job_id"], data["pipeline_id"], data["pipeline_version"],
+                    data["step_id"], data["plugin_id"], data["plugin_version"], data["model_id"],
+                    data["model_version"], data["workflow_hash"], data["prompt_hash"],
+                    json.dumps(data["artifact_ids"], sort_keys=True), json.dumps(data["input_artifact_ids"], sort_keys=True),
+                    json.dumps(data["parameters"], ensure_ascii=False, sort_keys=True), data["error_code"],
+                    data["error_message"], data["schema_version"],
+                ),
+            )
+        return tuple(actual_artifacts), actual_execution
+
     def get_artifact(self, artifact_id: str) -> Artifact | None:
         with self.connect() as conn:
             row = conn.execute("SELECT * FROM artifacts WHERE id = ?", (artifact_id,)).fetchone()
