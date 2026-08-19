@@ -52,18 +52,25 @@ class Database:
                 collision=c.execute("SELECT id FROM artifacts WHERE project_id=? AND relative_path=?",(r["project_id"],r["relative_path"])).fetchone()
                 if collision is not None: raise sqlite3.IntegrityError(f"Artifact relative path already belongs to a different artifact: {r['relative_path']}")
                 c.execute("INSERT INTO artifacts (id,project_id,kind,relative_path,mime_type,size_bytes,sha256,metadata_json) VALUES (?,?,?,?,?,?,?,?)",(r["id"],r["project_id"],r["kind"],r["relative_path"],r["mime_type"],r["size_bytes"],r["sha256"],json.dumps(r["metadata"],ensure_ascii=False,sort_keys=True))); actual.append(artifact)
-            d=execution.to_dict(); d["artifact_ids"]=[a.id for a in actual]; final=GenerationExecutionRecord.from_dict(d); self._insert_execution(c,final)
+            d=execution.to_dict(); d["artifact_ids"]=[a.id for a in actual]; final=GenerationExecutionRecord.from_dict(d)
+            existing_execution=c.execute("SELECT 1 FROM generation_executions WHERE id=?",(final.id,)).fetchone()
+            if existing_execution is None:
+                self._insert_execution(c,final)
+            else:
+                self._update_execution_connection(c,final)
         return tuple(actual),final
     def create_execution(self, record: GenerationExecutionRecord) -> GenerationExecutionRecord:
         with self.connect() as c: self._insert_execution(c,record)
         return record
     def update_execution(self, record: GenerationExecutionRecord) -> GenerationExecutionRecord:
-        """Persist a new state for an existing execution without changing its identity."""
         d=record.to_dict()
-        with self.connect() as c:
-            if c.execute("SELECT 1 FROM generation_executions WHERE id=?",(record.id,)).fetchone() is None: raise KeyError(f"Execution not found: {record.id}")
-            c.execute("UPDATE generation_executions SET state=?,job_id=?,provider_id=?,provider_job_id=?,model_id=?,model_version=?,workflow_hash=?,prompt_hash=?,artifact_ids_json=?,input_artifact_ids_json=?,parameters_json=?,error_code=?,error_message=?,schema_version=? WHERE id=?",(d["state"],d["job_id"],d["provider_id"],d["provider_job_id"],d["model_id"],d["model_version"],d["workflow_hash"],d["prompt_hash"],json.dumps(d["artifact_ids"],sort_keys=True),json.dumps(d["input_artifact_ids"],sort_keys=True),json.dumps(d["parameters"],ensure_ascii=False,sort_keys=True),d["error_code"],d["error_message"],d["schema_version"],record.id))
+        with self.connect() as c: self._update_execution_connection(c,record)
         return record
+    @staticmethod
+    def _update_execution_connection(c: sqlite3.Connection, record: GenerationExecutionRecord) -> None:
+        d=record.to_dict()
+        updated=c.execute("UPDATE generation_executions SET project_id=?,operation=?,state=?,job_id=?,provider_id=?,provider_job_id=?,pipeline_id=?,pipeline_version=?,step_id=?,plugin_id=?,plugin_version=?,model_id=?,model_version=?,workflow_hash=?,prompt_hash=?,artifact_ids_json=?,input_artifact_ids_json=?,parameters_json=?,error_code=?,error_message=?,schema_version=? WHERE id=?",(d["project_id"],d["operation"],d["state"],d["job_id"],d["provider_id"],d["provider_job_id"],d["pipeline_id"],d["pipeline_version"],d["step_id"],d["plugin_id"],d["plugin_version"],d["model_id"],d["model_version"],d["workflow_hash"],d["prompt_hash"],json.dumps(d["artifact_ids"],sort_keys=True),json.dumps(d["input_artifact_ids"],sort_keys=True),json.dumps(d["parameters"],ensure_ascii=False,sort_keys=True),d["error_code"],d["error_message"],d["schema_version"],record.id))
+        if updated.rowcount != 1: raise KeyError(f"Execution not found: {record.id}")
     @staticmethod
     def _insert_execution(c: sqlite3.Connection, record: GenerationExecutionRecord) -> None:
         d=record.to_dict(); c.execute("INSERT INTO generation_executions (id,project_id,operation,state,job_id,provider_id,provider_job_id,pipeline_id,pipeline_version,step_id,plugin_id,plugin_version,model_id,model_version,workflow_hash,prompt_hash,artifact_ids_json,input_artifact_ids_json,parameters_json,error_code,error_message,schema_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",(d["id"],d["project_id"],d["operation"],d["state"],d["job_id"],d["provider_id"],d["provider_job_id"],d["pipeline_id"],d["pipeline_version"],d["step_id"],d["plugin_id"],d["plugin_version"],d["model_id"],d["model_version"],d["workflow_hash"],d["prompt_hash"],json.dumps(d["artifact_ids"],sort_keys=True),json.dumps(d["input_artifact_ids"],sort_keys=True),json.dumps(d["parameters"],ensure_ascii=False,sort_keys=True),d["error_code"],d["error_message"],d["schema_version"]))
