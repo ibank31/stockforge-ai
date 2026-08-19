@@ -70,6 +70,7 @@ class GenerationOrchestrator:
         result: GenerationResult | None = None
         error_code: str | None = None
         error_message: str | None = None
+        sync_provider_result = False
 
         try:
             submit = getattr(self.provider, "submit", None)
@@ -126,6 +127,7 @@ class GenerationOrchestrator:
                         )
             else:
                 result = self.provider.generate(request)
+                sync_provider_result = True
                 provider_job_id = result.provider_job_id
                 if result.status == "failed":
                     error_code = result.error_code
@@ -172,6 +174,14 @@ class GenerationOrchestrator:
             input_artifact_ids=request.input_artifact_ids,
             parameters=dict(result.parameters),
         )
+
+        if sync_provider_result:
+            try:
+                registered_execution = self.database.create_execution(execution)
+            except Exception as exc:
+                raise OrchestrationError("Failed to persist generation execution") from exc
+            return OrchestrationResult(execution=registered_execution)
+
         try:
             registered_artifacts, registered_execution = self.database.create_artifacts_and_execution(artifacts, execution)
         except Exception as exc:
