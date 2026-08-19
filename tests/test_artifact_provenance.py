@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from stockforge.artifact import Artifact, ArtifactError, sha256_file
-from stockforge.provenance import ProvenanceError, ProvenanceRecord
+from stockforge.provenance import ArtifactLineage, ProvenanceError, ProvenanceRecord
 
 
 def test_artifact_from_file_is_fingerprinted(tmp_path: Path):
@@ -42,21 +42,11 @@ def test_artifact_round_trip():
 
 def test_provenance_records_generation_lineage():
     record = ProvenanceRecord.create(
-        artifact_id="a1",
-        project_id="p1",
-        operation="generate",
-        job_id="j1",
-        pipeline_id="stock-photo-v1",
-        pipeline_version=1,
-        step_id="generate",
-        plugin_id="generator.comfyui",
-        plugin_version="0.1.0",
-        model_id="model.example",
-        model_version="1",
-        workflow_hash="wf123",
-        prompt_hash="prompt123",
-        input_artifact_ids=("input-1",),
-        parameters={"seed": 42},
+        artifact_id="a1", project_id="p1", operation="generate", job_id="j1",
+        pipeline_id="stock-photo-v1", pipeline_version=1, step_id="generate",
+        plugin_id="generator.comfyui", plugin_version="0.1.0", model_id="model.example",
+        model_version="1", workflow_hash="wf123", prompt_hash="prompt123",
+        input_artifact_ids=("input-1",), parameters={"seed": 42},
     )
     restored = ProvenanceRecord.from_dict(record.to_dict())
     assert restored == record
@@ -68,3 +58,15 @@ def test_provenance_rejects_unknown_fields():
     record["unexpected"] = True
     with pytest.raises(ProvenanceError, match="Invalid provenance fields"):
         ProvenanceRecord.from_dict(record)
+
+
+def test_lineage_round_trip_and_relations():
+    lineage = ArtifactLineage.create("child", "parent", "p1", relation="upscaled", execution_id="e1", sequence=2)
+    assert ArtifactLineage(**lineage.to_dict()) == lineage
+
+
+def test_lineage_rejects_self_parent_and_unknown_relation():
+    with pytest.raises(ProvenanceError, match="own lineage parent"):
+        ArtifactLineage.create("a1", "a1", "p1")
+    with pytest.raises(ProvenanceError, match="Unsupported lineage relation"):
+        ArtifactLineage.create("a2", "a1", "p1", relation="invented")
