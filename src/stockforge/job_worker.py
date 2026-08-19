@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable
 
 from .generation import GenerationRequest
 from .job import Job
 from .job_manager import JobManager
-from .orchestrator import GenerationOrchestrator, OrchestrationError
+from .orchestrator import GenerationOrchestrator
 
 
 class JobWorkerError(RuntimeError):
@@ -57,6 +56,5 @@ class GenerationJobWorker:
         except Exception as exc:
             error = str(exc) or exc.__class__.__name__
             failed = self.job_manager.fail(job.id, error)
-            if failed.status == "failed":
-                return WorkerResult(failed.id, failed.status, {"error": error})
-            return WorkerResult(failed.id, failed.status, {"error": error, "retry": True})
+            failure_result = {"error": error, "retry": failed.status == "queued"}
+            return WorkerResult(failed.id, failed.status, failure_result)
