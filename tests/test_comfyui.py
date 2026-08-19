@@ -2,8 +2,8 @@ import pytest
 
 from stockforge.comfyui import ComfyUIProvider, extract_output_refs, workflow_hash
 from stockforge.generation import GenerationRequest
+from stockforge.generation_provider import ProviderRuntimeError
 from stockforge.provider import ProviderConfig
-from stockforge.provider_runtime import ProviderError
 
 
 class FakeComfyUI:
@@ -12,9 +12,9 @@ class FakeComfyUI:
         self.interrupted = []
         self.histories = histories or {}
 
-    def queue_prompt(self, workflow, *, client_id):
-        self.queued.append((workflow, client_id))
-        return {"prompt_id": "prompt-123"}
+    def queue_prompt(self, workflow, *, client_id, prompt_id=None):
+        self.queued.append((workflow, client_id, prompt_id))
+        return {"prompt_id": prompt_id or "prompt-123"}
 
     def get_history(self, prompt_id):
         return self.histories.get(prompt_id, {})
@@ -29,104 +29,75 @@ def workflow():
 
 def request():
     wf = workflow()
-    return GenerationRequest(
-        prompt="commercial stock photo",
-        workflow_hash=workflow_hash(wf),
-        parameters={"comfyui_workflow": wf},
-    )
+    return GenerationRequest(prompt="commercial stock photo", workflow_hash=workflow_hash(wf), parameters={"comfyui_workflow": wf})
+
+
+def provider(fake):
+    return ComfyUIProvider(ProviderConfig(id="comfyui.local", kind="comfyui"), client=fake, client_id="client-1")
 
 
 def test_workflow_hash_is_deterministic():
-    first = {"b": 2, "a": 1}
-    second = {"a": 1, "b": 2}
-    assert workflow_hash(first) == workflow_hash(second)
+    assert workflow_hash({"b": 2, "a": 1}) == workflow_hash({"a": 1, "b": 2})
 
 
-def test_submit_returns_provider_job_without_fake_artifact_ids():
+def test_submit_returns_provider_job_without_artifact_ids():
     fake = FakeComfyUI()
-    provider = ComfyUIProvider(
-        ProviderConfig(id="comfyui.local", kind="image-generator"),
-        client=fake,
-        client_id="client-1",
-    )
-    job = provider.submit(request())
+    job = provider(fake).submit(request())
     assert job.provider_job_id == "prompt-123"
     assert job.state == "submitted"
-    assert fake.queued == [(workflow(), "client-1")]
+    assert fake.queued == [(workflow(), "client-1", None)]
+
+
+def test_submit_can_reuse_durable_provider_identity():
+    fake = FakeComfyUI()
+    job = provider(fake).submit(request(), provider_job_id="execution-123")
+    assert job.provider_job_id == "execution-123"
+    assert fake.queued[-1] == (workflow(), "client-1", "execution-123")
+
+
+def test_durable_identity_mismatch_is_rejected():
+    class Mismatch(FakeComfyUI):
+        def queue_prompt(self, workflow, *, client_id, prompt_id=None):
+            return {"prompt_id": "different-id"}
+
+    with pytest.raises(ProviderRuntimeError, match="different prompt_id"):
+        provider(Mismatch()).submit(request(), provider_job_id="execution-123")
 
 
 def test_completed_provider_job_waits_for_artifact_ingestion():
-    history = {
-        "prompt-123": {
-            "status": {"status_str": "success", "completed": True},
-            "outputs": {"9": {"images": [{"filename": "hero.png", "subfolder": "", "type": "output"}]}},
-        }
-    }
-    provider = ComfyUIProvider(
-        ProviderConfig(id="comfyui.local", kind="image-generator"),
-        client=FakeComfyUI(history),
-    )
-    job = provider.status("prompt-123")
-    assert job.state == "completed"
-    refs = provider.output_refs("prompt-123")
-    assert refs == ({"node_id": "9", "filename": "hero.png", "subfolder": "", "type": "output"},)
+    history = {"prompt-123": {"status": {"status_str": "success", "completed": True}, "outputs": {"9": {"images": [{"filename": "hero.png", "subfolder": "", "type": "output"}]}}}}
+    fake = FakeComfyUI(history)
+    comfy = provider(fake)
+    assert comfy.status("prompt-123").state == "completed"
+    assert comfy.output_refs("prompt-123") == ({"node_id": "9", "filename": "hero.png", "subfolder": "", "type": "output"},)
 
 
 def test_failure_is_structured():
-    history = {"prompt-123": {"status": {"status_str": "error", "completed": True}}}
-    provider = ComfyUIProvider(
-        ProviderConfig(id="comfyui.local", kind="image-generator"),
-        client=FakeComfyUI(history),
-    )
-    job = provider.status("prompt-123")
+    fake = FakeComfyUI({"prompt-123": {"status": {"status_str": "error", "completed": True}}})
+    job = provider(fake).status("prompt-123")
     assert job.state == "failed"
     assert job.error_code == "COMFYUI_EXECUTION_FAILED"
 
 
 def test_cancel_is_targeted():
     fake = FakeComfyUI()
-    provider = ComfyUIProvider(
-        ProviderConfig(id="comfyui.local", kind="image-generator"),
-        client=fake,
-    )
-    job = provider.cancel("prompt-123")
+    job = provider(fake).cancel("prompt-123")
     assert job.state == "cancelled"
     assert fake.interrupted == ["prompt-123"]
 
 
 def test_workflow_hash_mismatch_is_rejected():
     wf = workflow()
-    bad = GenerationRequest(
-        prompt="commercial stock photo",
-        workflow_hash="not-the-real-hash",
-        parameters={"comfyui_workflow": wf},
-    )
-    provider = ComfyUIProvider(
-        ProviderConfig(id="comfyui.local", kind="image-generator"),
-        client=FakeComfyUI(),
-    )
-    with pytest.raises(ProviderError, match="workflow_hash"):
-        provider.submit(bad)
+    bad = GenerationRequest(prompt="commercial stock photo", workflow_hash="not-the-real-hash", parameters={"comfyui_workflow": wf})
+    with pytest.raises(ProviderRuntimeError, match="workflow_hash"):
+        provider(FakeComfyUI()).submit(bad)
 
 
 def test_missing_workflow_is_rejected():
-    provider = ComfyUIProvider(
-        ProviderConfig(id="comfyui.local", kind="image-generator"),
-        client=FakeComfyUI(),
-    )
-    with pytest.raises(ProviderError, match="comfyui_workflow"):
-        provider.submit(GenerationRequest(prompt="commercial stock photo"))
+    with pytest.raises(ProviderRuntimeError, match="comfyui_workflow"):
+        provider(FakeComfyUI()).submit(GenerationRequest(prompt="commercial stock photo"))
 
 
 def test_output_refs_ignore_non_image_outputs():
-    history = {
-        "p": {
-            "outputs": {
-                "1": {"text": "not an image"},
-                "2": {"images": [{"filename": "a.png"}]},
-            }
-        }
-    }
-    assert extract_output_refs(history, "p") == (
-        {"node_id": "2", "filename": "a.png", "subfolder": "", "type": "output"},
-    )
+    history = {"p": {"outputs": {"1": {"text": "not an image"}, "2": {"images": [{"filename": "a.png"}]}}}}
+    assert extract_output_refs(history, "p") == ({"node_id": "2", "filename": "a.png", "subfolder": "", "type": "output"},)
