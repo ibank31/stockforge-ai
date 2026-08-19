@@ -17,21 +17,20 @@ import uuid
 from typing import Any, Protocol
 
 from .generation import GenerationRequest, GenerationResult
+from .generation_provider import GenerationProvider, ProviderJob, ProviderRuntimeError
 from .plugin import PluginDescriptor
 from .provider import ProviderConfig, ProviderConfigError
-from .provider_runtime import GenerationProvider, ProviderError, ProviderJob
 
 COMFYUI_PROVIDER_KIND = "comfyui"
 COMFYUI_WORKFLOW_PARAMETER = "comfyui_workflow"
+ProviderError = ProviderRuntimeError
 
 
 class ComfyUIClient(Protocol):
     """Minimal transport contract used by the adapter."""
 
     def queue_prompt(self, workflow: dict[str, Any], *, client_id: str) -> dict[str, Any]: ...
-
     def get_history(self, prompt_id: str) -> dict[str, Any]: ...
-
     def interrupt(self, prompt_id: str) -> None: ...
 
 
@@ -142,13 +141,7 @@ def extract_output_refs(history: dict[str, Any], prompt_id: str) -> tuple[dict[s
 class ComfyUIProvider(GenerationProvider):
     """Asynchronous ComfyUI adapter using the native /prompt + /history API."""
 
-    def __init__(
-        self,
-        config: ProviderConfig,
-        *,
-        client: ComfyUIClient | None = None,
-        client_id: str | None = None,
-    ) -> None:
+    def __init__(self, config: ProviderConfig, *, client: ComfyUIClient | None = None, client_id: str | None = None) -> None:
         if not config.enabled:
             raise ProviderError(f"Provider {config.id!r} is disabled")
         timeout = float(config.options.get("timeout_seconds", 60))
@@ -208,12 +201,7 @@ class ComfyUIProvider(GenerationProvider):
         status = entry.get("status")
         status_str = status.get("status_str") if isinstance(status, dict) else None
         if status_str in {"error", "failed"}:
-            return ProviderJob(
-                provider_job_id=provider_job_id,
-                state="failed",
-                error_code="COMFYUI_EXECUTION_FAILED",
-                error_message="ComfyUI reported workflow execution failure",
-            )
+            return ProviderJob(provider_job_id=provider_job_id, state="failed", error_code="COMFYUI_EXECUTION_FAILED", error_message="ComfyUI reported workflow execution failure")
         if status_str in {"interrupted", "cancelled"}:
             return ProviderJob(provider_job_id=provider_job_id, state="cancelled")
         if isinstance(status, dict) and status.get("completed") is True:
