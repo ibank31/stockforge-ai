@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-**v0.1 Core Foundation → Asset Registry → Persistent Job Queue → Plugin Contract → Pipeline Engine**
+**v0.1 Core Foundation → Asset Registry → Persistent Job Queue → Plugin Contract → Pipeline Engine → Artifact/Provenance**
 
 ## Completed
 
@@ -40,11 +40,16 @@
 - Pipeline capability validation
 - Pipeline execution error boundary
 - Pipeline contract documentation
+- Versioned provenance record contract
+- Explicit artifact lineage contract
+- Durable SQLite provenance records
+- Durable SQLite artifact lineage records
+- Provenance/lineage round-trip and validation tests
 
 ## Next
 
-1. Artifact/provenance model
-2. Provider configuration and secret handling
-3. ComfyUI generator adapter
-4. Image QA pipeline
+1. Provider configuration and secret handling
+2. ComfyUI generator adapter hardening/live integration
+3. Image QA pipeline integration
+4. Enhancement/upscaling pipeline
 5. Stock metadata and marketplace export
