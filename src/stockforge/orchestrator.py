@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Protocol
 
 from .artifact import Artifact
 from .artifact_ingestion import ArtifactIngestor, ProviderOutputRef
@@ -35,7 +35,7 @@ class OrchestrationResult:
 
 
 class GenerationOrchestrator:
-    """Coordinates provider execution, output ingestion, and provenance."""
+    """Coordinates provider execution, output ingestion, and durable execution state."""
 
     def __init__(
         self,
@@ -60,7 +60,7 @@ class GenerationOrchestrator:
             raise OrchestrationError("Provider root must be an existing directory")
 
     def run(self, request: GenerationRequest, *, timeout_seconds: float = 600.0) -> OrchestrationResult:
-        """Execute one request and persist a final immutable execution record."""
+        """Execute one request and atomically persist its final outputs."""
         if timeout_seconds <= 0:
             raise OrchestrationError("timeout_seconds must be positive")
 
@@ -70,6 +70,7 @@ class GenerationOrchestrator:
         result: GenerationResult | None = None
         error_code: str | None = None
         error_message: str | None = None
+        sync_provider_result = False
 
         try:
             submit = getattr(self.provider, "submit", None)
@@ -126,6 +127,7 @@ class GenerationOrchestrator:
                         )
             else:
                 result = self.provider.generate(request)
+                sync_provider_result = True
                 provider_job_id = result.provider_job_id
                 if result.status == "failed":
                     error_code = result.error_code
@@ -172,7 +174,16 @@ class GenerationOrchestrator:
             input_artifact_ids=request.input_artifact_ids,
             parameters=dict(result.parameters),
         )
-        for artifact in artifacts:
-            self.database.create_artifact(artifact)
-        self.database.create_execution(execution)
-        return OrchestrationResult(execution=execution, artifacts=artifacts)
+
+        if sync_provider_result:
+            try:
+                registered_execution = self.database.create_execution(execution)
+            except Exception as exc:
+                raise OrchestrationError("Failed to persist generation execution") from exc
+            return OrchestrationResult(execution=registered_execution)
+
+        try:
+            registered_artifacts, registered_execution = self.database.create_artifacts_and_execution(artifacts, execution)
+        except Exception as exc:
+            raise OrchestrationError("Failed to atomically persist generation outputs") from exc
+        return OrchestrationResult(execution=registered_execution, artifacts=registered_artifacts)
