@@ -1,14 +1,15 @@
 from pathlib import Path
 from uuid import uuid4
 
-from stockforge.database import Database
+from PIL import Image
+
 from stockforge.generation import GenerationRequest
+from stockforge.generation_provider import ProviderJob
 from stockforge.job_database import JobDatabase
 from stockforge.job_manager import JobManager
 from stockforge.job_worker import GenerationJobWorker
 from stockforge.orchestrator import GenerationOrchestrator
 from stockforge.plugin import PluginDescriptor
-from stockforge.generation_provider import ProviderJob
 
 
 class FakeProvider:
@@ -40,7 +41,8 @@ def test_worker_claims_orchestrates_and_completes_job(tmp_path: Path) -> None:
     provider_root = tmp_path / "provider"
     project_root.mkdir()
     provider_root.mkdir()
-    (provider_root / "generated.png").write_bytes(b"PNG worker output")
+    # The ingestion contract expects a real image file, not arbitrary bytes with a PNG suffix.
+    Image.new("RGB", (2000, 2000), (128, 128, 128)).save(provider_root / "generated.png", format="PNG")
 
     database = JobDatabase(project_root / "stockforge.db")
     database.initialize()
