@@ -10,10 +10,15 @@ from pathlib import Path
 
 @dataclass(slots=True)
 class StockForgeConfig:
-    """Minimal persistent configuration for the early CLI."""
+    """Persistent StockForge control-plane and project storage configuration."""
 
     workspace: Path
     database: Path
+    project_root: Path | None = None
+
+    def __post_init__(self) -> None:
+        if self.project_root is None:
+            self.project_root = self.workspace / "projects"
 
     def to_dict(self) -> dict[str, str]:
         data = asdict(self)
@@ -21,7 +26,7 @@ class StockForgeConfig:
 
 
 class ConfigManager:
-    """Resolve and persist the global StockForge workspace."""
+    """Resolve and persist the global StockForge workspace and project storage."""
 
     def __init__(self, root: Path | None = None) -> None:
         self.root = Path(root or os.environ.get("STOCKFORGE_HOME", Path.home() / ".stockforge")).expanduser()
@@ -30,18 +35,30 @@ class ConfigManager:
     def load(self) -> StockForgeConfig:
         if not self.config_file.exists():
             workspace = self.root / "workspace"
-            return StockForgeConfig(workspace=workspace, database=self.root / "stockforge.db")
+            project_root = Path(
+                os.environ.get("STOCKFORGE_PROJECT_ROOT", workspace / "projects")
+            ).expanduser()
+            return StockForgeConfig(
+                workspace=workspace,
+                database=self.root / "stockforge.db",
+                project_root=project_root,
+            )
         data = json.loads(self.config_file.read_text(encoding="utf-8"))
+        workspace = Path(data["workspace"]).expanduser()
+        project_root = Path(
+            data.get("project_root", os.environ.get("STOCKFORGE_PROJECT_ROOT", workspace / "projects"))
+        ).expanduser()
         return StockForgeConfig(
-            workspace=Path(data["workspace"]).expanduser(),
+            workspace=workspace,
             database=Path(data["database"]).expanduser(),
+            project_root=project_root,
         )
 
     def initialize(self) -> StockForgeConfig:
         config = self.load()
         self.root.mkdir(parents=True, exist_ok=True)
         config.workspace.mkdir(parents=True, exist_ok=True)
-        (config.workspace / "projects").mkdir(parents=True, exist_ok=True)
+        config.project_root.mkdir(parents=True, exist_ok=True)
         (config.workspace / "assets").mkdir(parents=True, exist_ok=True)
         (config.workspace / "output").mkdir(parents=True, exist_ok=True)
         (config.workspace / "cache").mkdir(parents=True, exist_ok=True)
