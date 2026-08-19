@@ -104,7 +104,10 @@ class ComfyUIProvider(GenerationProvider):
     def generate(self, request: GenerationRequest) -> GenerationResult: raise ProviderError("ComfyUI provider is asynchronous; use submit/status")
     def submit(self, request: GenerationRequest, *, provider_job_id: str | None = None) -> ProviderJob:
         workflow = self._workflow(request)
-        response = self._client.queue_prompt(workflow, client_id=self._client_id, prompt_id=provider_job_id)
+        if provider_job_id is None:
+            response = self._client.queue_prompt(workflow, client_id=self._client_id)
+        else:
+            response = self._client.queue_prompt(workflow, client_id=self._client_id, prompt_id=provider_job_id)
         prompt_id = response.get("prompt_id") if isinstance(response, dict) else None
         if not isinstance(prompt_id, str) or not prompt_id:
             if isinstance(response, dict) and response.get("error"): raise ProviderError("ComfyUI rejected workflow validation")
