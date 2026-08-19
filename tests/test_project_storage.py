@@ -7,6 +7,7 @@ from stockforge.project import ProjectManager
 
 def test_project_root_defaults_to_workspace_projects(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / ".stockforge"))
+    monkeypatch.delenv("STOCKFORGE_PROJECT_ROOT", raising=False)
     config = ConfigManager().initialize()
     assert config.project_root == config.workspace / "projects"
 
