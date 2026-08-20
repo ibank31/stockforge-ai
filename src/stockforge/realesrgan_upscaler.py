@@ -104,7 +104,8 @@ class RealESRGANUpscaler:
             raise UpscalerError(f"Real-ESRGAN inference failed: {exc}") from exc
 
         destination.parent.mkdir(parents=True, exist_ok=True)
-        temporary = destination.with_suffix(destination.suffix + ".tmp")
+        suffix = destination.suffix.lower() or ".png"
+        temporary = destination.with_name(destination.name + ".tmp" + suffix)
         try:
             if not cv2.imwrite(str(temporary), output):
                 raise OSError("OpenCV failed to encode the upscaled image")
