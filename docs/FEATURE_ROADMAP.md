@@ -208,13 +208,13 @@ The generator is not the submission product. Every asset must pass the Adobe-ori
 
 | Feature | Status | Required outcome |
 |---|---|---|
-| Minimum resolution gate | PLANNED | Reject below Adobe photo minimum. |
-| Maximum resolution gate | PLANNED | Reject above marketplace maximum. |
-| JPEG finalization | PLANNED | Final photo artifact in supported JPEG form. |
-| sRGB validation/conversion | PLANNED | Final color space controlled. |
-| File-size gate | PLANNED | Reject oversized submission files. |
-| Image decodability/corruption | PLANNED | Reject broken files. |
-| Sharpness/noise/quality gate | PLANNED | Detect technical defects. |
+| Minimum resolution gate | DONE | Deterministic 4–100 MP validation. |
+| Maximum resolution gate | DONE | Deterministic upper-bound validation. |
+| JPEG finalization | DONE | Raster candidate converted to final JPEG. |
+| sRGB validation/conversion | DONE | Embedded ICC inspected and finalizer writes canonical sRGB profile. |
+| File-size gate | DONE | Deterministic 45 MB maximum validation. |
+| Image decodability/corruption | DONE | Structure verification plus full pixel decode. |
+| Sharpness/noise/quality gate | PLANNED | Requires separate visual-quality analysis. |
 | Anatomy/hand/face QA | PLANNED | Detect obvious AI anatomy defects. |
 | Object consistency QA | PLANNED | Detect malformed physical objects/interactions. |
 | OCR/text QA | PLANNED | Detect unintended text. |
@@ -230,15 +230,27 @@ The generator is not the submission product. Every asset must pass the Adobe-ori
 | Human approval gate | PLANNED | No automatic marketplace submission without explicit approval. |
 | Submission package exporter | PLANNED | Produce marketplace-ready package. |
 
+### Verified technical finalization milestone
+
+- Date: 2026-08-20
+- Implementation: `src/stockforge/adobe_finalize.py`
+- CLI: `stockforge adobe finalize <source> <destination>`
+- Explicit unprofiled-source policy: no silent sRGB assumption; `--assume-srgb` is required when the generator contract justifies it.
+- JPEG encoder: optimized progressive JPEG with embedded sRGB ICC profile.
+- Quality policy: searches quality 95 down to 85, then 4:2:0 only if required to stay below 45 MB; it refuses uncontrolled quality degradation.
+- Dimension policy: finalizer preserves dimensions and rejects candidates outside 4–100 MP; upscaling remains a separate stage.
+- Self-verification: every generated JPEG is immediately re-run through the deterministic Adobe technical gate.
+- CI evidence: GitHub Actions run `32361084347` completed successfully with **130 passed, 1 skipped**.
+
 ---
 
 # 10. Image QA system
 
 | Feature | Status |
 |---|---|
-| Technical image inspection | PLANNED |
-| Resolution/aspect validation | PLANNED |
-| Color/profile validation | PLANNED |
+| Technical image inspection | DONE |
+| Resolution/aspect validation | DONE |
+| Color/profile validation | DONE |
 | Blur/sharpness detection | PLANNED |
 | Noise/compression detection | PLANNED |
 | Face detection | PLANNED |
@@ -264,10 +276,10 @@ QA must be deterministic where possible and must preserve the reason for every r
 | Target resolution policy | PLANNED |
 | Detail preservation QA | PLANNED |
 | Halo/artifact detection after upscale | PLANNED |
-| Final JPEG export | PLANNED |
-| Final sRGB normalization | PLANNED |
+| Final JPEG export | DONE |
+| Final sRGB normalization | DONE |
 
-The current 1024×1024 generation benchmark is an **intermediate artifact**, not a final Adobe submission file.
+The current 1024×1024 generation benchmark is an **intermediate artifact**, not a final Adobe submission file. The finalizer deliberately does not upscale it.
 
 ---
 
@@ -399,16 +411,15 @@ Human approval remains the final gate. StockForge must not silently submit asset
 
 # 19. Current priority order
 
-1. Adobe technical submission gate.
-2. Image QA gate.
-3. Upscaling/finalization.
-4. Provenance population for live generation.
-5. Prompt/commercial concept engine.
-6. Perceptual deduplication.
-7. Metadata engine.
-8. Submission package + human approval.
-9. Market intelligence.
-10. Acceptance/sales feedback loop.
+1. Image QA gate.
+2. AI upscaling and final-size policy.
+3. Provenance population for live generation.
+4. Prompt/commercial concept engine.
+5. Perceptual deduplication.
+6. Metadata engine.
+7. Submission package + human approval.
+8. Market intelligence.
+9. Acceptance/sales feedback loop.
 
 ---
 
