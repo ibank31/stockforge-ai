@@ -5,28 +5,39 @@ import gradio as gr
 import spaces
 import torch
 from diffusers import AutoencoderKL, DiffusionPipeline, ZImageTransformer2DModel
+from huggingface_hub import hf_hub_download
 
 MODEL_REPO = "ibank31/stockforge-models"
-Z_IMAGE_URL = f"https://huggingface.co/{MODEL_REPO}/resolve/main/z_image_turbo_fp8_e4m3fn.safetensors"
-AE_URL = f"https://huggingface.co/{MODEL_REPO}/resolve/main/ae.safetensors"
-
-# The official Z-Image pipeline supplies tokenizer/text-encoder/configuration.
-# StockForge supplies the FP8 transformer and AE weights.
 PIPELINE_ID = "Tongyi-MAI/Z-Image-Turbo"
 DTYPE = torch.bfloat16
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
+
+
+def _download_model(filename):
+    print(f"[StockForge] Downloading {filename} from {MODEL_REPO}...")
+    return hf_hub_download(
+        repo_id=MODEL_REPO,
+        filename=filename,
+        revision="main",
+        token=HF_TOKEN,
+    )
 
 
 def _build_pipeline():
+    print("[StockForge] Resolving StockForge model files...")
+    z_image_path = _download_model("z_image_turbo_fp8_e4m3fn.safetensors")
+    ae_path = _download_model("ae.safetensors")
+
     print("[StockForge] Loading Z-Image FP8 transformer...")
     transformer = ZImageTransformer2DModel.from_single_file(
-        Z_IMAGE_URL,
+        z_image_path,
         config=PIPELINE_ID,
         torch_dtype=DTYPE,
     )
 
     print("[StockForge] Loading AE...")
     vae = AutoencoderKL.from_single_file(
-        AE_URL,
+        ae_path,
         config=f"{PIPELINE_ID}/vae",
         torch_dtype=DTYPE,
     )
@@ -43,15 +54,12 @@ def _build_pipeline():
     return pipe
 
 
-# Module-scope loading is intentional. ZeroGPU's documented pattern is to
-# construct GPU models once, not reload them inside every generation call.
+# Module-scope loading is intentional: models load once per worker.
 PIPE = _build_pipeline()
 print("[StockForge] Pipeline ready")
 
 
 def estimate_duration(prompt, width, height, steps, seed, randomize_seed):
-    # Conservative initial reservation. We will tighten this after the first
-    # real benchmark. Free-tier calls should remain below the per-call cap.
     steps = int(steps)
     return min(55, max(20, 8 + steps * 4))
 
