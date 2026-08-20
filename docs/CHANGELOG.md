@@ -26,10 +26,14 @@ The gate currently checks:
 
 The color-space check intentionally reports **REVIEW** when an ICC profile is absent rather than falsely claiming that the pixels are non-sRGB. A later finalization stage will normalize and embed an sRGB profile.
 
-### Evidence
+### Verification findings and fixes
 
-- Unit tests added for valid 4 MP sRGB JPEG, WEBP rejection, sub-4 MP rejection, missing ICC review, and CMYK rejection.
-- GitHub Actions CI was triggered automatically for commit `b7ba90ca696c404294ad38ae5851548c72bb8f75` and was still running at the time of this documentation entry.
+- First GitHub Actions run tested 124 tests and found 2 failures in the new test fixture.
+- The failure was caused by using `CmsProfile.tobytes()` directly with Pillow 12.3.0; the documented `ImageCmsProfile` wrapper is required for serialization.
+- The test fixture was corrected.
+- Local verification against the corrected implementation: **5 Adobe gate tests passed**.
+- The implementation was also corrected to parse embedded ICC bytes through `BytesIO`, matching Pillow's supported profile-loading interface.
+- A fresh GitHub Actions run is required before this feature can be promoted to `DONE`.
 
 ### Known limitations
 
