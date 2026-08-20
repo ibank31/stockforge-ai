@@ -16,6 +16,12 @@ dev = [
 image = [
   "pillow>=11.0,<13.0",
 ]
+upscale = [
+  "realesrgan==0.3.0",
+  "basicsr==1.4.2",
+  "opencv-python-headless>=4.8,<5.0",
+  "numpy>=1.24,<3.0",
+]
 
 [project.scripts]
 stockforge = "stockforge.cli:app"
