@@ -2,6 +2,50 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-20 — AI upscaling layer
+
+### IN PROGRESS — Real-ESRGAN provider and upscaler contract
+
+Implemented the provider-neutral enhancement boundary needed to turn the 1024×1024 ZeroGPU intermediate artifact into an Adobe-eligible resolution candidate:
+
+- `src/stockforge/upscaler.py`
+- `src/stockforge/realesrgan_upscaler.py`
+- `tests/test_upscaler.py`
+- optional `upscale` dependency group in `pyproject.toml`
+
+The contract records:
+
+- source and destination paths
+- scale factor
+- provider identity
+- model identity
+- source/output dimensions
+- deterministic failure reasons
+
+The first provider is **Real-ESRGAN x4plus**, selected after comparing open-source options for natural stock photography. The official/general-purpose checkpoint is a 4× model and is distributed under BSD-3-Clause. citeturn0search2turn1search0
+
+The implementation deliberately keeps the heavy inference stack optional. Core StockForge installations do not pull PyTorch/BasicSR merely to run the registry, queue, CLI, or Adobe technical gate.
+
+### Safety rules
+
+- only 4× is accepted by the x4plus provider
+- source must exist and decode successfully
+- source/destination must differ
+- model weights must exist before provider healthcheck passes
+- output dimensions must equal exactly 4× source dimensions
+- output is written atomically through a temporary file with a real image extension
+- inference errors become explicit `UpscalerError` failures
+
+### Important policy decision
+
+Real-ESRGAN is an **enhancement stage**, not an Adobe submission gate. It does not get to declare an image commercially acceptable. The resulting image still has to pass technical inspection, visual-quality QA, artifact/anatomy checks, deduplication, metadata validation, and human approval.
+
+The 1024×1024 benchmark becomes 4096×4096 (16.78 MP) with this provider, which is inside the Adobe 4–100 MP technical range. This is an intended path, not yet a live benchmark result.
+
+### Verification status
+
+The unit-test contract has been added, but the actual Real-ESRGAN inference benchmark has **not** yet been run in the target GPU environment. Therefore this milestone remains `IN PROGRESS` by project policy.
+
 ## 2026-08-20 — Adobe JPEG/sRGB finalization milestone
 
 ### DONE — deterministic Adobe technical finalization
@@ -113,31 +157,9 @@ These remain separate planned stages.
 
 ### LIVE — Qwen3 FP8 mixed loader
 
-The previous loader path:
+The previous loader path was abandoned after the checkpoint produced shape mismatches and was identified as a quantized/packed FP8 mixed checkpoint.
 
-```text
-Qwen3ForCausalLM._from_config()
-    ↓
-load_file()
-    ↓
-model.load_state_dict()
-```
-
-was abandoned after the checkpoint produced shape mismatches and was identified as a quantized/packed FP8 mixed checkpoint.
-
-The live runtime now loads:
-
-```text
-qwen_3_4b_fp8_mixed.safetensors
-    ↓
-Comfy-compatible CLIPLoader
-    ↓
-lumina2
-    ↓
-Z-Image generation
-```
-
-The first end-to-end generation is the verification evidence that the FP8 loader path is functional in the deployed environment.
+The live runtime now loads `qwen_3_4b_fp8_mixed.safetensors` through the Comfy-compatible loader and successfully generates through Z-Image.
 
 ### DONE — ZeroGPU build compatibility fixes
 
@@ -150,32 +172,11 @@ The Space configuration was updated to Python 3.12 and Gradio 6.25-compatible ru
 
 ### DONE — Adobe Stock readiness specification
 
-Added `docs/ADOBE_STOCK_READINESS.md` covering:
-
-- resolution
-- JPEG/sRGB finalization
-- file integrity
-- technical quality
-- anatomy/hand/face QA
-- object consistency
-- OCR
-- logos/trademarks
-- watermark detection
-- prompt/IP compliance
-- people/property/release logic
-- generative-AI disclosure
-- metadata
-- duplicate/spam prevention
-- commercial-value scoring
-- copy-space planning
-- upscaling
-- provenance
-- human approval
-- marketplace policy maintenance
+Added `docs/ADOBE_STOCK_READINESS.md` covering resolution, JPEG/sRGB finalization, file integrity, technical quality, anatomy/hand/face QA, object consistency, OCR, logos/trademarks, watermark detection, prompt/IP compliance, people/property/release logic, generative-AI disclosure, metadata, duplicate/spam prevention, commercial-value scoring, copy-space planning, upscaling, provenance, human approval, and marketplace policy maintenance.
 
 ### DONE — Feature implementation ledger
 
-Added `docs/FEATURE_ROADMAP.md` as the authoritative project feature matrix. It records the state of core foundation, registry, queue, plugin architecture, pipeline engine, provenance, ZeroGPU runtime, Adobe readiness, QA, enhancement, prompt intelligence, market intelligence, metadata, deduplication, compliance, security, and human approval.
+Added `docs/FEATURE_ROADMAP.md` as the authoritative project feature matrix.
 
 ## 2026-08-19 — Core/project foundation
 
