@@ -6,6 +6,7 @@ import spaces
 import torch
 from diffusers import AutoencoderKL, DiffusionPipeline, ZImageTransformer2DModel
 from huggingface_hub import hf_hub_download, snapshot_download
+from safetensors.torch import load_file
 from transformers import AutoTokenizer, Qwen3ForCausalLM
 
 MODEL_REPO = "ibank31/stockforge-models"
@@ -15,12 +16,10 @@ HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
 
 
 def _download_model(filename):
-    print(f"[StockForge] Downloading {filename} from {MODEL_REPO}...")
     return hf_hub_download(repo_id=MODEL_REPO, filename=filename, revision="main", token=HF_TOKEN)
 
 
 def _download_pipeline_configs():
-    print("[StockForge] Downloading Z-Image configs/tokenizer...")
     return snapshot_download(
         repo_id=PIPELINE_ID,
         revision="main",
@@ -36,42 +35,44 @@ def _download_pipeline_configs():
     )
 
 
+def _build_qwen(config_dir, checkpoint):
+    config_path = os.path.join(config_dir, "config.json")
+    config = Qwen3ForCausalLM.config_class.from_pretrained(config_path)
+    model = Qwen3ForCausalLM.from_config(config, torch_dtype=DTYPE)
+    state = load_file(checkpoint, device="cpu")
+    result = model.load_state_dict(state, strict=False)
+    print(f"[StockForge] Qwen checkpoint: missing={len(result.missing_keys)} unexpected={len(result.unexpected_keys)}")
+    if result.missing_keys:
+        print("[StockForge] Missing:", result.missing_keys[:8])
+    if result.unexpected_keys:
+        print("[StockForge] Unexpected:", result.unexpected_keys[:8])
+    if len(result.missing_keys) > 20:
+        raise RuntimeError("Qwen checkpoint is not structurally compatible with the official Z-Image Qwen3 config")
+    return model
+
+
 def _build_pipeline():
-    print("[StockForge] Resolving model files...")
+    print("[StockForge] Downloading StockForge models...")
     z_image_path = _download_model("z_image_turbo_fp8_e4m3fn.safetensors")
     ae_path = _download_model("ae.safetensors")
     qwen_path = _download_model("qwen_3_4b_fp8_mixed.safetensors")
     pipeline_dir = _download_pipeline_configs()
 
-    transformer_config = os.path.join(pipeline_dir, "transformer")
-    vae_config = os.path.join(pipeline_dir, "vae")
-    text_encoder_dir = os.path.join(pipeline_dir, "text_encoder")
-    tokenizer_dir = os.path.join(pipeline_dir, "tokenizer")
-
-    print("[StockForge] Loading Z-Image transformer...")
-    transformer = ZImageTransformer2DModel.from_single_file(z_image_path, config=transformer_config, torch_dtype=DTYPE)
-
-    print("[StockForge] Loading AE...")
-    vae = AutoencoderKL.from_single_file(ae_path, config=vae_config, torch_dtype=DTYPE)
-
-    print("[StockForge] Loading local Qwen3 text encoder...")
-    text_encoder = Qwen3ForCausalLM.from_pretrained(
-        text_encoder_dir,
-        state_dict=None,
+    transformer = ZImageTransformer2DModel.from_single_file(
+        z_image_path,
+        config=os.path.join(pipeline_dir, "transformer"),
         torch_dtype=DTYPE,
-        local_files_only=True,
+    )
+    vae = AutoencoderKL.from_single_file(
+        ae_path,
+        config=os.path.join(pipeline_dir, "vae"),
+        torch_dtype=DTYPE,
+    )
+    text_encoder = _build_qwen(os.path.join(pipeline_dir, "text_encoder"), qwen_path)
+    tokenizer = AutoTokenizer.from_pretrained(
+        os.path.join(pipeline_dir, "tokenizer"), local_files_only=True
     )
 
-    # Replace the expected checkpoint with the StockForge safetensors file.
-    # Diffusers/Transformers can consume a single-file checkpoint when passed explicitly.
-    from safetensors.torch import load_file
-    qwen_state = load_file(qwen_path, device="cpu")
-    missing, unexpected = text_encoder.load_state_dict(qwen_state, strict=False)
-    print(f"[StockForge] Qwen loaded. missing={len(missing)} unexpected={len(unexpected)}")
-
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, local_files_only=True)
-
-    print("[StockForge] Loading pipeline components...")
     pipe = DiffusionPipeline.from_pretrained(
         pipeline_dir,
         transformer=transformer,
@@ -100,7 +101,14 @@ def generate_gpu(prompt, width, height, steps, seed, randomize_seed):
         seed = int(torch.randint(0, 2**32 - 1, (1,), device="cuda").item())
     seed = int(seed)
     generator = torch.Generator(device="cuda").manual_seed(seed)
-    image = PIPE(prompt=str(prompt).strip(), height=int(height), width=int(width), num_inference_steps=int(steps), guidance_scale=0.0, generator=generator).images[0]
+    image = PIPE(
+        prompt=str(prompt).strip(),
+        height=int(height),
+        width=int(width),
+        num_inference_steps=int(steps),
+        guidance_scale=0.0,
+        generator=generator,
+    ).images[0]
     return image, seed, round(time.perf_counter() - started, 3)
 
 
