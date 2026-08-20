@@ -7,6 +7,7 @@ It deliberately does not claim to replace Adobe moderation or visual/legal revie
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 from typing import Literal
 
@@ -93,7 +94,7 @@ def _icc_description(image: Image.Image) -> tuple[str | None, GateCheck]:
             "No embedded ICC profile; the file's sRGB state cannot be proven from metadata alone. Final export must normalize to sRGB.",
         )
     try:
-        profile = ImageCms.ImageCmsProfile(raw)
+        profile = ImageCms.ImageCmsProfile(BytesIO(raw))
         description = ImageCms.getProfileDescription(profile).strip()
         normalized = description.lower()
         if "srgb" in normalized:
