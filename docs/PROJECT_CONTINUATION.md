@@ -95,17 +95,43 @@ Architectural style:
 - trust-boundary documentation
 
 ### Pipeline Engine
-Current work is in progress on the pipeline layer. The initial runner is intentionally **linear/sequential**. Do NOT prematurely add DAG/fan-out/caching/resumability until artifact/provenance contracts are established.
+The initial runner is intentionally **linear/sequential**. Do NOT prematurely add DAG/fan-out/caching/resumability until artifact/provenance contracts are established.
+
+### Provenance / Lineage
+- versioned provenance record contract
+- explicit artifact lineage contract
+- durable SQLite provenance records
+- durable SQLite artifact lineage records
+- provenance/lineage round-trip and validation tests
 
 ## 5. Current Branch / Work State
 
-At the latest handoff:
-- `main` contains the completed core foundation, asset registry/job queue, and plugin contract.
-- PR #4 targets `main` from `feat/pipeline-engine`.
-- PR #4 adds the versioned pipeline definition and deterministic sequential runner.
-- CI must be green before merge.
+Current active implementation branch:
 
-Always inspect the actual GitHub state before assuming these statuses remain current.
+- `feat/zerogpu-runtime`
+- Latest documented runtime milestone: live ZeroGPU generation
+
+The current branch contains the working Hugging Face ZeroGPU adapter and the documentation required to continue the project without losing state.
+
+### Live ZeroGPU verification
+
+Space:
+
+`ibank31/stockforge-zerogpu`
+
+Verified:
+
+- runtime `RUNNING`
+- hardware `zero-a10g`
+- public app HTTP 200
+- `/generate` API HTTP 200
+- Z-Image generation success
+- Qwen3 FP8 mixed text encoder generation success
+- 1024×1024 / 8-step benchmark
+- seed `2157290427964887587`
+- measured GPU-function time `44.238` seconds
+
+The working loader is the Comfy-compatible FP8 path. Do not return to raw `Qwen3ForCausalLM.load_state_dict()` for `qwen_3_4b_fp8_mixed.safetensors`.
 
 ## 6. Target Architecture
 
@@ -244,7 +270,7 @@ A future intelligence layer should score opportunities using evidence rather tha
 - predicted acceptance risk
 - predicted commercial value
 
-Construction/property/architecture can be an early domain advantage because the project owner has strong construction/property domain knowledge, but the machine should remain general enough for broader stock categories.
+Construction/property/architecture can be an early domain advantage, but the machine should remain general enough for broader stock categories.
 
 ## 11. Free-First / Resource Constraints
 
@@ -264,35 +290,51 @@ Design rules:
 
 ## 12. Quality Bar
 
-User explicitly requires:
-- work incrementally
+User requires:
+- incremental work
 - detailed implementation
 - no avoidable mistakes
-- verify code rather than assume
+- code verification rather than assumption
 - CI/test before merge
-- research before committing to important technology choices
-- maintain continuity across sessions
+- research before important technology decisions
+- continuity across sessions
 
 Do not say a stage is complete merely because files were written. Completion means implementation + tests + CI + audit + correct Git state.
 
-## 13. Immediate Roadmap
+## 13. Documentation System
 
-1. Finish and validate Pipeline Engine PR #4.
-2. Artifact + provenance/lineage contract.
-3. Provider configuration + secure secret handling.
-4. ComfyUI generator adapter.
-5. Real image-generation workflow integration.
-6. Automated image QA gates.
-7. Enhancement/upscaling pipeline.
-8. Perceptual duplicate/similarity control.
-9. Stock metadata engine.
-10. Marketplace-specific compliance/export packages.
-11. Human approval workflow.
-12. Market intelligence + concept planning.
-13. Sales/acceptance feedback loop.
-14. Optimization for scalable production.
+The repository now maintains three explicit project-control documents in addition to this continuation brief:
 
-## 14. Non-Negotiable Product Definition
+- `docs/FEATURE_ROADMAP.md` — authoritative feature matrix and status ledger.
+- `docs/ADOBE_STOCK_READINESS.md` — Adobe-oriented technical/compliance specification and implementation roadmap.
+- `docs/CHANGELOG.md` — dated record of completed features, verification evidence, and known limitations.
+- `docs/STATUS.md` — current milestone and immediate implementation priorities.
+
+Every completed feature must be recorded in `docs/CHANGELOG.md` and reflected in `docs/FEATURE_ROADMAP.md`.
+
+## 14. Immediate Roadmap
+
+1. Adobe technical submission gate.
+2. JPEG + sRGB finalization.
+3. AI upscaling to submission resolution.
+4. Technical image QA.
+5. Anatomy/hand/face QA.
+6. OCR/logo/trademark/watermark QA.
+7. AI disclosure + people/property/release metadata.
+8. Populate provenance from live generation jobs.
+9. Perceptual deduplication.
+10. Commercial-value scoring.
+11. Stock title/keyword/category metadata engine.
+12. Human review/submission package.
+13. Market opportunity engine.
+14. Commercial concept planner.
+15. Prompt compliance firewall.
+16. Prompt/variation engine.
+17. Controlled batch generation.
+18. Portfolio diversity scoring.
+19. Acceptance/sales feedback loop.
+
+## 15. Non-Negotiable Product Definition
 
 When future sessions ask “what are we building?”, the answer is:
 
