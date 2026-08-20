@@ -7,6 +7,7 @@ import json
 import typer
 
 from . import __version__
+from .adobe_finalize import AdobeFinalizationError, finalize_image
 from .adobe_gate import inspect_image
 from .asset import ASSET_TYPES, AssetError
 from .asset_manager import AssetManager
@@ -114,6 +115,38 @@ def adobe_check(
         typer.echo(f"SUBMISSION TECHNICAL GATE: {'PASS' if report.ready else 'NOT READY'}")
 
     raise typer.Exit(code=0 if report.ready else 1)
+
+
+@adobe_app.command("finalize")
+def adobe_finalize(
+    source: str = typer.Argument(..., help="Raster candidate to finalize."),
+    destination: str = typer.Argument(..., help="Output JPEG path."),
+    assume_srgb: bool = typer.Option(
+        False,
+        "--assume-srgb",
+        help="Explicitly treat an unprofiled source as sRGB after confirming the generator contract.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print machine-readable JSON."),
+) -> None:
+    """Finalize a raster candidate as JPEG with an embedded sRGB profile."""
+    try:
+        report = finalize_image(source, destination, assume_srgb=assume_srgb)
+    except AdobeFinalizationError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if json_output:
+        typer.echo(json.dumps(report.to_dict(), indent=2))
+    else:
+        typer.echo(f"Source: {report.source_path}")
+        typer.echo(f"Output: {report.output_path}")
+        typer.echo(f"Dimensions: {report.width} x {report.height}")
+        typer.echo(f"Megapixels: {report.megapixels:.2f}")
+        typer.echo(f"JPEG quality: {report.jpeg_quality}")
+        typer.echo(f"Subsampling: {report.subsampling}")
+        typer.echo(f"Output size: {report.output_size_bytes} bytes")
+        typer.echo(f"Source profile: {report.source_profile or 'none'}")
+        typer.echo(f"Assumed sRGB: {'yes' if report.assumed_srgb else 'no'}")
+        typer.echo("FINALIZATION: PASS")
 
 
 @project_app.command("create")
