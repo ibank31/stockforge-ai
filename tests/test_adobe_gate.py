@@ -9,7 +9,7 @@ def _save_jpeg(path: Path, size: tuple[int, int], *, profile: bool = True) -> No
     image = Image.new("RGB", size, (128, 128, 128))
     kwargs = {"format": "JPEG", "quality": 90}
     if profile:
-        kwargs["icc_profile"] = ImageCms.createProfile("sRGB").tobytes()
+        kwargs["icc_profile"] = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
     image.save(path, **kwargs)
 
 
