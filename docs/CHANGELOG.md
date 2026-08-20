@@ -2,9 +2,51 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-20 — Adobe JPEG/sRGB finalization milestone
+
+### DONE — deterministic Adobe technical finalization
+
+Implemented and verified the next executable layer of the Adobe Stock readiness pipeline:
+
+- `src/stockforge/adobe_finalize.py`
+- `tests/test_adobe_finalize.py`
+- `stockforge adobe finalize <source> <destination>` CLI command
+
+The finalizer:
+
+- preserves source pixel dimensions
+- refuses candidates outside Adobe's 4–100 MP range instead of silently resizing them
+- converts supported profiled raster inputs to RGB/sRGB through Pillow + LittleCMS
+- embeds a canonical sRGB ICC profile in the JPEG output
+- refuses unprofiled sources unless `assume_srgb=True` / `--assume-srgb` is explicitly supplied
+- refuses non-opaque transparency instead of silently compositing against an arbitrary background
+- writes optimized progressive JPEG
+- searches JPEG quality 95 down to 85 and then 4:2:0 subsampling only when necessary to remain under Adobe's 45 MB limit
+- refuses uncontrolled quality degradation when the file cannot fit the limit
+- writes through a temporary file and atomically replaces the destination
+- immediately re-runs the finished artifact through `inspect_image()` and deletes the output if the technical gate fails
+
+### Verification evidence
+
+GitHub Actions run `32361084347` completed successfully:
+
+- **130 passed**
+- **1 skipped**
+- `stockforge version` passed
+- Python 3.11 CI environment
+- Pillow 12.3.0
+
+The first finalizer CI run exposed an actual Pillow 12.3.0 API mistake: raw ICC bytes must be supplied through a file-like wrapper to `ImageCmsProfile`. The finalizer was corrected to use `BytesIO`, and the complete suite then passed.
+
+### Architectural decision
+
+The finalizer does **not** perform AI upscaling, sharpening, denoising, artifact removal, anatomy analysis, OCR, logo detection, watermark detection, legal/IP checks, metadata generation, or deduplication. Those concerns remain separate gates so each transformation can be audited and verified independently.
+
+The current 1024×1024 ZeroGPU benchmark therefore remains an intermediate artifact. It correctly fails the 4 MP finalization requirement until a dedicated upscaling stage is implemented.
+
 ## 2026-08-20 — Adobe technical submission gate implementation
 
-### IN PROGRESS — deterministic Adobe photo technical gate
+### DONE — deterministic Adobe photo technical gate
 
 Implemented the first executable layer of the Adobe Stock readiness pipeline:
 
@@ -24,23 +66,20 @@ The gate currently checks:
 - image structure verification
 - full pixel decodability
 
-The color-space check intentionally reports **REVIEW** when an ICC profile is absent rather than falsely claiming that the pixels are non-sRGB. A later finalization stage will normalize and embed an sRGB profile.
+The color-space check intentionally reports **REVIEW** when an ICC profile is absent rather than falsely claiming that the pixels are non-sRGB. The finalization stage now normalizes and embeds an sRGB profile.
 
 ### Verification findings and fixes
 
-- First GitHub Actions run tested 124 tests and found 2 failures in the new test fixture.
+- First GitHub Actions run exposed two failures in the new Adobe test fixture.
 - The failure was caused by using `CmsProfile.tobytes()` directly with Pillow 12.3.0; the documented `ImageCmsProfile` wrapper is required for serialization.
 - The test fixture was corrected.
-- Local verification against the corrected implementation: **5 Adobe gate tests passed**.
-- The implementation was also corrected to parse embedded ICC bytes through `BytesIO`, matching Pillow's supported profile-loading interface.
-- A fresh GitHub Actions run is required before this feature can be promoted to `DONE`.
+- The implementation parses embedded ICC bytes through `BytesIO`, matching Pillow's supported profile-loading interface.
+- The complete Adobe gate is now covered by the passing CI suite recorded above.
 
 ### Known limitations
 
 This is **not yet the complete Adobe submission gate**. It does not yet implement:
 
-- JPEG conversion/finalization
-- sRGB conversion
 - sharpness/noise/artifact analysis
 - anatomy/hand/face QA
 - OCR
@@ -52,7 +91,7 @@ This is **not yet the complete Adobe submission gate**. It does not yet implemen
 - metadata validation
 - human approval
 
-The feature must not be marked `DONE` until CI passes and the implementation is audited.
+These remain separate planned stages.
 
 ## 2026-08-20 — ZeroGPU generation milestone
 
