@@ -7,6 +7,7 @@ import json
 import typer
 
 from . import __version__
+from .adobe_gate import inspect_image
 from .asset import ASSET_TYPES, AssetError
 from .asset_manager import AssetManager
 from .config import ConfigManager
@@ -21,9 +22,11 @@ app = typer.Typer(help="StockForge AI — digital asset production automation.")
 project_app = typer.Typer(help="Manage StockForge projects.")
 asset_app = typer.Typer(help="Register and inspect project assets.")
 job_app = typer.Typer(help="Create and operate persistent jobs.")
+adobe_app = typer.Typer(help="Adobe Stock readiness checks.")
 app.add_typer(project_app, name="project")
 app.add_typer(asset_app, name="asset")
 app.add_typer(job_app, name="job")
+app.add_typer(adobe_app, name="adobe")
 
 
 def _initialized() -> tuple[ConfigManager, object, Database, ProjectManager]:
@@ -81,6 +84,36 @@ def doctor() -> None:
         icon = "OK" if check.ok else "FAIL"
         typer.echo(f"[{icon}] {check.name}: {check.detail}")
     raise typer.Exit(code=0 if all(check.ok for check in checks) else 1)
+
+
+@adobe_app.command("check")
+def adobe_check(
+    path: str = typer.Argument(..., help="Image file to inspect."),
+    json_output: bool = typer.Option(False, "--json", help="Print machine-readable JSON."),
+) -> None:
+    """Check a final image against deterministic Adobe technical requirements."""
+    try:
+        report = inspect_image(path)
+    except Exception as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if json_output:
+        typer.echo(json.dumps(report.to_dict(), indent=2))
+    else:
+        typer.echo(f"File: {report.path}")
+        typer.echo(f"Format: {report.format or '-'}")
+        typer.echo(f"Dimensions: {report.width or '-'} x {report.height or '-'}")
+        typer.echo(f"Megapixels: {report.megapixels:.2f}" if report.megapixels is not None else "Megapixels: -")
+        typer.echo(f"Size: {report.file_size_bytes} bytes")
+        typer.echo(f"Mode: {report.color_mode or '-'}")
+        typer.echo(f"ICC: {report.icc_profile or '-'}")
+        typer.echo("")
+        for check in report.checks:
+            typer.echo(f"[{check.status}] {check.name}: {check.detail}")
+        typer.echo("")
+        typer.echo(f"SUBMISSION TECHNICAL GATE: {'PASS' if report.ready else 'NOT READY'}")
+
+    raise typer.Exit(code=0 if report.ready else 1)
 
 
 @project_app.command("create")
