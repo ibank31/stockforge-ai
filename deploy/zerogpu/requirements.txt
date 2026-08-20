@@ -6,3 +6,4 @@ safetensors>=0.5.0
 gradio>=5.49.0
 spaces>=0.41.0
 sentencepiece>=0.2.0
+comfy-diffusion[comfyui]>=2.6.0
