@@ -5,7 +5,7 @@ import gradio as gr
 import spaces
 import torch
 from diffusers import AutoencoderKL, DiffusionPipeline, ZImageTransformer2DModel
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, snapshot_download
 
 MODEL_REPO = "ibank31/stockforge-models"
 PIPELINE_ID = "Tongyi-MAI/Z-Image-Turbo"
@@ -23,28 +23,49 @@ def _download_model(filename):
     )
 
 
+def _download_pipeline_configs():
+    print("[StockForge] Downloading Z-Image pipeline configs...")
+    return snapshot_download(
+        repo_id=PIPELINE_ID,
+        revision="main",
+        allow_patterns=[
+            "model_index.json",
+            "transformer/config.json",
+            "vae/config.json",
+            "scheduler/scheduler_config.json",
+            "text_encoder/config.json",
+            "tokenizer/*",
+        ],
+        token=HF_TOKEN,
+    )
+
+
 def _build_pipeline():
     print("[StockForge] Resolving StockForge model files...")
     z_image_path = _download_model("z_image_turbo_fp8_e4m3fn.safetensors")
     ae_path = _download_model("ae.safetensors")
+    pipeline_dir = _download_pipeline_configs()
+
+    transformer_config = os.path.join(pipeline_dir, "transformer")
+    vae_config = os.path.join(pipeline_dir, "vae")
 
     print("[StockForge] Loading Z-Image FP8 transformer...")
     transformer = ZImageTransformer2DModel.from_single_file(
         z_image_path,
-        config=f"{PIPELINE_ID}/transformer",
+        config=transformer_config,
         torch_dtype=DTYPE,
     )
 
     print("[StockForge] Loading AE...")
     vae = AutoencoderKL.from_single_file(
         ae_path,
-        config=f"{PIPELINE_ID}/vae",
+        config=vae_config,
         torch_dtype=DTYPE,
     )
 
     print("[StockForge] Loading pipeline components...")
     pipe = DiffusionPipeline.from_pretrained(
-        PIPELINE_ID,
+        pipeline_dir,
         transformer=transformer,
         vae=vae,
         torch_dtype=DTYPE,
