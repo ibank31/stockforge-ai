@@ -54,8 +54,12 @@ def _srgb_profile() -> ImageCms.ImageCmsProfile:
     return ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB"))
 
 
+def _profile_from_bytes(raw: bytes) -> ImageCms.ImageCmsProfile:
+    return ImageCms.ImageCmsProfile(BytesIO(raw))
+
+
 def _profile_description(raw: bytes) -> str:
-    profile = ImageCms.ImageCmsProfile(raw)
+    profile = _profile_from_bytes(raw)
     return ImageCms.getProfileDescription(profile).strip()
 
 
@@ -92,7 +96,7 @@ def _prepare_rgb(
     if raw_profile:
         try:
             description = _profile_description(raw_profile)
-            source_profile = ImageCms.ImageCmsProfile(raw_profile)
+            source_profile = _profile_from_bytes(raw_profile)
         except Exception as exc:
             raise AdobeFinalizationError(f"Invalid embedded ICC profile: {exc}") from exc
     else:
