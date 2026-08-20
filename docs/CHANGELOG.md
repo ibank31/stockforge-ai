@@ -2,6 +2,54 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-20 — Adobe technical submission gate implementation
+
+### IN PROGRESS — deterministic Adobe photo technical gate
+
+Implemented the first executable layer of the Adobe Stock readiness pipeline:
+
+- `src/stockforge/adobe_gate.py`
+- `tests/test_adobe_gate.py`
+- `stockforge adobe check <path>` CLI command
+- Pillow promoted to a core dependency because image inspection is now part of the product core.
+
+The gate currently checks:
+
+- file existence
+- JPEG format
+- 4–100 megapixel resolution range
+- maximum 45 MB file size
+- RGB pixel mode
+- embedded ICC profile inspection
+- image structure verification
+- full pixel decodability
+
+The color-space check intentionally reports **REVIEW** when an ICC profile is absent rather than falsely claiming that the pixels are non-sRGB. A later finalization stage will normalize and embed an sRGB profile.
+
+### Evidence
+
+- Unit tests added for valid 4 MP sRGB JPEG, WEBP rejection, sub-4 MP rejection, missing ICC review, and CMYK rejection.
+- GitHub Actions CI was triggered automatically for commit `b7ba90ca696c404294ad38ae5851548c72bb8f75` and was still running at the time of this documentation entry.
+
+### Known limitations
+
+This is **not yet the complete Adobe submission gate**. It does not yet implement:
+
+- JPEG conversion/finalization
+- sRGB conversion
+- sharpness/noise/artifact analysis
+- anatomy/hand/face QA
+- OCR
+- logo/trademark detection
+- watermark detection
+- AI disclosure/release metadata
+- prompt/IP compliance
+- deduplication
+- metadata validation
+- human approval
+
+The feature must not be marked `DONE` until CI passes and the implementation is audited.
+
 ## 2026-08-20 — ZeroGPU generation milestone
 
 ### LIVE — Hugging Face ZeroGPU runtime
