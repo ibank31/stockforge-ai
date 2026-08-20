@@ -38,7 +38,7 @@ def _download_pipeline_configs():
 def _build_qwen(config_dir, checkpoint):
     config_path = os.path.join(config_dir, "config.json")
     config = Qwen3ForCausalLM.config_class.from_pretrained(config_path)
-    model = Qwen3ForCausalLM.from_config(config, torch_dtype=DTYPE)
+    model = Qwen3ForCausalLM._from_config(config, torch_dtype=DTYPE)
     state = load_file(checkpoint, device="cpu")
     result = model.load_state_dict(state, strict=False)
     print(f"[StockForge] Qwen checkpoint: missing={len(result.missing_keys)} unexpected={len(result.unexpected_keys)}")
