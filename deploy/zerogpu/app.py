@@ -31,7 +31,7 @@ def _build_pipeline():
     print("[StockForge] Loading Z-Image FP8 transformer...")
     transformer = ZImageTransformer2DModel.from_single_file(
         z_image_path,
-        config=PIPELINE_ID,
+        config=f"{PIPELINE_ID}/transformer",
         torch_dtype=DTYPE,
     )
 
@@ -54,7 +54,6 @@ def _build_pipeline():
     return pipe
 
 
-# Module-scope loading is intentional: models load once per worker.
 PIPE = _build_pipeline()
 print("[StockForge] Pipeline ready")
 
