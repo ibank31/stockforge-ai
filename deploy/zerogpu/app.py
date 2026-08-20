@@ -1,93 +1,85 @@
 import os
 import time
+from pathlib import Path
 
 import gradio as gr
 import spaces
 import torch
-from diffusers import AutoencoderKL, DiffusionPipeline, ZImageTransformer2DModel
-from huggingface_hub import hf_hub_download, snapshot_download
-from safetensors.torch import load_file
-from transformers import AutoTokenizer, Qwen3ForCausalLM
+from huggingface_hub import hf_hub_download
+
+# ComfyUI's quantization-aware runtime is required for qwen_3_4b_fp8_mixed.safetensors.
+# Do not load this checkpoint with Transformers load_state_dict().
+from comfy_diffusion import check_runtime, vae_decode
+from comfy_diffusion.conditioning import encode_prompt
+from comfy_diffusion.models import ModelManager
+from comfy_diffusion.nodes import run_node
+from comfy_diffusion.sampling import sample
 
 MODEL_REPO = "ibank31/stockforge-models"
-PIPELINE_ID = "Tongyi-MAI/Z-Image-Turbo"
-DTYPE = torch.bfloat16
+ROOT = Path(os.getenv("STOCKFORGE_MODEL_DIR", "/tmp/stockforge-models"))
 HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
+Z_IMAGE_FILE = "z_image_turbo_fp8_e4m3fn.safetensors"
+QWEN_FILE = "qwen_3_4b_fp8_mixed.safetensors"
+AE_FILE = "ae.safetensors"
 
 
-def _download_model(filename):
-    return hf_hub_download(repo_id=MODEL_REPO, filename=filename, revision="main", token=HF_TOKEN)
+def _prepare_models():
+    for folder in ("diffusion_models", "text_encoders", "vae"):
+        (ROOT / folder).mkdir(parents=True, exist_ok=True)
+    files = {
+        Z_IMAGE_FILE: "diffusion_models",
+        QWEN_FILE: "text_encoders",
+        AE_FILE: "vae",
+    }
+    for filename, folder in files.items():
+        target = ROOT / folder / filename
+        if target.exists() and target.stat().st_size > 0:
+            print(f"[StockForge] Cached: {folder}/{filename}")
+            continue
+        print(f"[StockForge] Downloading {filename}...")
+        hf_hub_download(
+            repo_id=MODEL_REPO,
+            filename=filename,
+            revision="main",
+            token=HF_TOKEN,
+            local_dir=str(ROOT / folder),
+            local_dir_use_symlinks=False,
+        )
 
 
-def _download_pipeline_configs():
-    return snapshot_download(
-        repo_id=PIPELINE_ID,
-        revision="main",
-        allow_patterns=[
-            "model_index.json",
-            "transformer/config.json",
-            "vae/config.json",
-            "scheduler/scheduler_config.json",
-            "text_encoder/config.json",
-            "tokenizer/*",
-        ],
-        token=HF_TOKEN,
-    )
+def _load_runtime_models():
+    runtime = check_runtime()
+    if isinstance(runtime, dict) and runtime.get("error"):
+        raise RuntimeError(runtime["error"])
+    _prepare_models()
+    manager = ModelManager(models_dir=ROOT)
+    print("[StockForge] Loading FP8 Z-Image model through Comfy runtime...")
+    model = run_node(
+        "UNETLoader",
+        unet_name=Z_IMAGE_FILE,
+        weight_dtype="default",
+    )[0]
+    print("[StockForge] Loading Qwen3 FP8 mixed text encoder through Comfy runtime...")
+    clip = run_node(
+        "CLIPLoader",
+        clip_name=QWEN_FILE,
+        type="lumina2",
+        device="default",
+    )[0]
+    print("[StockForge] Loading AE VAE...")
+    vae = manager.load_vae(AE_FILE)
+    print("[StockForge] Models ready")
+    return model, clip, vae
 
 
-def _build_qwen(config_dir, checkpoint):
-    config_path = os.path.join(config_dir, "config.json")
-    config = Qwen3ForCausalLM.config_class.from_pretrained(config_path)
-    model = Qwen3ForCausalLM._from_config(config, torch_dtype=DTYPE)
-    state = load_file(checkpoint, device="cpu")
-    result = model.load_state_dict(state, strict=False)
-    print(f"[StockForge] Qwen checkpoint: missing={len(result.missing_keys)} unexpected={len(result.unexpected_keys)}")
-    if result.missing_keys:
-        print("[StockForge] Missing:", result.missing_keys[:8])
-    if result.unexpected_keys:
-        print("[StockForge] Unexpected:", result.unexpected_keys[:8])
-    if len(result.missing_keys) > 20:
-        raise RuntimeError("Qwen checkpoint is not structurally compatible with the official Z-Image Qwen3 config")
-    return model
+MODEL_CACHE = None
 
 
-def _build_pipeline():
-    print("[StockForge] Downloading StockForge models...")
-    z_image_path = _download_model("z_image_turbo_fp8_e4m3fn.safetensors")
-    ae_path = _download_model("ae.safetensors")
-    qwen_path = _download_model("qwen_3_4b_fp8_mixed.safetensors")
-    pipeline_dir = _download_pipeline_configs()
-
-    transformer = ZImageTransformer2DModel.from_single_file(
-        z_image_path,
-        config=os.path.join(pipeline_dir, "transformer"),
-        torch_dtype=DTYPE,
-    )
-    vae = AutoencoderKL.from_single_file(
-        ae_path,
-        config=os.path.join(pipeline_dir, "vae"),
-        torch_dtype=DTYPE,
-    )
-    text_encoder = _build_qwen(os.path.join(pipeline_dir, "text_encoder"), qwen_path)
-    tokenizer = AutoTokenizer.from_pretrained(
-        os.path.join(pipeline_dir, "tokenizer"), local_files_only=True
-    )
-
-    pipe = DiffusionPipeline.from_pretrained(
-        pipeline_dir,
-        transformer=transformer,
-        vae=vae,
-        text_encoder=text_encoder,
-        tokenizer=tokenizer,
-        torch_dtype=DTYPE,
-        low_cpu_mem_usage=False,
-    )
-    pipe.to("cuda")
-    return pipe
-
-
-PIPE = _build_pipeline()
-print("[StockForge] Pipeline ready")
+def _get_models():
+    global MODEL_CACHE
+    if MODEL_CACHE is None:
+        MODEL_CACHE = _load_runtime_models()
+    return MODEL_CACHE
 
 
 def estimate_duration(prompt, width, height, steps, seed, randomize_seed):
@@ -97,19 +89,32 @@ def estimate_duration(prompt, width, height, steps, seed, randomize_seed):
 @spaces.GPU(duration=estimate_duration, size="large")
 def generate_gpu(prompt, width, height, steps, seed, randomize_seed):
     started = time.perf_counter()
+    model, clip, vae = _get_models()
     if randomize_seed:
-        seed = int(torch.randint(0, 2**32 - 1, (1,), device="cuda").item())
+        seed = int.from_bytes(os.urandom(8), "little") & 0xFFFFFFFFFFFFFFFF
     seed = int(seed)
-    generator = torch.Generator(device="cuda").manual_seed(seed)
-    image = PIPE(
-        prompt=str(prompt).strip(),
-        height=int(height),
-        width=int(width),
-        num_inference_steps=int(steps),
-        guidance_scale=0.0,
-        generator=generator,
-    ).images[0]
-    return image, seed, round(time.perf_counter() - started, 3)
+
+    positive = encode_prompt(clip, str(prompt).strip())
+    negative = encode_prompt(clip, "")
+
+    # Official Z-Image Turbo ComfyUI workflow: EmptySD3LatentImage 1024x1024,
+    # AuraFlow sampling shift=3, KSampler 8 steps, cfg=1, res_multistep/simple.
+    latent = {"samples": torch.zeros((1, 16, int(height) // 8, int(width) // 8), dtype=torch.float32)}
+    model = run_node("ModelSamplingAuraFlow", model=model, shift=3.0)[0]
+    denoised = sample(
+        model,
+        positive,
+        negative,
+        latent,
+        steps=int(steps),
+        cfg=1.0,
+        sampler_name="res_multistep",
+        scheduler="simple",
+        seed=seed,
+    )
+    image = vae_decode(vae, denoised)
+    elapsed = round(time.perf_counter() - started, 3)
+    return image, seed, elapsed
 
 
 def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=True):
@@ -124,7 +129,7 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
 
 
 with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
-    gr.Markdown("# StockForge V5 · ZeroGPU\nQuota-aware Z-Image Turbo benchmark runtime.")
+    gr.Markdown("# StockForge V5 · ZeroGPU\nFP8-aware Z-Image Turbo runtime.")
     prompt = gr.Textbox(label="Prompt", lines=4)
     with gr.Row():
         width = gr.Number(value=1024, label="Width", precision=0)
