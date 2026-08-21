@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "samples": [
+    {
+      "id": "sf001",
+      "image_path": "./images/sf001.webp",
+      "sha256": "REPLACE_WITH_SHA256",
+      "category": "clean_stock_like",
+      "human_labels": {
+        "anatomy": 1.0,
+        "face_integrity": 1.0,
+        "subject_integrity": 1.0,
+        "realism": 0.9,
+        "lighting_consistency": 0.9,
+        "artifact_risk": 1.0,
+        "unexpected_text": 1.0,
+        "ip_risk": 1.0,
+        "commercial_usefulness": 0.8,
+        "composition": 0.9,
+        "similarity_risk": 1.0
+      },
+      "reviewer_count": 2,
+      "notes": "Example only"
+    }
+  ]
+}
