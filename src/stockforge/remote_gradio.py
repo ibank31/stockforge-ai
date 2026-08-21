@@ -1,9 +1,4 @@
-"""Provider adapter for remote Gradio/Spaces generation workers.
-
-The adapter speaks the public Gradio queue API used by Hugging Face Spaces and
-can therefore target both a Hugging Face Space and a Kaggle-hosted Gradio
-worker. Provider-specific GPU/model code stays inside the worker.
-"""
+"""Provider adapter for remote Gradio/Spaces generation workers."""
 
 from __future__ import annotations
 
@@ -26,17 +21,7 @@ class RemoteGradioError(ProviderRuntimeError):
 class RemoteGradioProvider(GenerationProvider):
     """Call a Gradio worker using POST -> event_id -> SSE completion."""
 
-    def __init__(
-        self,
-        *,
-        provider_id: str,
-        base_url: str,
-        output_dir: Path,
-        token: str | None = None,
-        api_name: str = "generate",
-        timeout_seconds: float = 300.0,
-        capabilities: frozenset[str] | None = None,
-    ) -> None:
+    def __init__(self, *, provider_id: str, base_url: str, output_dir: Path, token: str | None = None, api_name: str = "generate_remote", timeout_seconds: float = 300.0, capabilities: frozenset[str] | None = None) -> None:
         self.provider_id = provider_id
         self.base_url = base_url.rstrip("/")
         self.output_dir = Path(output_dir).resolve()
@@ -50,14 +35,7 @@ class RemoteGradioProvider(GenerationProvider):
 
     @property
     def descriptor(self) -> PluginDescriptor:
-        return PluginDescriptor(
-            id=self.provider_id,
-            name=f"Remote Gradio ({self.provider_id})",
-            version="1.0.0",
-            api_version="1",
-            kind="generator",
-            capabilities=self._capabilities,
-        )
+        return PluginDescriptor(id=self.provider_id, name=f"Remote Gradio ({self.provider_id})", version="1.0.0", api_version="1", kind="generator", capabilities=self._capabilities)
 
     def generate(self, request: GenerationRequest) -> GenerationResult:
         job = self.submit(request)
@@ -71,10 +49,7 @@ class RemoteGradioProvider(GenerationProvider):
         existing = self._jobs.get(durable_id)
         if existing is not None:
             return existing
-        payload = {"data": [
-            request.prompt, request.width, request.height, request.steps,
-            request.seed or 0, request.seed is None, durable_id,
-        ]}
+        payload = {"data": [request.prompt, request.width, request.height, request.steps, request.seed or 0, request.seed is None, durable_id]}
         event = self._request_json("POST", f"/gradio_api/call/{self.api_name}", payload)
         event_id = str(event.get("event_id") or "")
         if not event_id:
@@ -121,13 +96,7 @@ class RemoteGradioProvider(GenerationProvider):
                 raise RemoteGradioError("Gradio completed without output data")
             refs = self._materialize_outputs(values[0], durable_id)
             self._outputs[durable_id] = refs
-            result = GenerationResult(
-                status="succeeded",
-                artifact_ids=(f"provider:{durable_id}:0",),
-                provider_job_id=durable_id,
-                seed=int(values[1]) if len(values) > 1 and values[1] is not None else None,
-                parameters={"remote_provider": self.provider_id, "gpu_seconds": values[2] if len(values) > 2 else None},
-            )
+            result = GenerationResult(status="succeeded", artifact_ids=(f"provider:{durable_id}:0",), provider_job_id=durable_id, seed=int(values[1]) if len(values) > 1 and values[1] is not None else None, parameters={"remote_provider": self.provider_id, "gpu_seconds": values[2] if len(values) > 2 else None})
             job = ProviderJob(durable_id, "succeeded", result=result)
         elif event in {"error", "exception"}:
             job = ProviderJob(durable_id, "failed", error_code="remote_generation_failed", error_message=data or event)
