@@ -1,0 +1,9 @@
+torch>=2.8,<2.12
+diffusers>=0.36.0
+transformers>=4.51.0
+accelerate>=1.10.0
+safetensors>=0.5.0
+gradio>=6.25.0,<6.26.0
+spaces>=0.41.0
+sentencepiece>=0.2.0
+comfy-diffusion[comfyui]==2.6.0

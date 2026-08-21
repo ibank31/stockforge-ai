@@ -1,301 +1,258 @@
 # StockForge AI — Project Continuation Brief
 
-**Purpose:** This file is the canonical handoff/context brief for future sessions. Read it before making architectural or implementation decisions.
+**Last re-baselined:** 2026-08-21  
+**Active branch:** `feat/zerogpu-runtime`
 
-## 1. End Goal
+This is the canonical handoff document. Future sessions must inspect actual repository/provider state before assuming any milestone is complete.
 
-StockForge AI is intended to become a **free-first, production-grade AI stock asset factory**, focused first on **commercial stock photography/images** that can realistically be submitted to and sold through marketplaces such as Adobe Stock and other compliant stock marketplaces.
+## 1. What we are building
 
-The product is NOT merely an image generator. The target system converts market opportunity into controlled asset production:
+StockForge AI is a **free-first, Termux-first, plugin-based AI stock asset factory**. The first production target is high-quality commercial stock photography for marketplaces such as Adobe Stock.
 
-`market demand → opportunity → concept → prompt → generation → QA → enhancement → deduplication → provenance/compliance → metadata → submission package → human approval → marketplace`
+It is not merely an image generator. The intended closed loop is:
 
-Long-term, the system should learn from portfolio/submission/sales outcomes and improve future concept selection and production. Human approval remains the final gate for submission.
+`market signal → opportunity → concept → compliant prompt → generation → technical/visual QA → enhancement → deduplication → provenance/compliance → metadata → human review → marketplace → acceptance/sales feedback`
 
-## 2. Core Product Principles
+The long-term advantage is controlled commercial production and learning, not raw image volume.
 
-- **Commercial usefulness over visual novelty.** Optimize for buyer utility, not merely beautiful AI images.
-- **Quality over raw volume.** Avoid spam, near-duplicates, repetitive batches, and low-value variations.
-- **Free/open-source first.** Prefer zero-cost/open-source tools and local execution where practical; remote GPU/API providers are optional adapters, not architectural requirements.
-- **Vendor neutral core.** Generators, upscalers, OCR, QA, metadata, and marketplace integrations are plugins/adapters.
-- **Provenance first.** Every important asset must be traceable to job, pipeline, model, workflow, prompt, seed, inputs, transformations, QA, and metadata versions.
-- **Reproducibility.** Record enough information to reproduce or audit generation and transformations whenever the underlying provider permits it.
-- **Marketplace compliance is a first-class feature.** Never assume that technically generated content is commercially/submission compliant.
-- **Termux/Android first.** Core must remain usable on modest hardware; heavy generation can be delegated to optional remote/local GPU providers.
-- **No hard dependency on one model/provider.** Provider lock-in is a design failure.
-- **CI is a gate.** Do not merge untested changes merely to advance the roadmap.
+## 2. Non-negotiable principles
 
-## 3. Current Architecture
+- Commercial usefulness over novelty.
+- Quality and differentiation over volume.
+- Free/open-source first, but never assume free means unlimited or commercially unrestricted.
+- Vendor-neutral core.
+- Model and compute-provider independence.
+- Full provenance and reproducibility where technically possible.
+- Marketplace compliance as a first-class gate.
+- Termux/Android as the control plane.
+- Heavy inference delegated to interchangeable workers.
+- Human approval remains the final marketplace submission gate.
+- No feature is DONE without implementation + verification + correct repository state.
 
-Core stack:
-- Python
-- uv
-- Typer CLI
-- SQLite
-- filesystem as binary/artifact source of truth
-- pytest
-- GitHub Actions
-
-Architectural style:
-- CLI-first
-- Termux-first
-- microkernel/plugin-oriented
-- persistent jobs
-- declarative pipelines
-- versioned domain contracts
-- filesystem artifacts + queryable SQLite registry
-
-## 4. Completed Milestones
-
-### Core Foundation
-- CLI entry point
-- `stockforge version`
-- `stockforge init`
-- `stockforge doctor`
-- SQLite initialization
-- project creation/listing
-- workspace layout
-- versioned project manifest
-- atomic manifest writes
-- project creation rollback handling
-- initial test suite
-- GitHub Actions CI
-
-### Asset Registry
-- stable asset UUID
-- project ownership
-- asset type/status contract
-- safe relative paths
-- MIME type/file size
-- SHA-256 checksum
-- asset CLI create/list
-- persistent SQLite asset records
-
-### Persistent Job Queue
-- stable job UUID
-- project ownership
-- job type
-- priority
-- JSON payload
-- queued/running/succeeded/failed/cancelled states
-- atomic worker claiming
-- attempt counting
-- bounded retries
-- completion/failure/cancellation
-- persistent SQLite queue
-- job CLI commands
-
-### Plugin Contract
-- vendor-neutral plugin descriptor
-- plugin API version
-- plugin kind/capabilities
-- deterministic registry lookup
-- capability-based discovery
-- API compatibility validation
-- trust-boundary documentation
-
-### Pipeline Engine
-Current work is in progress on the pipeline layer. The initial runner is intentionally **linear/sequential**. Do NOT prematurely add DAG/fan-out/caching/resumability until artifact/provenance contracts are established.
-
-## 5. Current Branch / Work State
-
-At the latest handoff:
-- `main` contains the completed core foundation, asset registry/job queue, and plugin contract.
-- PR #4 targets `main` from `feat/pipeline-engine`.
-- PR #4 adds the versioned pipeline definition and deterministic sequential runner.
-- CI must be green before merge.
-
-Always inspect the actual GitHub state before assuming these statuses remain current.
-
-## 6. Target Architecture
+## 3. Current architecture
 
 ```text
-Market Intelligence
-        ↓
-Opportunity / Concept Planner
-        ↓
-Prompt + Variation Planner
-        ↓
-Persistent Job Queue
-        ↓
-Pipeline Runner
-        ↓
-Generator Plugin
-        ↓
-Artifact Registry + Provenance
-        ↓
-Image QA Gates
-        ↓
-Enhancement / Upscaling
-        ↓
-Perceptual Deduplication
-        ↓
-Commercial / Marketplace Compliance
-        ↓
-Stock Metadata Engine
-        ↓
-Submission Package
-        ↓
-Human Approval
-        ↓
-Marketplace
-        ↓
-Sales / Acceptance Feedback
-        └────────────→ Market Intelligence
+Termux / Control Plane
+        |
+        +-- Project + Config + SQLite
+        +-- Model Registry
+        +-- Persistent Job Queue
+        +-- Provider Router
+        +-- Pipeline Runner
+        |
+        +--> Hugging Face ZeroGPU adapter
+        +--> Kaggle GPU adapter
+        +--> future provider adapters
+                    |
+                    v
+              Model preparation/cache
+                    |
+                 GPU inference
+                    |
+              Artifact + Provenance
+                    |
+          QA → Enhancement → Dedup
+                    |
+          Compliance → Metadata
+                    |
+              Human Approval
+                    |
+                Marketplace
 ```
 
-## 7. Critical Domain Contracts Still Needed
+**Model** and **provider** are separate abstractions. A model has identity, revision, license/policy evidence, resource requirements, and compatibility metadata. A provider supplies compute and execution.
 
-Build these deliberately before large provider integrations:
+A provider still needs model weights locally or through a runtime-supported mounted/streamed mechanism during inference. The practical goal is therefore **central model registry + provider-local cache/access**, not an impossible zero-transfer model.
 
-1. **Artifact contract**
-   - immutable artifact identity/version
-   - path/reference
-   - MIME/type
-   - size
-   - checksum
-   - creation source
-   - parent artifacts
-   - transformation history
+## 4. Verified runtime state
 
-2. **Provenance/lineage contract**
-   - job ID
-   - pipeline ID/version/hash
-   - step ID
-   - plugin/provider ID/version
-   - model identifier/version/hash when available
-   - workflow hash
-   - prompt and negative prompt hashes/records
-   - seed/generation parameters
-   - input references
-   - transformation chain
-   - QA results
-   - metadata version
-   - license/policy record
+### Hugging Face ZeroGPU — VERIFIED
 
-3. **Provider configuration/secrets contract**
-   - secrets never stored in job payloads
-   - provider configuration referenced by stable ID
-   - credentials separated from reproducible job data
-   - no secret leakage in logs/errors
+Space: `ibank31/stockforge-zerogpu`
 
-4. **QA contract**
-   - deterministic technical checks
-   - image dimensions/aspect ratio
-   - decodability/corruption
-   - color/profile sanity
-   - duplicate/similarity score
-   - OCR/text/logo detection
-   - face/anatomy/artifact checks where feasible
-   - aesthetic/commercial usefulness score
-   - marketplace-specific rejection gates
+Recorded live benchmark:
 
-5. **Marketplace metadata contract**
-   Internal metadata must be richer than any one marketplace export. Preserve internal provenance separately from submission title/description/keywords/categories/AI disclosure fields.
+- hardware: `zero-a10g`
+- request: 1024×1024
+- steps: 8
+- successful image returned
+- Z-Image Turbo + Qwen3 FP8 mixed text encoder path
+- measured GPU-function time: 44.238 seconds
+- Termux-triggered HTTP generation succeeded
 
-## 8. Image Generation Direction
+This is a working remote generation provider adapter.
 
-The first production target is **photo-first stock imagery**.
+### Kaggle GPU — VERIFIED INFRASTRUCTURE
 
-ComfyUI is a preferred adapter because it provides workflow-level control and can remain outside the core. Do not hardwire ComfyUI into core services.
+Worker: `iqbalteguh/stockforge-worker-public`
 
-Prior technology research identified a free-first ecosystem including tools such as Diffusers, Pillow, rembg, Real-ESRGAN, CleanVision, imagededup, vtracer, SVGO, and ExifRead. Treat every model/tool license separately and verify current licensing before commercial deployment. **Open-source does not automatically mean commercially unrestricted.**
+Verified:
 
-Model selection must consider:
-- commercial-use rights
-- model-weight license
+- CUDA available
+- 2 × Tesla T4
+- ~14.56 GiB VRAM per GPU
+- PyTorch CUDA matmul succeeded
+- structured worker result succeeded
+
+### Kaggle Qwen-Image — NOT YET VERIFIED END-TO-END
+
+The feasibility worker reached:
+
+- official DiffSynth-Studio installation
+- Qwen-Image pipeline loading
+- model download from ModelScope
+- FP8 + disk-offload configuration
+
+The experiment then failed with:
+
+`OSError: [Errno 28] No space left on device`
+
+Therefore the repository must **not** claim that Kaggle currently generates Qwen-Image successfully. The next test must be storage-aware and must produce an actual image before the provider is marked complete.
+
+## 5. Model strategy
+
+Qwen-Image is currently a **top candidate**, not a permanently declared best model.
+
+Current evidence:
+
+- Qwen/Qwen-Image is listed as Apache-2.0 on Hugging Face.
+- The model is 20B parameters and the current Hub repository is roughly 57.7 GB.
+- Official DiffSynth documentation provides a VRAM-managed path and a low-VRAM FP8/disk-offload example.
+- DiffSynth documents approximately 40 GB VRAM for an unmanaged 20B DiT inference, while its managed Qwen-Image path is documented as runnable from 8 GB VRAM.
+
+StockForge still needs an internal benchmark before declaring any model "best". The benchmark must include photorealism, prompt adherence, anatomy/object consistency, artifact rate, commercial usefulness, latency, resource footprint, licensing/policy, and reproducibility.
+
+## 6. Model registry requirements
+
+Every approved model should record:
+
+- model ID
+- exact revision
+- source repository
+- backend/runtime
+- precision/weight format
 - code license
-- dataset/provenance considerations
-- marketplace policy
-- output restrictions
-- resource footprint
-- reproducibility
+- weight license
+- commercial-use assessment
+- marketplace-policy assessment
+- expected disk/RAM/VRAM footprint
+- supported resolutions
+- provider compatibility
+- integrity/hash data where available
+- approval/deprecation state
 
-A previously researched MVP candidate was Stable Diffusion 3.5 Medium under its applicable Stability license/registration terms. Do not treat this as permanently approved: re-check the current license and marketplace policies before implementation or distribution.
+Model storage is separate from provider cache.
 
-FLUX was previously excluded from the free commercial MVP pending license/use-rights analysis. Revisit only with current evidence.
+## 7. Provider requirements
 
-## 9. Stock Marketplace Reality
+Every provider adapter should eventually support:
 
-The financial goal is real but not guaranteed. Existing contributor reports indicate that AI-generated stock can earn money, but outcomes vary enormously with portfolio size, quality, demand, acceptance, niche, marketplace, account history, and metadata.
+```text
+capabilities()
+health()
+submit(job)
+status(execution_id)
+result(execution_id)
+cancel(execution_id)  # if provider supports it
+```
 
-Do not optimize StockForge around simplistic `generate 1,000 images → upload 1,000 images` behavior. The system should actively avoid:
-- near-duplicate spam
-- repetitive concepts
-- obvious AI artifacts
-- trademark/logo contamination
-- unsafe/unlicensed source material
-- low-value generic imagery
-- misleading metadata
-- marketplace policy violations
+Runtime capability data should include accelerator, VRAM, RAM, disk, model/backend compatibility, queue state, and quota/session information.
 
-The strategic objective is **high-value, commercially useful, differentiated stock content**.
+The router should select providers using measured capability and policy rather than a hard-coded preference.
 
-## 10. Market Intelligence Direction
+Provider failure should be isolated from the logical job so compatible jobs can fail over without changing their model-independent contract.
 
-A future intelligence layer should score opportunities using evidence rather than inventing demand. Candidate dimensions:
-- buyer/use-case utility
-- seasonal vs evergreen demand
-- competition/saturation signals
-- portfolio gaps
-- search/keyword opportunity where data is legally and technically available
-- variation potential
-- production difficulty/cost
-- predicted acceptance risk
-- predicted commercial value
+## 8. Stock marketplace reality
 
-Construction/property/architecture can be an early domain advantage because the project owner has strong construction/property domain knowledge, but the machine should remain general enough for broader stock categories.
+Adobe Stock currently accepts generative AI content when it meets its requirements. Current Adobe guidance requires appropriate submission rights, generative-AI labeling, accurate asset type/metadata, releases where applicable, and technically/visually sound content. Adobe also restricts prohibited prompt/title/keyword references and warns against excessive similar submissions.
 
-## 11. Free-First / Resource Constraints
+Therefore StockForge must implement:
 
-The system must work from Android/Termux and modest hardware.
+- prompt/IP compliance firewall
+- technical QA
+- anatomy/face/hand/object checks
+- OCR/logo/trademark/watermark detection
+- similarity/deduplication gate
+- commercial-value scoring
+- AI disclosure and release metadata
+- marketplace-specific submission packaging
+- human approval
 
-Design rules:
-- lightweight core
-- streaming file operations
-- SQLite instead of heavyweight infrastructure for MVP
-- filesystem artifacts rather than storing binaries in DB
-- optional worker machines/remote GPU through adapters
-- resumable jobs
-- bounded retries
-- cache expensive deterministic operations
-- avoid unnecessary memory duplication
-- no mandatory paid SaaS dependency
+## 9. Major gaps discovered
 
-## 12. Quality Bar
+### P0 architecture
 
-User explicitly requires:
-- work incrementally
-- detailed implementation
-- no avoidable mistakes
-- verify code rather than assume
-- CI/test before merge
-- research before committing to important technology choices
-- maintain continuity across sessions
+1. Model Registry implementation.
+2. Unified Generation Job/Result contract.
+3. Provider capability/health/quota contract.
+4. Provider router.
+5. Failover/idempotency.
+6. Model cache/delivery abstraction.
 
-Do not say a stage is complete merely because files were written. Completion means implementation + tests + CI + audit + correct Git state.
+### P1 runtime
 
-## 13. Immediate Roadmap
+7. Kaggle storage-aware preflight.
+8. Kaggle Qwen-Image end-to-end test.
+9. Worker heartbeat/progress diagnostics.
+10. Internal model benchmark harness.
 
-1. Finish and validate Pipeline Engine PR #4.
-2. Artifact + provenance/lineage contract.
-3. Provider configuration + secure secret handling.
-4. ComfyUI generator adapter.
-5. Real image-generation workflow integration.
-6. Automated image QA gates.
-7. Enhancement/upscaling pipeline.
-8. Perceptual duplicate/similarity control.
-9. Stock metadata engine.
-10. Marketplace-specific compliance/export packages.
-11. Human approval workflow.
-12. Market intelligence + concept planning.
-13. Sales/acceptance feedback loop.
-14. Optimization for scalable production.
+### P1 asset factory
 
-## 14. Non-Negotiable Product Definition
+11. JPEG + sRGB finalization.
+12. Technical QA.
+13. Visual/anatomy QA.
+14. OCR/logo/trademark/watermark QA.
+15. Perceptual deduplication.
+16. Commercial-value scoring.
+17. Metadata engine.
+18. Human review/submission package.
 
-When future sessions ask “what are we building?”, the answer is:
+### P2 intelligence
 
-> **StockForge AI is a free-first, Termux-first, plugin-based AI stock asset factory. Its first and most important output is high-quality commercial stock photography. It should transform market opportunities into generation jobs, produce controlled image batches, automatically reject technical/commercial failures, preserve complete provenance, create compliant marketplace metadata, prevent duplicate/spam submissions, and produce human-reviewable submission packages. Its long-term advantage is not merely generation; it is the closed production-and-learning loop from market demand → asset → acceptance/sales feedback → better future production.**
+19. Market opportunity engine.
+20. Commercial concept planner.
+21. Prompt/variation engine.
+22. Controlled batch generation.
+23. Portfolio diversity scoring.
+24. Acceptance/sales feedback loop.
 
-The machine should eventually be capable of operating most of this workflow automatically while keeping final marketplace submission under explicit human approval and maintaining auditable provenance/compliance records.
+## 10. Immediate implementation sequence
+
+1. Implement Model Registry contract.
+2. Implement Provider Capability/Health contract.
+3. Implement unified Generation Job/Result contract.
+4. Implement Provider Router and failover policy.
+5. Implement model cache/delivery abstraction.
+6. Add Kaggle storage preflight and fail-fast diagnostics.
+7. Re-test Qwen-Image on Kaggle only after preflight passes.
+8. Build internal model benchmark harness.
+9. Build technical/visual QA gates.
+10. Build commercial-value and deduplication gates.
+11. Build Adobe metadata/compliance package.
+12. Build human approval/submission package.
+
+## 11. Repository documentation map
+
+- `docs/ARCHITECTURE.md` — current system architecture.
+- `docs/MODEL_PROVIDER_ARCHITECTURE.md` — model registry, provider, routing, and cache design.
+- `docs/RESEARCH_GAPS_2026-08-21.md` — evidence-backed research and gap map.
+- `docs/STATUS.md` — current implementation state and priorities.
+- `docs/FEATURE_ROADMAP.md` — feature ledger.
+- `docs/ADOBE_STOCK_READINESS.md` — marketplace requirements.
+- `docs/CHANGELOG.md` — dated implementation history.
+
+## 12. Evidence sources
+
+- Qwen-Image: https://huggingface.co/Qwen/Qwen-Image
+- DiffSynth Qwen-Image guide: https://github.com/modelscope/DiffSynth-Studio/blob/main/docs/en/Model_Details/Qwen-Image.md
+- DiffSynth low-VRAM example: https://github.com/modelscope/DiffSynth-Studio/blob/main/examples/qwen_image/model_inference_low_vram/Qwen-Image.py
+- DiffSynth VRAM management: https://github.com/modelscope/DiffSynth-Studio/blob/main/docs/en/Developer_Guide/Enabling_VRAM_management.md
+- Kaggle notebook resources: https://www.kaggle.com/docs/notebooks
+- Hugging Face ZeroGPU: https://huggingface.co/docs/hub/main/spaces-zerogpu
+- Hugging Face Space storage: https://huggingface.co/docs/hub/en/spaces-storage
+- Adobe Stock generative AI guidelines: https://helpx.adobe.com/stock/contributor/submit-your-content/submit-generative-ai-content/generative-ai-content-guidelines.html
+- Adobe Stock generative AI FAQ: https://helpx.adobe.com/stock/contributor/submit-your-content/submit-generative-ai-content/adobe-stock-generative-ai-faq.html
+
+## Product definition
+
+> StockForge AI is a free-first, Termux-first, plugin-based AI stock asset factory. Its first and most important output is high-quality commercial stock photography. It transforms market opportunities into generation jobs, uses interchangeable compute providers, automatically rejects technical/commercial failures, preserves provenance, creates compliant metadata, prevents duplicate/spam submissions, and produces human-reviewable marketplace packages. Its long-term advantage is the closed loop from market demand to asset performance and future production decisions.
