@@ -8,9 +8,13 @@ from .reality import RealityRules, RealityScene, ToolAffordance
 _KNOWLEDGE_DIR = Path(__file__).with_name("knowledge")
 
 def _scene(payload: dict[str, Any], item: dict[str, Any]) -> RealityScene:
+    affordance = dict(item["affordance"])
+    # Knowledge packs store the tool at workflow level; hydrate the runtime
+    # contract here so existing packs remain valid without duplicated fields.
+    affordance.setdefault("tool", item["tool"])
     return RealityScene(
         domain=payload["domain"], task=item["task"], problem=item["problem"], object=item["object"], tool=item["tool"],
-        affordance=ToolAffordance(**item["affordance"]), human_action=item["human_action"], environment=item["environment"],
+        affordance=ToolAffordance(**affordance), human_action=item["human_action"], environment=item["environment"],
         buyer_job=item["buyer_job"], rules=RealityRules(tuple(item.get("must", ())), tuple(item.get("should", ())), tuple(item.get("must_not", ()))),
         visual_evidence=tuple(item.get("visual_evidence", ())),
     )
