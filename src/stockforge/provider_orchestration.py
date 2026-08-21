@@ -20,7 +20,12 @@ class ProviderRoutingError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class ProviderCapabilities:
-    """Provider resource/capability snapshot used for scheduling decisions."""
+    """Provider resource/capability snapshot used for scheduling decisions.
+
+    ``quota_remaining`` is an opaque provider-specific quota unit. A value of
+    zero or less means the provider must not be selected. The adapter is
+    responsible for normalizing its external quota into this field.
+    """
 
     provider_id: str
     available: bool = True
@@ -36,6 +41,8 @@ class ProviderCapabilities:
 
     def supports(self, request: GenerationRequest) -> bool:
         if not self.available or not self.generation:
+            return False
+        if self.quota_remaining is not None and self.quota_remaining <= 0:
             return False
         if self.max_width is not None and request.width > self.max_width:
             return False
