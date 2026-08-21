@@ -15,15 +15,18 @@ from .doctor import run_doctor
 from .job import JobError
 from .job_database import JobDatabase
 from .job_manager import JobManager
+from .kaggle_worker import KaggleWorkerError, doctor as kaggle_doctor, list_kernels, push as kaggle_push, quota as kaggle_quota, remote as kaggle_remote, validate_local
 from .project import ProjectManager
 
 app = typer.Typer(help="StockForge AI — digital asset production automation.")
 project_app = typer.Typer(help="Manage StockForge projects.")
 asset_app = typer.Typer(help="Register and inspect project assets.")
 job_app = typer.Typer(help="Create and operate persistent jobs.")
+kaggle_app = typer.Typer(help="Control the Kaggle GPU worker without a browser.")
 app.add_typer(project_app, name="project")
 app.add_typer(asset_app, name="asset")
 app.add_typer(job_app, name="job")
+app.add_typer(kaggle_app, name="kaggle")
 
 
 def _initialized() -> tuple[ConfigManager, object, Database, ProjectManager]:
@@ -254,6 +257,82 @@ def job_cancel(job_id: str = typer.Argument(...)) -> None:
     except JobError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Cancelled job: {job.id}")
+
+
+@kaggle_app.command("test")
+def kaggle_test() -> None:
+    """Validate Kaggle metadata/notebook locally. Never pushes or uses GPU."""
+    try:
+        info = validate_local()
+    except KaggleWorkerError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo("KAGGLE WORKER TEST: PASS")
+    typer.echo(f"Worker: {info['worker_dir']}")
+    typer.echo(f"Kernel: {info['metadata']['id']}")
+    typer.echo(f"Code: {info['code_file']}")
+    typer.echo(f"GPU enabled: {info['metadata'].get('enable_gpu', False)}")
+
+
+@kaggle_app.command("doctor")
+def kaggle_doctor_cmd() -> None:
+    """Check Kaggle CLI/auth/worker files. Never pushes or uses GPU."""
+    checks = kaggle_doctor()
+    failed = False
+    for name, ok, detail in checks:
+        typer.echo(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
+        failed |= not ok
+    raise typer.Exit(code=1 if failed else 0)
+
+
+@kaggle_app.command("push")
+def kaggle_push_cmd(
+    accelerator: str = typer.Option("NvidiaTeslaT4", "--accelerator", "-a"),
+    public: bool = typer.Option(False, "--public", help="Make the pushed kernel public before running."),
+) -> None:
+    """Push and run the Kaggle worker from Termux."""
+    try:
+        code = kaggle_push(accelerator=accelerator, public=True if public else None)
+    except KaggleWorkerError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
+
+
+@kaggle_app.command("discover")
+def kaggle_discover(
+    search: str = typer.Option("stockforge-worker", "--search", "-s"),
+) -> None:
+    """Find StockForge kernels using Kaggle's list endpoint."""
+    raise typer.Exit(code=list_kernels(search))
+
+
+@kaggle_app.command("quota")
+def kaggle_quota_cmd() -> None:
+    """Show Kaggle GPU/TPU quota."""
+    raise typer.Exit(code=kaggle_quota())
+
+
+@kaggle_app.command("status")
+def kaggle_status(
+    kernel: str | None = typer.Option(None, "--kernel", "-k"),
+) -> None:
+    """Read kernel status through the Kaggle API."""
+    raise typer.Exit(code=kaggle_remote("status", kernel))
+
+
+@kaggle_app.command("logs")
+def kaggle_logs(
+    kernel: str | None = typer.Option(None, "--kernel", "-k"),
+) -> None:
+    """Read kernel logs through the Kaggle API."""
+    raise typer.Exit(code=kaggle_remote("logs", kernel))
+
+
+@kaggle_app.command("output")
+def kaggle_output(
+    kernel: str | None = typer.Option(None, "--kernel", "-k"),
+) -> None:
+    """Download the latest kernel output through the Kaggle API."""
+    raise typer.Exit(code=kaggle_remote("output", kernel))
 
 
 if __name__ == "__main__":
