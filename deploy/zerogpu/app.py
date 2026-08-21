@@ -15,6 +15,8 @@ from comfy_diffusion.models import ModelManager
 from comfy_diffusion.nodes import run_node
 from comfy_diffusion.sampling import sample
 
+from reality_engine import compile_prompt, reality_preflight
+
 MODEL_REPO = "ibank31/stockforge-models"
 ROOT = Path(os.getenv("STOCKFORGE_MODEL_DIR", "/tmp/stockforge-models"))
 HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
@@ -97,8 +99,6 @@ def generate_gpu(prompt, width, height, steps, seed, randomize_seed):
     positive = encode_prompt(clip, str(prompt).strip())
     negative = encode_prompt(clip, "")
 
-    # Official Z-Image Turbo ComfyUI workflow: EmptySD3LatentImage 1024x1024,
-    # AuraFlow sampling shift=3, KSampler 8 steps, cfg=1, res_multistep/simple.
     latent = {"samples": torch.zeros((1, 16, int(height) // 8, int(width) // 8), dtype=torch.float32)}
     model = run_node("ModelSamplingAuraFlow", model=model, shift=3.0)[0]
     denoised = sample(
@@ -125,11 +125,20 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
         raise gr.Error("Baseline benchmark is fixed at 1024x1024.")
     if not 4 <= int(steps) <= 12:
         raise gr.Error("Steps must be between 4 and 12 for the free-tier benchmark.")
-    return generate_gpu(prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
+
+    # Reality preflight and compilation happen before the GPU function is called.
+    # This keeps contradictory professional scenes out of the paid/free GPU window.
+    task_id = "wall_moisture_inspection"
+    reality_preflight(task_id)
+    compiled_prompt = compile_prompt(prompt, task_id=task_id)
+    print(f"[StockForge] Reality workflow: {task_id}")
+    print(f"[StockForge] Compiled prompt length: {len(compiled_prompt)}")
+
+    return generate_gpu(compiled_prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
 
 
 with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
-    gr.Markdown("# StockForge V5 · ZeroGPU\nFP8-aware Z-Image Turbo runtime.")
+    gr.Markdown("# StockForge V5 · ZeroGPU\nFP8-aware Z-Image Turbo runtime + Reality Knowledge Layer.")
     prompt = gr.Textbox(label="Prompt", lines=4)
     with gr.Row():
         width = gr.Number(value=1024, label="Width", precision=0)
