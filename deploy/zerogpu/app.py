@@ -118,6 +118,36 @@ def generate_gpu(prompt, width, height, steps, seed, randomize_seed):
     return image, seed, elapsed
 
 
+
+@spaces.GPU(duration=8, size="large")
+def gpu_probe():
+    """Read actual GPU capabilities without loading StockForge models."""
+    if not torch.cuda.is_available():
+        return {
+            "status": "error",
+            "cuda_available": False,
+            "error": "CUDA unavailable",
+        }
+
+    free_bytes, total_bytes = torch.cuda.mem_get_info(0)
+    props = torch.cuda.get_device_properties(0)
+
+    return {
+        "status": "ok",
+        "cuda_available": True,
+        "device_name": torch.cuda.get_device_name(0),
+        "compute_capability": f"{props.major}.{props.minor}",
+        "total_vram_gib": round(total_bytes / 1024**3, 3),
+        "free_vram_gib": round(free_bytes / 1024**3, 3),
+        "allocated_vram_gib": round(torch.cuda.memory_allocated(0) / 1024**3, 3),
+        "reserved_vram_gib": round(torch.cuda.memory_reserved(0) / 1024**3, 3),
+        "torch_version": torch.__version__,
+        "cuda_version": torch.version.cuda,
+        "models_loaded": False,
+        "image_generated": False,
+    }
+
+
 def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=True):
     prompt = str(prompt or "").strip()
     if not prompt:
@@ -173,6 +203,16 @@ with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
     health_button = gr.Button("Reality Health Check")
     health_output = gr.JSON(label="Reality Engine Status")
     health_button.click(reality_health, outputs=health_output, api_name="reality_health")
+
+
+    gpu_probe_button = gr.Button("GPU Capability Probe")
+    gpu_probe_output = gr.JSON(label="GPU Runtime Capability")
+    gpu_probe_button.click(
+        gpu_probe,
+        outputs=gpu_probe_output,
+        api_name="gpu_probe",
+    )
+
 
 if __name__ == "__main__":
     demo.queue(max_size=32).launch()
