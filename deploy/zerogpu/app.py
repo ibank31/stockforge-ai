@@ -23,6 +23,7 @@ HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
 Z_IMAGE_FILE = "z_image_turbo_fp8_e4m3fn.safetensors"
 QWEN_FILE = "qwen_3_4b_fp8_mixed.safetensors"
 AE_FILE = "ae.safetensors"
+REALITY_WORKFLOW = "wall_moisture_inspection"
 
 
 def _prepare_models():
@@ -128,13 +129,29 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
 
     # Reality preflight and compilation happen before the GPU function is called.
     # This keeps contradictory professional scenes out of the paid/free GPU window.
-    task_id = "wall_moisture_inspection"
-    reality_preflight(task_id)
-    compiled_prompt = compile_prompt(prompt, task_id=task_id)
-    print(f"[StockForge] Reality workflow: {task_id}")
+    reality_preflight(REALITY_WORKFLOW)
+    compiled_prompt = compile_prompt(prompt, task_id=REALITY_WORKFLOW)
+    print(f"[StockForge] Reality workflow: {REALITY_WORKFLOW}")
     print(f"[StockForge] Compiled prompt length: {len(compiled_prompt)}")
 
     return generate_gpu(compiled_prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
+
+
+def reality_health():
+    """Non-GPU health proof for the active reality compiler."""
+    workflow = reality_preflight(REALITY_WORKFLOW)
+    probe = compile_prompt("professional construction inspection photograph", REALITY_WORKFLOW)
+    return {
+        "status": "ok",
+        "reality_engine": "active",
+        "compiler": "active",
+        "workflow": REALITY_WORKFLOW,
+        "tool": workflow.tool,
+        "target": workflow.target,
+        "human_action": workflow.action,
+        "compiled_prompt_length": len(probe),
+        "gpu_used": False,
+    }
 
 
 with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
@@ -152,6 +169,10 @@ with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
     output_seed = gr.Number(label="Used seed", precision=0)
     gpu_seconds = gr.Number(label="Measured GPU-function seconds", precision=3)
     generate_button.click(generate, [prompt, width, height, steps, seed, randomize], [output, output_seed, gpu_seconds], api_name="generate")
+
+    health_button = gr.Button("Reality Health Check")
+    health_output = gr.JSON(label="Reality Engine Status")
+    health_button.click(reality_health, outputs=health_output, api_name="reality_health")
 
 if __name__ == "__main__":
     demo.queue(max_size=32).launch()
