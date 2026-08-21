@@ -25,4 +25,4 @@ def test_bad_affordance_rejected_before_gpu():
 def test_prompt_contains_physical_action_and_negative_rules():
     prompt = compile_reality_prompt(get_construction_task("construction.room_dimensional_measurement"))
     assert "aim the laser distance meter toward the opposite wall" in prompt
-    assert "do not show laser pointed at a person" in prompt
+    assert "do not show laser pointed at person" in prompt
