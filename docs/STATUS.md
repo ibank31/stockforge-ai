@@ -1,15 +1,15 @@
 # Development Status
 
-**Date:** 2026-08-20  
+**Date:** 2026-08-21  
 **Branch:** `feat/zerogpu-runtime`
 
 ## Current milestone
 
-**v0.2 Live ZeroGPU Generation Runtime → Adobe Stock Readiness Pipeline Specification**
+**v0.2 Multi-Provider Generation Runtime → Model Registry → Adobe Stock Readiness**
 
-StockForge has crossed the first major runtime milestone: a real Termux-triggered generation job now runs on Hugging Face ZeroGPU and returns an image using the Z-Image Turbo + Qwen3 FP8 mixed stack.
+StockForge has a verified remote generation provider on Hugging Face ZeroGPU and a verified Kaggle GPU worker. The next architectural step is to separate model management from compute-provider execution and add provider routing/failover.
 
-The generator is now considered a **working provider adapter**, not a submission-ready asset factory.
+Generation success is still not the same thing as a marketplace-ready asset.
 
 ## Completed
 
@@ -36,7 +36,6 @@ The generator is now considered a **working provider adapter**, not a submission
 - File path validation
 - MIME type and file-size support
 - SHA-256 checksum support
-- Asset CLI create/list commands
 - Artifact lineage contract
 
 ### Persistent job queue
@@ -70,135 +69,113 @@ The generator is now considered a **working provider adapter**, not a submission
 - Durable SQLite artifact lineage records
 - Provenance/lineage round-trip and validation tests
 
-### ZeroGPU generation runtime — LIVE
+### Hugging Face ZeroGPU — VERIFIED
 
-- Hugging Face Space: `ibank31/stockforge-zerogpu`
-- ZeroGPU hardware: `zero-a10g`
-- Python 3.12 runtime
-- Gradio 6.25-compatible runtime
-- Comfy-compatible FP8 loading path
-- Z-Image Turbo integration
-- Qwen3 FP8 mixed text encoder integration
-- AE/VAE loading
-- Public Gradio `/generate` endpoint
-- Termux HTTP generation workflow
-- Runtime health check
-- End-to-end generation benchmark
+- Space: `ibank31/stockforge-zerogpu`
+- `zero-a10g` runtime
+- Termux-triggered generation
+- Public `/generate` endpoint
+- Z-Image Turbo
+- Qwen3 FP8 mixed text encoder path
+- 1024×1024 / 8-step benchmark
+- Successful image result
+- 44.238 seconds measured GPU-function time in the recorded benchmark
 
-### Verified live benchmark
+### Kaggle GPU worker — VERIFIED INFRASTRUCTURE
 
-- Date: 2026-08-20
-- Resolution: 1024×1024 generation request
-- Steps: 8
-- Seed: `2157290427964887587`
-- GPU-function seconds: `44.238`
-- Result: successful image returned
-- Concept: construction project planning meeting
-- Assessment: commercially promising, **not yet Adobe submission-ready**
+- Public worker: `iqbalteguh/stockforge-worker-public`
+- CUDA available
+- 2 × Tesla T4 observed
+- ~14.56 GiB VRAM per GPU observed
+- PyTorch CUDA matmul test passed
+- Remote worker job/result contract passed
 
-### Adobe Stock readiness documentation — DONE
+### Kaggle Qwen-Image feasibility — NOT COMPLETE
 
-Added:
+Verified:
 
-- `docs/ADOBE_STOCK_READINESS.md`
-- `docs/FEATURE_ROADMAP.md`
-- `docs/CHANGELOG.md`
+- DiffSynth-Studio installation from the official GitHub repository succeeds.
+- Qwen-Image pipeline reaches model download/loading.
+- DiffSynth's low-VRAM FP8 + disk-offload configuration is compatible with the intended test path.
 
-These documents define the complete downstream asset-factory requirements and provide a permanent feature/completion ledger.
+Failure observed:
 
-## Important architectural decisions
+- `OSError: [Errno 28] No space left on device`
 
-1. **Do not return to raw `Qwen3ForCausalLM.load_state_dict()` for the FP8 mixed checkpoint.**
-2. **Keep ZeroGPU generation as a provider/adapter.** Adobe compliance belongs downstream in the core pipeline.
-3. **Generation success does not equal submission readiness.** Every asset must pass technical, visual, compliance, metadata, deduplication, and human-approval gates.
-4. **Do not optimize for raw volume.** Optimize for differentiated commercial utility.
-5. **Every completed feature must be recorded in `docs/CHANGELOG.md` and reflected in `docs/FEATURE_ROADMAP.md`.**
-6. **Do not mark a feature DONE without verification evidence.**
+Therefore Kaggle **must not** be marked as a completed Qwen-Image generator yet.
 
-## Current gaps
+## Research re-baseline — 2026-08-21
 
-### Highest priority
+New evidence and decisions are recorded in:
 
-1. Adobe technical submission gate
-2. JPEG + sRGB finalization
-3. AI upscaling to submission resolution
-4. Technical image QA
-5. Anatomy/hand/face QA
-6. OCR and logo/trademark/watermark QA
-7. AI disclosure + people/property/release metadata
-8. Provenance population for live generation
-9. Perceptual deduplication
-10. Commercial-value scoring
-11. Stock title/keyword/category metadata engine
-12. Human review/submission package
+- `docs/RESEARCH_GAPS_2026-08-21.md`
+- `docs/MODEL_PROVIDER_ARCHITECTURE.md`
 
-### Next strategic layer
+Key decisions:
 
-13. Market opportunity engine
-14. Commercial concept planner
-15. Prompt compliance firewall
-16. Prompt/variation engine
-17. Controlled batch generation
-18. Portfolio diversity scoring
-19. Acceptance/sales feedback loop
+1. Qwen-Image remains a **top candidate**, not a proven universal best model.
+2. Hugging Face and Kaggle are **compute providers**, not the core model abstraction.
+3. A **Model Registry** is required before scaling the provider count.
+4. Provider capability, health, quota, VRAM, RAM, disk, and model compatibility must be measured and schedulable.
+5. Model preparation/cache must be separated from GPU inference where provider capabilities permit.
+6. Provider failure should trigger policy-driven retry/failover rather than changing the logical generation job.
+7. Model licenses and marketplace rights must be recorded as evidence, not inferred from the word "open-source".
 
-## Next implementation sequence
+## Current gaps — highest priority
 
-### Phase A — Submission Gate
+### P0 — Architecture
 
-Build the deterministic finalization and hard-fail checks first:
+1. Model Registry contract and implementation.
+2. Unified Generation Job/Result contract.
+3. Provider Capability/Health contract.
+4. Provider Router with quota/health/capability-aware selection.
+5. Provider failover and idempotent execution.
+6. Model cache/delivery abstraction.
 
-- resolution
-- JPEG export
-- sRGB
-- file size
-- corruption/integrity
-- basic sharpness/noise/color checks
+### P1 — Runtime
 
-### Phase B — AI Visual QA
+7. Kaggle storage-aware preflight.
+8. Kaggle Qwen-Image end-to-end generation test.
+9. Runtime heartbeat/progress and structured failure diagnostics.
+10. Model benchmark harness comparing candidate generators.
 
-Add:
+### P1 — Asset quality and marketplace readiness
 
-- face detection
-- hand/anatomy analysis
-- object consistency
-- OCR
-- logo/trademark detection
-- watermark detection
-- persisted QA report
+11. JPEG + sRGB finalization.
+12. Technical image QA.
+13. Anatomy/hand/face/object consistency QA.
+14. OCR/logo/trademark/watermark QA.
+15. Perceptual deduplication and similarity/spam gate.
+16. AI disclosure + people/property/release metadata.
+17. Commercial-value scoring.
+18. Stock title/keyword/category metadata engine.
+19. Human review/submission package.
 
-### Phase C — Commercial Selection
+### P2 — Intelligence and feedback
 
-Add:
+20. Market opportunity engine.
+21. Commercial concept planner.
+22. Prompt compliance firewall.
+23. Prompt/variation engine.
+24. Controlled batch generation.
+25. Portfolio diversity scoring.
+26. Acceptance/sales feedback loop.
 
-- buyer/use-case classification
-- copy-space analysis
-- commercial-value score
-- perceptual deduplication
-- portfolio diversity
+## Important current constraint
 
-### Phase D — Production Factory
-
-Add:
-
-- market intelligence
-- concept planner
-- prompt engine
-- controlled variations
-- batch queueing
-- automatic best-of-batch selection
-- metadata
-- submission package
-- human approval
+Do not optimize the system around unlimited free GPU availability. Kaggle documents notebook session limits and storage constraints; Hugging Face ZeroGPU also has daily quotas. Free compute is a pool of opportunistic capacity that the router must schedule around.
 
 ## Documentation source of truth
 
-- Product architecture and long-term vision: `docs/PROJECT_CONTINUATION.md`
+- Product vision/context: `docs/PROJECT_CONTINUATION.md`
+- Current architecture: `docs/ARCHITECTURE.md`
+- Model/provider design: `docs/MODEL_PROVIDER_ARCHITECTURE.md`
+- Research and gap map: `docs/RESEARCH_GAPS_2026-08-21.md`
 - Feature state: `docs/FEATURE_ROADMAP.md`
-- Adobe readiness specification: `docs/ADOBE_STOCK_READINESS.md`
-- Dated implementation history: `docs/CHANGELOG.md`
-- Core development status: this file
+- Adobe readiness: `docs/ADOBE_STOCK_READINESS.md`
+- Dated history: `docs/CHANGELOG.md`
+- Core status: this file
 
 ## Completion rule
 
-A feature is complete only when implementation, verification, and repository state are all correct. A live benchmark or integration result must be recorded when the feature depends on an external runtime/provider.
+A feature is complete only when implementation, verification, and repository state are correct. External-provider claims require live evidence. A model is not considered production-ready until generation, quality, licensing/policy, resource footprint, and marketplace suitability have all been evaluated.
