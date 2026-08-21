@@ -5,7 +5,7 @@
       "id": "sdxl-lightning",
       "version": "4step",
       "kind": "image-generation",
-      "commercial_use": true,
+      "commercial_use": false,
       "capabilities": [
         "photorealism",
         "product-scene",
@@ -23,20 +23,57 @@
         "revision": "main",
         "storage": "huggingface",
         "weight_files": [
-          "sdxl_lightning_4step_unet.safetensors"
-        ]
+          "sdxl_lightning_4step.safetensors"
+        ],
+        "sha256": "e0d996ee0013e79d9d3561f50fcafb9a17e3ff07b780358e3b66d67932c4d490"
       },
       "providers": [
         "hf_zerogpu",
         "lightning"
       ],
       "priority": 10,
-      "enabled": true,
+      "enabled": false,
       "metadata": {
         "recommended_steps": 4,
         "default_resolution": [1024, 1024],
         "storage_policy": "remote-source-of-truth-ephemeral-worker-cache",
-        "notes": "Production baseline selected for constrained/free GPU execution. Provider availability and quota must be checked before reservation."
+        "license": "openrail++",
+        "commercial_use_status": "review_required",
+        "notes": "Infrastructure research selected this as the primary constrained-GPU candidate. Current Hugging Face model card states the models are released for research purposes only, so marketplace production is blocked until commercial-use rights are explicitly cleared."
+      }
+    },
+    {
+      "id": "qwen-image",
+      "version": "20b",
+      "kind": "image-generation",
+      "commercial_use": true,
+      "capabilities": [
+        "text-rendering",
+        "image-editing",
+        "bilingual-imagery"
+      ],
+      "requirements": {
+        "vram_min_bytes": 8589934592,
+        "ram_min_bytes": 17179869184,
+        "disk_min_bytes": 10737418240
+      },
+      "artifact": {
+        "repository": "Qwen/Qwen-Image",
+        "revision": "main",
+        "storage": "huggingface",
+        "weight_files": []
+      },
+      "providers": [
+        "hf_zerogpu"
+      ],
+      "priority": 20,
+      "enabled": false,
+      "metadata": {
+        "quantization": "nunchaku-svdquant-int4",
+        "license": "apache-2.0",
+        "commercial_use_status": "license_verified_but_runtime_unverified",
+        "storage_policy": "remote-source-of-truth-ephemeral-worker-cache",
+        "notes": "Specialist candidate from the infrastructure research. The official repository is 20B/BF16 and much larger than the target worker budget; the quantized Nunchaku artifact and its exact provider path must be validated before enabling production."
       }
     }
   ]
