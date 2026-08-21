@@ -2,6 +2,38 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-21 — Multi-provider architecture and Kaggle Qwen-Image findings
+
+### DONE — research re-baseline
+
+Added:
+
+- `docs/RESEARCH_GAPS_2026-08-21.md`
+- `docs/MODEL_PROVIDER_ARCHITECTURE.md`
+- updated `docs/ARCHITECTURE.md`
+- updated `docs/STATUS.md`
+- updated `docs/PROJECT_CONTINUATION.md`
+
+### Verified findings
+
+- Hugging Face ZeroGPU remains a verified remote generation provider.
+- Kaggle GPU worker is verified with 2 × Tesla T4 and ~14.56 GiB VRAM per GPU.
+- Kaggle Qwen-Image testing successfully installed DiffSynth-Studio from the official GitHub repository.
+- Kaggle Qwen-Image reached model loading/download.
+- The end-to-end Kaggle Qwen-Image experiment failed with `OSError: [Errno 28] No space left on device` before a generated image was produced.
+
+### Architectural decisions
+
+- Model identity/storage and compute-provider execution are separate concerns.
+- Hugging Face and Kaggle are provider adapters, not hard-coded core engines.
+- A Model Registry, Provider Capability/Health contract, unified Generation Job/Result contract, provider router, failover policy, and model cache/delivery abstraction are now P0 architecture gaps.
+- Qwen-Image remains a top candidate but is **not** declared the universally best stock-photo model without an internal benchmark.
+- Free GPU capacity is treated as opportunistic capacity subject to quota, session, storage, and compatibility constraints.
+
+### Important limitation
+
+Do not claim Kaggle is a completed Qwen-Image generator until a real image-generation PASS is recorded.
+
 ## 2026-08-20 — AI upscaling layer
 
 ### IN PROGRESS — Real-ESRGAN provider and upscaler contract
