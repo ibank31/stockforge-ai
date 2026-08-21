@@ -8,7 +8,7 @@ from stockforge.model_registry import ModelRegistry, ModelRegistryError
 REGISTRY = Path(__file__).parents[1] / "models" / "registry.json"
 
 
-def test_production_registry_loads() -> None:
+def test_registry_loads_remote_model_metadata() -> None:
     registry = ModelRegistry.from_json(REGISTRY)
     model = registry.get("sdxl-lightning")
     assert model.artifact.storage == "huggingface"
@@ -16,6 +16,17 @@ def test_production_registry_loads() -> None:
     assert "hf_zerogpu" in model.providers
     assert model.requirements.vram_min_bytes == 8 * 1024**3
     assert model.requirements.ram_min_bytes == 16 * 1024**3
+    assert model.commercial_use is False
+    assert model.enabled is False
+
+
+def test_qwen_specialist_is_license_eligible_but_runtime_disabled() -> None:
+    registry = ModelRegistry.from_json(REGISTRY)
+    model = registry.get("qwen-image")
+    assert model.artifact.repository == "Qwen/Qwen-Image"
+    assert model.commercial_use is True
+    assert model.enabled is False
+    assert "text-rendering" in model.capabilities
 
 
 def test_registry_rejects_non_huggingface_weight_storage() -> None:
@@ -43,18 +54,20 @@ def test_registry_rejects_non_huggingface_weight_storage() -> None:
         )
 
 
-def test_registry_filters_by_resources_and_capability() -> None:
+def test_registry_does_not_route_license_blocked_model() -> None:
     registry = ModelRegistry.from_json(REGISTRY)
-    eligible = registry.eligible(
+    assert registry.eligible(
         capability="stock-photo",
         vram_bytes=16 * 1024**3,
         ram_bytes=32 * 1024**3,
         free_disk_bytes=20 * 1024**3,
-    )
-    assert [model.id for model in eligible] == ["sdxl-lightning"]
+    ) == ()
 
+
+def test_registry_filters_by_resources() -> None:
+    registry = ModelRegistry.from_json(REGISTRY)
     assert registry.eligible(
-        capability="stock-photo",
+        capability="text-rendering",
         vram_bytes=4 * 1024**3,
         ram_bytes=32 * 1024**3,
         free_disk_bytes=20 * 1024**3,
