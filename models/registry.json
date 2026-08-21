@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "sdxl-lightning",
+      "version": "4step",
+      "kind": "image-generation",
+      "commercial_use": true,
+      "capabilities": [
+        "photorealism",
+        "product-scene",
+        "editorial",
+        "illustration",
+        "stock-photo"
+      ],
+      "requirements": {
+        "vram_min_bytes": 8589934592,
+        "ram_min_bytes": 17179869184,
+        "disk_min_bytes": 16106127360
+      },
+      "artifact": {
+        "repository": "ByteDance/SDXL-Lightning",
+        "revision": "main",
+        "storage": "huggingface",
+        "weight_files": [
+          "sdxl_lightning_4step_unet.safetensors"
+        ]
+      },
+      "providers": [
+        "hf_zerogpu",
+        "lightning"
+      ],
+      "priority": 10,
+      "enabled": true,
+      "metadata": {
+        "recommended_steps": 4,
+        "default_resolution": [1024, 1024],
+        "storage_policy": "remote-source-of-truth-ephemeral-worker-cache",
+        "notes": "Production baseline selected for constrained/free GPU execution. Provider availability and quota must be checked before reservation."
+      }
+    }
+  ]
+}
