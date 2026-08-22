@@ -167,6 +167,159 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
     return generate_gpu(compiled_prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
 
 
+# ============================================================
+# EXPERIMENTAL: NATIVE QWEN IMAGE
+# ============================================================
+
+QWEN_MODEL_REPO = "Comfy-Org/Qwen-Image_ComfyUI"
+
+QWEN_UNET_FILE = "qwen_image_fp8_e4m3fn.safetensors"
+QWEN_CLIP_FILE = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+QWEN_VAE_FILE = "qwen_image_vae.safetensors"
+
+QWEN_CACHE = None
+
+
+def _prepare_qwen_models():
+    for folder in ("diffusion_models", "text_encoders", "vae"):
+        (ROOT / folder).mkdir(parents=True, exist_ok=True)
+
+    files = {
+        QWEN_UNET_FILE: (
+            "diffusion_models",
+            "split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors",
+        ),
+        QWEN_CLIP_FILE: (
+            "text_encoders",
+            "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        ),
+        QWEN_VAE_FILE: (
+            "vae",
+            "split_files/vae/qwen_image_vae.safetensors",
+        ),
+    }
+
+    for filename, (folder, remote_filename) in files.items():
+        target = ROOT / folder / filename
+
+        if target.exists() and target.stat().st_size > 0:
+            print(f"[StockForge Qwen] Cached: {folder}/{filename}")
+            continue
+
+        print(f"[StockForge Qwen] Downloading: {remote_filename}")
+
+        hf_hub_download(
+            repo_id=QWEN_MODEL_REPO,
+            filename=remote_filename,
+            revision="main",
+            token=HF_TOKEN,
+            local_dir=str(ROOT),
+        )
+
+
+def _load_qwen_runtime_models():
+    global QWEN_CACHE
+
+    if QWEN_CACHE is not None:
+        return QWEN_CACHE
+
+    runtime = check_runtime()
+    if isinstance(runtime, dict) and runtime.get("error"):
+        raise RuntimeError(runtime["error"])
+
+    _prepare_qwen_models()
+
+    from comfy_diffusion.models import ModelManager
+    from comfy_diffusion.nodes import run_node
+
+    manager = ModelManager(models_dir=ROOT)
+
+    print("[StockForge Qwen] Loading diffusion model...")
+    model = run_node(
+        "UNETLoader",
+        unet_name=QWEN_UNET_FILE,
+        weight_dtype="default",
+    )[0]
+
+    print("[StockForge Qwen] Loading Qwen VL text encoder...")
+    clip = run_node(
+        "CLIPLoader",
+        clip_name=QWEN_CLIP_FILE,
+        type="qwen_image",
+        device="default",
+    )[0]
+
+    print("[StockForge Qwen] Loading VAE...")
+    vae = manager.load_vae(str(ROOT / "vae" / QWEN_VAE_FILE))
+
+    QWEN_CACHE = (model, clip, vae)
+
+    print("[StockForge Qwen] Native Qwen models ready")
+
+    return QWEN_CACHE
+
+
+@spaces.GPU(duration=60, size="large")
+def qwen_generate_gpu(prompt, steps, seed, randomize_seed):
+    started = time.perf_counter()
+
+    model, clip, vae = _load_qwen_runtime_models()
+
+    if randomize_seed:
+        seed = int.from_bytes(os.urandom(8), "little") & 0xFFFFFFFFFFFFFFFF
+
+    seed = int(seed)
+
+    positive = encode_prompt(clip, str(prompt).strip())
+    negative = encode_prompt(clip, "")
+
+    latent = {
+        "samples": torch.zeros(
+            (1, 16, 128, 128),
+            dtype=torch.float32,
+        )
+    }
+
+    denoised = sample(
+        model,
+        positive,
+        negative,
+        latent,
+        steps=int(steps),
+        cfg=1.0,
+        sampler_name="euler",
+        scheduler="simple",
+        seed=seed,
+    )
+
+    image = vae_decode(vae, denoised)
+
+    elapsed = round(time.perf_counter() - started, 3)
+
+    return image, seed, elapsed
+
+
+def qwen_generate(
+    prompt,
+    steps=4,
+    seed=0,
+    randomize_seed=True,
+):
+    prompt = str(prompt or "").strip()
+
+    if not prompt:
+        raise gr.Error("Prompt is required.")
+
+    if not 1 <= int(steps) <= 12:
+        raise gr.Error("Steps must be between 1 and 12.")
+
+    return qwen_generate_gpu(
+        prompt,
+        int(steps),
+        int(seed),
+        bool(randomize_seed),
+    )
+
 def reality_health():
     """Non-GPU health proof for the active reality compiler."""
     workflow = reality_preflight(REALITY_WORKFLOW)
@@ -213,6 +366,24 @@ with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
         api_name="gpu_probe",
     )
 
+
+
+# Experimental native Qwen API endpoint.
+qwen_prompt_api = gr.Textbox(visible=False)
+qwen_steps_api = gr.Number(value=4, visible=False)
+qwen_seed_api = gr.Number(value=0, visible=False)
+qwen_randomize_api = gr.Checkbox(value=True, visible=False)
+qwen_button_api = gr.Button(visible=False)
+qwen_output_api = gr.Image(visible=False, type="pil")
+qwen_output_seed_api = gr.Number(visible=False)
+qwen_gpu_seconds_api = gr.Number(visible=False)
+
+qwen_button_api.click(
+    qwen_generate,
+    [qwen_prompt_api, qwen_steps_api, qwen_seed_api, qwen_randomize_api],
+    [qwen_output_api, qwen_output_seed_api, qwen_gpu_seconds_api],
+    api_name="qwen_generate",
+)
 
 if __name__ == "__main__":
     demo.queue(max_size=32).launch()

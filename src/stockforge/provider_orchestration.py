@@ -37,6 +37,8 @@ class ProviderCapabilities:
     def supports(self, request: GenerationRequest) -> bool:
         if not self.available or not self.generation:
             return False
+        if self.quota_remaining is not None and self.quota_remaining <= 0:
+            return False
         if self.max_width is not None and request.width > self.max_width:
             return False
         if self.max_height is not None and request.height > self.max_height:

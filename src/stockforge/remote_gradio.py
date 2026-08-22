@@ -12,6 +12,7 @@ from typing import Any
 from .generation import GenerationRequest, GenerationResult
 from .generation_provider import GenerationProvider, ProviderJob, ProviderRuntimeError
 from .plugin import PluginDescriptor
+from .provider_orchestration import ProviderCapabilities
 
 
 class RemoteGradioError(ProviderRuntimeError):
@@ -28,6 +29,8 @@ class RemoteGradioProvider(GenerationProvider):
         self.token = token
         self.api_name = api_name.strip("/")
         self.timeout_seconds = timeout_seconds
+        if self.timeout_seconds <= 0:
+            raise RemoteGradioError("timeout_seconds must be positive")
         self._jobs: dict[str, ProviderJob] = {}
         self._events: dict[str, str] = {}
         self._outputs: dict[str, tuple[dict[str, Any], ...]] = {}
@@ -37,10 +40,24 @@ class RemoteGradioProvider(GenerationProvider):
     def descriptor(self) -> PluginDescriptor:
         return PluginDescriptor(id=self.provider_id, name=f"Remote Gradio ({self.provider_id})", version="1.0.0", api_version="1", kind="generator", capabilities=self._capabilities)
 
+    def capabilities(self) -> ProviderCapabilities:
+        """Return the static scheduling contract of this worker.
+
+        The adapter forwards one image request per remote job and does not
+        expose a live quota/health API, so those values remain unknown rather
+        than being guessed.
+        """
+        return ProviderCapabilities(
+            provider_id=self.provider_id,
+            available=True,
+            generation=True,
+            max_batch_size=1,
+        )
+
     def generate(self, request: GenerationRequest) -> GenerationResult:
         job = self.submit(request)
         terminal = self.wait(job.provider_job_id)
-        if terminal.state != "succeeded" or terminal.result is None:
+        if terminal.state != "completed" or terminal.result is None:
             raise RemoteGradioError(terminal.error_message or "Remote generation failed")
         return terminal.result
 
@@ -63,15 +80,18 @@ class RemoteGradioProvider(GenerationProvider):
         cached = self._jobs.get(provider_job_id)
         if cached is None:
             raise RemoteGradioError(f"Unknown provider job: {provider_job_id}")
-        if cached.state in {"succeeded", "failed", "cancelled"}:
+        if cached.state in {"completed", "succeeded", "failed", "cancelled"}:
             return cached
         return self._poll(provider_job_id)
 
-    def wait(self, provider_job_id: str) -> ProviderJob:
-        deadline = time.monotonic() + self.timeout_seconds
+    def wait(self, provider_job_id: str, *, timeout_seconds: float | None = None) -> ProviderJob:
+        timeout = self.timeout_seconds if timeout_seconds is None else timeout_seconds
+        if timeout <= 0:
+            raise RemoteGradioError("timeout_seconds must be positive")
+        deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             current = self.status(provider_job_id)
-            if current.state in {"succeeded", "failed", "cancelled"}:
+            if current.state in {"completed", "succeeded", "failed", "cancelled"}:
                 return current
             time.sleep(1.0)
         failed = ProviderJob(provider_job_id, "failed", error_code="provider_timeout", error_message="Remote generation timed out")
@@ -97,7 +117,7 @@ class RemoteGradioProvider(GenerationProvider):
             refs = self._materialize_outputs(values[0], durable_id)
             self._outputs[durable_id] = refs
             result = GenerationResult(status="succeeded", artifact_ids=(f"provider:{durable_id}:0",), provider_job_id=durable_id, seed=int(values[1]) if len(values) > 1 and values[1] is not None else None, parameters={"remote_provider": self.provider_id, "gpu_seconds": values[2] if len(values) > 2 else None})
-            job = ProviderJob(durable_id, "succeeded", result=result)
+            job = ProviderJob(durable_id, "completed", result=result)
         elif event in {"error", "exception"}:
             job = ProviderJob(durable_id, "failed", error_code="remote_generation_failed", error_message=data or event)
         else:
