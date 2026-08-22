@@ -67,6 +67,21 @@ def test_router_prefers_highest_score_among_eligible():
     assert ProviderRouter(candidates).select(request).capabilities.provider_id == "b"
 
 
+def test_router_rejects_exhausted_quota():
+    request = GenerationRequest(prompt="test")
+    exhausted = ProviderCandidate(
+        FakeProvider("zerogpu"),
+        ProviderCapabilities(provider_id="zerogpu", quota_remaining=0),
+        score=100,
+    )
+    fallback = ProviderCandidate(
+        FakeProvider("kaggle"),
+        ProviderCapabilities(provider_id="kaggle", quota_remaining=1),
+        score=10,
+    )
+    assert ProviderRouter([exhausted, fallback]).select(request).capabilities.provider_id == "kaggle"
+
+
 def test_router_fails_when_no_provider_is_eligible():
     request = GenerationRequest(prompt="test")
     candidate = ProviderCandidate(
