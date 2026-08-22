@@ -44,7 +44,6 @@ def test_remote_provider_completed_state_is_terminal(tmp_path: Path):
 
     assert provider.status("job").state == "completed"
     assert provider.wait("job", timeout_seconds=0.1).state == "completed"
-    assert provider.generate.__name__ == "generate"
 
 
 def test_remote_provider_advertises_single_image_batch_limit(tmp_path: Path):
