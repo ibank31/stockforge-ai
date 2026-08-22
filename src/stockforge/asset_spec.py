@@ -1,0 +1,143 @@
+"""Structured commercial asset specification for the StockForge factory."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+ASSET_FAMILIES = frozenset({
+    "ephemera", "culinary_illustration", "glasscore_3d_ui",
+    "nursery_boho", "retro_tech_nostalgia", "generic",
+})
+ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "texture", "graphic"})
+BACKGROUND_POLICIES = frozenset({"white", "transparent", "neutral", "scene"})
+ISOLATION_POLICIES = frozenset({"isolated", "cluster", "scene"})
+TEXT_POLICIES = frozenset({"none", "abstract", "controlled", "required"})
+
+
+class AssetSpecError(ValueError):
+    """Raised when a commercial asset specification is invalid."""
+
+
+@dataclass(frozen=True, slots=True)
+class AssetSpec:
+    """Provider-neutral commercial specification for one asset candidate."""
+
+    asset_id: str
+    market_opportunity_id: str
+    buyer_segment: str
+    buyer_job: str
+    channel: str
+    asset_family: str
+    asset_type: str
+    micro_niche: str
+    subject: str
+    visual_language: str
+    medium: str
+    palette: tuple[str, ...] = ()
+    composition: str = ""
+    negative_space: str = ""
+    background_policy: str = "white"
+    isolation_policy: str = "isolated"
+    text_policy: str = "none"
+    branding_policy: str = "no_branding"
+    originality_levers: tuple[str, ...] = ()
+    variation_policy: str = "genuinely_different"
+    commercial_use_cases: tuple[str, ...] = ()
+    quality_gates: tuple[str, ...] = ()
+    model_preferences: tuple[str, ...] = ()
+    metadata_hints: tuple[str, ...] = ()
+    extra_constraints: tuple[str, ...] = ()
+    tags: tuple[str, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        required = {
+            "asset_id": self.asset_id,
+            "market_opportunity_id": self.market_opportunity_id,
+            "buyer_segment": self.buyer_segment,
+            "buyer_job": self.buyer_job,
+            "channel": self.channel,
+            "asset_family": self.asset_family,
+            "asset_type": self.asset_type,
+            "micro_niche": self.micro_niche,
+            "subject": self.subject,
+            "visual_language": self.visual_language,
+            "medium": self.medium,
+        }
+        missing = [name for name, value in required.items() if not str(value).strip()]
+        if missing:
+            raise AssetSpecError(f"Required fields are empty: {', '.join(missing)}")
+        if self.asset_family not in ASSET_FAMILIES:
+            raise AssetSpecError(f"Unsupported asset family: {self.asset_family}")
+        if self.asset_type not in ASSET_TYPES:
+            raise AssetSpecError(f"Unsupported asset type: {self.asset_type}")
+        if self.background_policy not in BACKGROUND_POLICIES:
+            raise AssetSpecError(f"Unsupported background policy: {self.background_policy}")
+        if self.isolation_policy not in ISOLATION_POLICIES:
+            raise AssetSpecError(f"Unsupported isolation policy: {self.isolation_policy}")
+        if self.text_policy not in TEXT_POLICIES:
+            raise AssetSpecError(f"Unsupported text policy: {self.text_policy}")
+        if not self.originality_levers:
+            raise AssetSpecError("At least one originality lever is required.")
+        if self.isolation_policy == "isolated" and self.background_policy == "scene":
+            raise AssetSpecError("An isolated asset cannot require a scene background.")
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def standalone_asset_spec(
+    *,
+    asset_id: str,
+    market_opportunity_id: str,
+    buyer_segment: str,
+    buyer_job: str,
+    channel: str,
+    asset_family: str,
+    asset_type: str,
+    micro_niche: str,
+    subject: str,
+    visual_language: str,
+    medium: str,
+    originality_levers: tuple[str, ...],
+    commercial_use_cases: tuple[str, ...] = (),
+    palette: tuple[str, ...] = (),
+    model_preferences: tuple[str, ...] = (),
+    metadata_hints: tuple[str, ...] = (),
+    extra_constraints: tuple[str, ...] = (),
+) -> AssetSpec:
+    """Build the common isolated-asset policy for the first factory lane."""
+    return AssetSpec(
+        asset_id=asset_id,
+        market_opportunity_id=market_opportunity_id,
+        buyer_segment=buyer_segment,
+        buyer_job=buyer_job,
+        channel=channel,
+        asset_family=asset_family,
+        asset_type=asset_type,
+        micro_niche=micro_niche,
+        subject=subject,
+        visual_language=visual_language,
+        medium=medium,
+        palette=palette,
+        composition="single standalone object, fully visible, extraction-friendly silhouette",
+        negative_space="substantial clean negative space around the asset",
+        background_policy="white",
+        isolation_policy="isolated",
+        text_policy="none",
+        branding_policy="no_branding",
+        originality_levers=originality_levers,
+        variation_policy="retain only commercially distinct variants; crop/color/seed-only changes are insufficient",
+        commercial_use_cases=commercial_use_cases,
+        quality_gates=(
+            "thumbnail readability",
+            "clean silhouette",
+            "no accidental text",
+            "no logos or trademarks",
+            "no obvious AI artifacts",
+            "commercial design utility",
+        ),
+        model_preferences=model_preferences,
+        metadata_hints=metadata_hints,
+        extra_constraints=extra_constraints,
+    )
