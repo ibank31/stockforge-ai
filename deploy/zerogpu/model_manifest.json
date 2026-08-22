@@ -1,20 +1,27 @@
 {
-  "version": "5.0",
-  "repository": "ibank31/stockforge-models",
+  "version": "5.1",
+  "repository": "Comfy-Org/Qwen-Image_ComfyUI",
   "revision": "main",
   "models": {
-    "qwen": {
-      "file": "qwen_3_4b_fp8_mixed.safetensors",
-      "size": 5631994051
+    "qwen_image": {
+      "file": "qwen_image_fp8_e4m3fn.safetensors",
+      "size": 20400000000,
+      "source_path": "split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors"
     },
-    "z_image": {
-      "file": "z_image_turbo_fp8_e4m3fn.safetensors",
-      "size": 6154974440
+    "qwen_text_encoder": {
+      "file": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "size": 9380000000,
+      "source_path": "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
     },
-    "ae": {
-      "file": "ae.safetensors",
-      "size": 335304388,
-      "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38"
+    "qwen_vae": {
+      "file": "qwen_image_vae.safetensors",
+      "size": 254000000,
+      "source_path": "split_files/vae/qwen_image_vae.safetensors"
+    },
+    "qwen_lightning_lora": {
+      "repository": "lightx2v/Qwen-Image-Lightning",
+      "file": "Qwen-Image-Lightning-8steps-V1.0.safetensors",
+      "size": 850000000
     }
   }
 }
