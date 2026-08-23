@@ -46,3 +46,37 @@ def test_missing_originality_lever_is_rejected():
 def test_isolated_scene_conflict_is_rejected():
     with pytest.raises(AssetSpecError):
         _spec(background_policy="scene")
+
+
+def test_unsupported_asset_family_is_rejected():
+    with pytest.raises(AssetSpecError, match="Unsupported asset family"):
+        _spec(asset_family="unsupported")
+
+
+def test_unsupported_asset_type_is_rejected():
+    with pytest.raises(AssetSpecError, match="Unsupported asset type"):
+        _spec(asset_type="unsupported")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("background_policy", "scene"),
+        ("isolation_policy", "scene"),
+        ("text_policy", "controlled"),
+        ("branding_policy", "fictional_brand"),
+    ),
+)
+def test_standalone_policy_conflicts_are_rejected(field, value):
+    with pytest.raises(AssetSpecError):
+        _spec(**{field: value})
+
+
+def test_provider_specific_model_name_is_rejected():
+    with pytest.raises(AssetSpecError, match="provider-neutral capability expressions"):
+        _spec(model_preferences=("z-image",))
+
+
+def test_capability_preferences_are_provider_neutral():
+    spec = _spec(model_preferences=("realism=high", "isolation=required", "resolution>=1024"))
+    assert spec.model_preferences == ("realism=high", "isolation=required", "resolution>=1024")

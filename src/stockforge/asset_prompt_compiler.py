@@ -1,28 +1,9 @@
-"""Prompt compiler for structured standalone commercial assets."""
+"""Compile provider-neutral AssetSpec objects into canonical prompt packages."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from .asset_spec import AssetSpec
-
-
-@dataclass(frozen=True, slots=True)
-class AssetPromptPackage:
-    prompt: str
-    negative_prompt: str
-    quality_constraints: tuple[str, ...]
-    commercial_use_cases: tuple[str, ...]
-    metadata_hints: tuple[str, ...]
-
-    def to_dict(self) -> dict[str, object]:
-        return {
-            "prompt": self.prompt,
-            "negative_prompt": self.negative_prompt,
-            "quality_constraints": self.quality_constraints,
-            "commercial_use_cases": self.commercial_use_cases,
-            "metadata_hints": self.metadata_hints,
-        }
+from .prompt_compiler import PromptPackage
 
 
 _BASE_NEGATIVE = (
@@ -38,9 +19,16 @@ _BASE_NEGATIVE = (
     "white halo, colored fringe, broken extraction edges",
 )
 
+_LEGAL_CONSTRAINTS = (
+    "Avoid brands, trademarks, logos, copyrighted characters, and celebrity or public-figure likenesses.",
+    "Do not imply endorsement by a real company or person.",
+    "Use only the approved fictional or rights-cleared subject matter; prompt constraints are not legal clearance.",
+    "Final submission still requires human rights and compliance review.",
+)
 
-def compile_asset_prompt(spec: AssetSpec) -> AssetPromptPackage:
-    """Compile an AssetSpec without adding market facts or legal claims."""
+
+def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
+    """Compile an AssetSpec without adding market facts or provider syntax."""
     isolation = {
         "isolated": "single standalone asset, fully visible, no overlap with other objects",
         "cluster": "small controlled cluster of related objects with clear separation",
@@ -73,9 +61,9 @@ def compile_asset_prompt(spec: AssetSpec) -> AssetPromptPackage:
         f"Palette: {palette}. Branding policy: {spec.branding_policy}. {text}. "
         f"Differentiate through: {levers}. "
         f"Commercial use cases: {uses}. "
-        f"Prioritize practical design utility, thumbnail readability, believable material behavior, "
-        f"clean geometry, professional art direction, and marketplace-ready finish. "
-        f"Do not turn the asset into a generic decorative image. "
+        "Prioritize practical design utility, thumbnail readability, believable material behavior, "
+        "clean geometry, professional art direction, and marketplace-ready finish. "
+        "Do not turn the asset into a generic decorative image. "
         f"{extras}"
     ).strip()
 
@@ -89,10 +77,21 @@ def compile_asset_prompt(spec: AssetSpec) -> AssetPromptPackage:
         "no accidental text, branding, or watermark",
         *spec.quality_gates,
     )
-    return AssetPromptPackage(
+    metadata = (
+        spec.asset_family,
+        spec.asset_type,
+        spec.micro_niche,
+        spec.buyer_segment,
+        spec.buyer_job,
+        spec.channel,
+        *spec.commercial_use_cases,
+        *spec.originality_levers,
+        *spec.metadata_hints,
+    )
+    return PromptPackage(
         prompt=prompt,
         negative_prompt="; ".join(_BASE_NEGATIVE),
         quality_constraints=quality,
-        commercial_use_cases=spec.commercial_use_cases,
-        metadata_hints=spec.metadata_hints,
+        legal_constraints=_LEGAL_CONSTRAINTS,
+        metadata_hints=metadata,
     )

@@ -85,7 +85,7 @@ originality_levers
 variation_policy
 commercial_use_cases
 quality_gates
-model_preferences
+model_preferences          # provider-neutral capability requirements only
 metadata_hints
 ```
 
@@ -435,18 +435,23 @@ A niche is data. It must not become a hard-coded branch in the generation engine
 
 ## 17. Implementation sequence
 
+### Current implementation — PR #38
+
+The implemented boundary is deliberately narrow. `AssetSpec` validates provider-neutral commercial requirements, including capability-style model preferences; `standalone_asset_spec()` fixes the standalone policy to a white background, isolated placement, no text, and no branding; and `compile_asset_prompt()` returns the existing canonical `PromptPackage` with standalone quality, legal, and metadata constraints. Existing `ConceptVariant`, `Pipeline`, and `Plugin` contracts remain unchanged and compatible.
+
+The market-to-asset planner, standalone `ConceptVariant` primitives, model adapters and routing, QC/similarity/metadata execution, and end-to-end factory orchestration remain planned. They are not represented as completed runtime stages by this implementation.
+
 ### Phase A — contracts
 
-- Add `AssetSpec` and validation.
-- Add asset-family composition policies.
-- Add standalone concept templates.
-- Preserve existing `ConceptVariant` compatibility.
+- Implement `AssetSpec` validation and the standalone asset policy.
+- Keep the existing `ConceptVariant` interface unchanged.
+- Plan standalone concept templates without forcing the scene-oriented `hero/workflow/detail/decision` defaults onto small assets.
 
 ### Phase B — compiler
 
-- Extend `PromptPackage` with structured asset constraints.
-- Add model adapters.
-- Add standalone negative/quality policies.
+- Compile structured asset constraints into the existing `PromptPackage` contract.
+- Add standalone negative, quality, legal, and metadata policies.
+- Plan model adapters as the next provider-specific layer.
 
 ### Phase C — router
 

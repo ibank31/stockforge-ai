@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import re
 from typing import Any
 
 ASSET_FAMILIES = frozenset({
@@ -13,6 +14,7 @@ ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "tex
 BACKGROUND_POLICIES = frozenset({"white", "transparent", "neutral", "scene"})
 ISOLATION_POLICIES = frozenset({"isolated", "cluster", "scene"})
 TEXT_POLICIES = frozenset({"none", "abstract", "controlled", "required"})
+_CAPABILITY_PREFERENCE = re.compile(r"^[a-z][a-z0-9_]*\s*(?:=|>=|<=)\s*[a-z0-9_.]+$")
 
 
 class AssetSpecError(ValueError):
@@ -79,6 +81,11 @@ class AssetSpec:
             raise AssetSpecError(f"Unsupported text policy: {self.text_policy}")
         if not self.originality_levers:
             raise AssetSpecError("At least one originality lever is required.")
+        if any(not _CAPABILITY_PREFERENCE.fullmatch(preference) for preference in self.model_preferences):
+            raise AssetSpecError(
+                "Model preferences must be provider-neutral capability expressions, "
+                "such as 'realism=high' or 'resolution>=1024'."
+            )
         if self.isolation_policy == "isolated" and self.background_policy == "scene":
             raise AssetSpecError("An isolated asset cannot require a scene background.")
 
@@ -101,13 +108,17 @@ def standalone_asset_spec(
     medium: str,
     originality_levers: tuple[str, ...],
     commercial_use_cases: tuple[str, ...] = (),
+    background_policy: str = "white",
+    isolation_policy: str = "isolated",
+    text_policy: str = "none",
+    branding_policy: str = "no_branding",
     palette: tuple[str, ...] = (),
     model_preferences: tuple[str, ...] = (),
     metadata_hints: tuple[str, ...] = (),
     extra_constraints: tuple[str, ...] = (),
 ) -> AssetSpec:
     """Build the common isolated-asset policy for the first factory lane."""
-    return AssetSpec(
+    spec = AssetSpec(
         asset_id=asset_id,
         market_opportunity_id=market_opportunity_id,
         buyer_segment=buyer_segment,
@@ -122,10 +133,10 @@ def standalone_asset_spec(
         palette=palette,
         composition="single standalone object, fully visible, extraction-friendly silhouette",
         negative_space="substantial clean negative space around the asset",
-        background_policy="white",
-        isolation_policy="isolated",
-        text_policy="none",
-        branding_policy="no_branding",
+        background_policy=background_policy,
+        isolation_policy=isolation_policy,
+        text_policy=text_policy,
+        branding_policy=branding_policy,
         originality_levers=originality_levers,
         variation_policy="retain only commercially distinct variants; crop/color/seed-only changes are insufficient",
         commercial_use_cases=commercial_use_cases,
@@ -141,3 +152,14 @@ def standalone_asset_spec(
         metadata_hints=metadata_hints,
         extra_constraints=extra_constraints,
     )
+    if (
+        spec.background_policy != "white"
+        or spec.isolation_policy != "isolated"
+        or spec.text_policy != "none"
+        or spec.branding_policy != "no_branding"
+    ):
+        raise AssetSpecError(
+            "Standalone assets require white background, isolated placement, "
+            "no text, and no branding."
+        )
+    return spec
