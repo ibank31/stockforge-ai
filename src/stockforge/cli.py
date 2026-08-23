@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import socket
+from pathlib import Path
 
 import typer
 
@@ -19,6 +21,17 @@ from .job_database import JobDatabase
 from .job_manager import JobManager
 from .kaggle_worker import KaggleWorkerError, doctor as kaggle_doctor, list_kernels, push as kaggle_push, quota as kaggle_quota, remote as kaggle_remote, validate_local
 from .project import ProjectManager
+from .provider_config import ProviderConfigError
+from .provider_orchestration import ProviderRoutingError
+from .recovery_orchestrator import RecoveryGenerationOrchestrator
+from .release_package import build_release_package
+from .termux_control import (
+    TermuxControlError,
+    configure_remote_provider,
+    profile_for,
+    provider_names,
+    route_remote_generation,
+)
 
 app = typer.Typer(help="StockForge AI — digital asset production automation.")
 project_app = typer.Typer(help="Manage StockForge projects.")
@@ -26,11 +39,13 @@ asset_app = typer.Typer(help="Register and inspect project assets.")
 job_app = typer.Typer(help="Create and operate persistent jobs.")
 adobe_app = typer.Typer(help="Adobe Stock readiness checks.")
 kaggle_app = typer.Typer(help="Control the Kaggle GPU worker without a browser.")
+provider_app = typer.Typer(help="Configure remote GPU workers for Termux-controlled generation.")
 app.add_typer(project_app, name="project")
 app.add_typer(asset_app, name="asset")
 app.add_typer(job_app, name="job")
 app.add_typer(adobe_app, name="adobe")
 app.add_typer(kaggle_app, name="kaggle")
+app.add_typer(provider_app, name="provider")
 
 
 def _initialized() -> tuple[ConfigManager, object, Database, ProjectManager]:
@@ -88,6 +103,145 @@ def doctor() -> None:
         icon = "OK" if check.ok else "FAIL"
         typer.echo(f"[{icon}] {check.name}: {check.detail}")
     raise typer.Exit(code=0 if all(check.ok for check in checks) else 1)
+
+
+@provider_app.command("configure")
+def provider_configure(
+    provider_id: str = typer.Option(..., "--id"),
+    endpoint: str = typer.Option(..., "--endpoint"),
+    profile: str = typer.Option("qwen-image", "--profile"),
+    secret_env: str | None = typer.Option(None, "--secret-env"),
+    timeout_seconds: int = typer.Option(300, "--timeout-seconds", min=1),
+    score: float = typer.Option(0.0, "--score"),
+) -> None:
+    """Register one remote worker without persisting its secret value."""
+    try:
+        manager = ConfigManager()
+        config = manager.initialize()
+        provider = configure_remote_provider(
+            workspace=config.workspace,
+            provider_id=provider_id,
+            endpoint=endpoint,
+            secret_env=secret_env,
+            timeout_seconds=timeout_seconds,
+            profile_names=(profile,),
+            score=score,
+        )
+    except (TermuxControlError, ProviderConfigError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Configured provider: {provider.provider_id}")
+    typer.echo(f"Endpoint: {provider.endpoint}")
+    typer.echo(f"Profile: {profile}")
+    typer.echo(f"Secret environment variable: {provider.secret_env or '-'}")
+
+
+@provider_app.command("list")
+def provider_list() -> None:
+    """List configured remote workers without exposing secret values."""
+    config = ConfigManager().load()
+    names = provider_names(config.workspace)
+    if not names:
+        typer.echo("No remote providers configured.")
+        raise typer.Exit()
+    for name in names:
+        typer.echo(name)
+
+
+@app.command("generate")
+def generate(
+    project: str = typer.Option(..., "--project", "-p"),
+    prompt: str = typer.Option(..., "--prompt"),
+    provider: str | None = typer.Option(None, "--provider"),
+    profile: str = typer.Option("qwen-image", "--profile"),
+    seed: int | None = typer.Option(None, "--seed", min=0),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
+    """Submit exactly one bounded remote generation from the Termux control plane."""
+    manager = ConfigManager()
+    config = manager.initialize()
+    database = JobDatabase(config.database)
+    database.initialize()
+    projects = [item for item in database.list_projects() if item["name"] == project]
+    if not projects:
+        raise typer.BadParameter(f"Project not found: {project}")
+    project_record = projects[0]
+    project_root = Path(project_record["path"]).resolve()
+
+    try:
+        request = profile_for(profile).request(prompt, seed=seed)
+        candidate = route_remote_generation(
+            workspace=config.workspace,
+            request=request,
+            output_dir=project_root / ".provider-output" / (provider or "auto"),
+            provider_id=provider,
+        )
+    except (TermuxControlError, ProviderConfigError, ProviderRoutingError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    preview = {
+        "project": project,
+        "provider": candidate.capabilities.provider_id,
+        "profile": profile,
+        "model_id": request.model_id,
+        "model_version": request.model_version,
+        "width": request.width,
+        "height": request.height,
+        "steps": request.steps,
+        "seed": request.seed,
+        "batch_size": request.batch_size,
+        "estimated_gpu_seconds": request.parameters["estimated_gpu_seconds"],
+    }
+    if dry_run:
+        typer.echo(json.dumps({"dry_run": True, **preview}, indent=2))
+        raise typer.Exit()
+
+    jobs = JobManager(database)
+    job = jobs.create(
+        project_id=project_record["id"],
+        job_type="image.generate",
+        payload=request.to_dict(),
+        max_attempts=1,
+    )
+    claimed = jobs.claim(job.id, f"termux:{socket.gethostname()}")
+    orchestrator = RecoveryGenerationOrchestrator(
+        database,
+        project_id=project_record["id"],
+        project_root=project_root,
+        provider_root=candidate.provider.output_dir,
+        provider=candidate.provider,
+    )
+    try:
+        result = orchestrator.run(request, job_id=claimed.id)
+        package = build_release_package(
+            database=database,
+            project_id=project_record["id"],
+            project_root=project_root,
+            execution_id=result.execution.id,
+        )
+        jobs.complete(
+            claimed.id,
+            {
+                "execution_id": result.execution.id,
+                "artifact_ids": list(result.execution.artifact_ids),
+                "provider": candidate.capabilities.provider_id,
+                "release_package": package.to_dict(),
+            },
+        )
+    except Exception as exc:
+        try:
+            jobs.fail(claimed.id, str(exc), retry_delay_seconds=0)
+        except JobError:
+            pass
+        raise typer.BadParameter(str(exc)) from exc
+
+    typer.echo(json.dumps({
+        **preview,
+        "job_id": claimed.id,
+        "execution_id": result.execution.id,
+        "artifact_ids": list(result.execution.artifact_ids),
+        "release_package": package.to_dict(),
+        "status": "review_ready",
+    }, indent=2))
 
 
 @adobe_app.command("check")

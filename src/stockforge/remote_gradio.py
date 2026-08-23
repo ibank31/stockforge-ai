@@ -40,7 +40,7 @@ class RemoteGradioProvider(GenerationProvider):
     def generate(self, request: GenerationRequest) -> GenerationResult:
         job = self.submit(request)
         terminal = self.wait(job.provider_job_id)
-        if terminal.state != "succeeded" or terminal.result is None:
+        if terminal.state not in {"completed", "succeeded"} or terminal.result is None:
             raise RemoteGradioError(terminal.error_message or "Remote generation failed")
         return terminal.result
 
@@ -97,7 +97,7 @@ class RemoteGradioProvider(GenerationProvider):
             refs = self._materialize_outputs(values[0], durable_id)
             self._outputs[durable_id] = refs
             result = GenerationResult(status="succeeded", artifact_ids=(f"provider:{durable_id}:0",), provider_job_id=durable_id, seed=int(values[1]) if len(values) > 1 and values[1] is not None else None, parameters={"remote_provider": self.provider_id, "gpu_seconds": values[2] if len(values) > 2 else None})
-            job = ProviderJob(durable_id, "succeeded", result=result)
+            job = ProviderJob(durable_id, "completed", result=result)
         elif event in {"error", "exception"}:
             job = ProviderJob(durable_id, "failed", error_code="remote_generation_failed", error_message=data or event)
         else:
