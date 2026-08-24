@@ -95,7 +95,7 @@ unzip -o '<PATH_DARI_release_package.path>' \
 
 ## Profil model dan Kaggle
 
-`z-image-turbo` adalah profile default untuk Space ZeroGPU karena runtime live memakai FP8 Z-Image Turbo yang telah diverifikasi. `qwen-image` tetap profile alternatif dan hanya boleh dipakai pada worker yang secara eksplisit menyatakan dukungannya. Kaggle tetap fallback eksperimental; lakukan `python -m stockforge.cli kaggle test`, `doctor`, dan `quota` sebelum memakai quota GPU.
+`z-image-turbo` adalah profile default untuk Space ZeroGPU karena runtime live memakai FP8 Z-Image Turbo yang telah diverifikasi. `qwen-image` tetap profile alternatif dan hanya boleh dipakai pada worker yang secara eksplisit menyatakan dukungannya. Jalur finalizer Kaggle telah lulus benchmark 4× 1024→4096 JPEG sRGB; tetap jalankan `kaggle-finalizer doctor` dan `test`, lalu gunakan hanya untuk preview yang sudah dipilih secara visual.
 
 ## Portfolio Engine: Batch Niche yang Aman
 
@@ -216,11 +216,12 @@ python -m stockforge.cli kaggle-finalizer output \
   --project stock-assets
 
 # 6. Verifikasi checksum/request/format/ukuran lalu buat ZIP review master.
-# Ganti RESULT_DIR dengan folder output yang tercetak oleh command sebelumnya.
+# Lokasi default result.json dan master.jpg adalah folder berikut.
+RESULT_DIR='/storage/emulated/0/StockForge/projects/stock-assets/kaggle-finalizer-output/stockforge-finalizer-output'
 python -m stockforge.cli portfolio import-kaggle-master \
   --project stock-assets \
   --request "$REQUEST" \
-  --result-dir '<RESULT_DIR>'
+  --result-dir "$RESULT_DIR"
 ```
 
 Worker hanya menerima request `prepared_no_gpu` dengan SHA-256 preview yang cocok. Ia mengunduh bobot RealESRGAN x4plus bila belum tersedia, menghasilkan master JPEG RGB/sRGB, lalu membuat `result.json`; hasil tanpa manifest, checksum, dimensi target, atau gate teknis yang sesuai akan ditolak saat import. Meski sukses, status akhir tetap `review_ready`: periksa master pada ukuran 100%, bandingkan dengan preview, dan jangan upload jika ada detail rekaan, halo, blur, kerusakan tekstur, perubahan objek, pseudo-teks, atau risiko hak/IP.

@@ -11,8 +11,8 @@ Dokumen ini menjelaskan jalur dari preview rendah resolusi menuju master kandida
 | Lineage preview → master | Aktif di core | Master dicatat sebagai artefak `finalized-master` dengan relasi `upscaled`, provenance, serta execution terpisah. |
 | Paket master | Aktif di core | Paket final dapat memuat `masters/*.jpg`, `MASTER_FINALIZATION.json`, laporan teknis, metadata draft, dan checklist review. |
 | `portfolio prepare-master` | Aktif | Membuat request master yang terikat pada execution dan source SHA-256. **Tidak memanggil GPU.** |
-| Provider GPU AI upscale otomatis | Aktif sebagai jalur Kaggle experimental | `kaggle-finalizer submit` menjalankan tepat satu request 4× private; output masih wajib diimpor dan direview. |
-| Kaggle finalizer worker | Aktif untuk benchmark satu-per-satu | Kaggle adalah worker batch privat, bukan endpoint permanen; validasi kualitas nyata tetap diperlukan sebelum batch. |
+| Provider GPU AI upscale otomatis | Terbukti melalui benchmark Kaggle | Benchmark 2026-08-24 menghasilkan master 4096×4096 JPEG sRGB dari preview 1024×1024; setiap output tetap wajib diimpor dan direview. |
+| Kaggle finalizer worker | Siap untuk produksi kecil yang terpilih | Kaggle adalah worker batch privat, bukan endpoint permanen; gunakan hanya untuk preview yang telah lolos seleksi dan catat setiap job pada ledger quota. |
 | Cloudflare R2 / queue | Opsional, belum dikonfigurasi | Memerlukan akun dan kredensial pengguna. Cloudflare bukan AI upscaler master. |
 | Provider burst berbayar | Opsional, belum diaktifkan | Hanya setelah benchmark dan persetujuan budget eksplisit. |
 
@@ -59,9 +59,9 @@ Output adalah file pada `master-finalizer-requests/`. Ia menyimpan ID artefak, S
 
 ## Pekerjaan berikutnya
 
-1. Benchmark satu aset 1024×1024 → master 4096×4096 melalui `kaggle-finalizer` dan periksa hasil pada ukuran 100% sebelum membuka batch lebih besar.
-2. Tambahkan deduplikasi/visual-review record sebelum status marketplace-specific dapat dipromosikan.
-3. Tambahkan bounded retry/error import untuk Kaggle, berdasarkan hasil benchmark nyata dan tanpa menyembunyikan log provider.
+1. Jalankan produksi kecil yang dipilih: hanya preview yang lolos seleksi visual, metadata, dan deduplikasi awal yang boleh mendapat master Kaggle.
+2. Tambahkan record visual-review dan keputusan marketplace per aset sebelum status marketplace-specific dapat dipromosikan.
+3. Catat setiap job GPU menurut `GPU_QUOTA_RUNBOOK.md`; retry hanya untuk error baru yang terisolasi dan sudah diuji tanpa GPU.
 4. Setelah volume membenarkan, aktifkan R2/Queue atau satu provider burst dengan secret dan budget cap di sisi server.
 
-Referensi keputusan dan bukti resmi tersedia pada dokumen riset infrastruktur dan standar marketplace yang menyertai proyek.
+Referensi keputusan dan bukti resmi tersedia pada dokumen riset infrastruktur dan standar marketplace yang menyertai proyek. Aturan penggunaan GPU terukur, stop rule, dan template ledger ada di [`GPU_QUOTA_RUNBOOK.md`](GPU_QUOTA_RUNBOOK.md).
