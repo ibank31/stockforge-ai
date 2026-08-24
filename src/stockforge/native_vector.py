@@ -19,7 +19,7 @@ from .format_router import FormatRoutingError, require_production_route
 
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
-_ALLOWED_TAGS = frozenset({"svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line", "defs", "linearGradient", "stop"})
+_ALLOWED_TAGS = frozenset({"svg", "g", "path", "rect", "circle", "ellipse", "polygon", "polyline", "line", "defs", "pattern", "linearGradient", "stop"})
 _FORBIDDEN_TOKENS = ("<image", "<text", "<script", "foreignobject", "data:image", "javascript:", "@import")
 
 
@@ -182,6 +182,53 @@ def build_technical_badge_svg(spec: AssetSpec, destination: str | Path) -> Nativ
     return report
 
 
+def build_geometric_pattern_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
+    """Build a repeatable geometric tile as native SVG geometry."""
+    route = require_production_route(spec)
+    if route.product_kind != "native_vector":
+        raise NativeVectorError("Native SVG construction requires product_kind='native_vector'.")
+    if spec.background_policy not in {"transparent", "white"}:
+        raise NativeVectorError("Native SVG products require a transparent or white background policy.")
+    if spec.text_policy != "none":
+        raise NativeVectorError("Native SVG preset does not support text-bearing products.")
+
+    width = height = 2048
+    primary, secondary, accent = _palette(spec)
+    seed = _seed(spec)
+    tile = 512
+    offset = 32 + (seed % 64)
+    root = ET.Element(f"{{{SVG_NS}}}svg", {
+        "width": str(width),
+        "height": str(height),
+        "viewBox": f"0 0 {width} {height}",
+        "version": "1.1",
+        "data-stockforge": "native-vector-geometric-pattern-v1",
+        "aria-label": "repeatable geometric pattern",
+    })
+    defs = _append(root, "defs")
+    pattern = _append(defs, "pattern", id="sf-tile", patternUnits="userSpaceOnUse", width=str(tile), height=str(tile))
+    _append(pattern, "rect", x="0", y="0", width=str(tile), height=str(tile), fill=secondary)
+    _append(pattern, "circle", cx=str(128 + offset), cy="128", r="72", fill=accent)
+    _append(pattern, "circle", cx=str(384 - offset), cy="384", r="72", fill=accent)
+    _append(pattern, "path", d="M 0 256 L 256 0 L 512 256 L 256 512 Z", fill="none", stroke=primary, stroke_width="28")
+    if spec.background_policy == "white":
+        _append(root, "rect", x="0", y="0", width=str(width), height=str(height), fill="#FFFFFF")
+    _append(root, "rect", x="0", y="0", width=str(width), height=str(height), fill="url(#sf-tile)")
+
+    raw = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    path = Path(destination).expanduser().resolve()
+    if path.suffix.lower() != ".svg":
+        raise NativeVectorError("Native vector destination must use the .svg extension.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    report = inspect_native_svg(path)
+    if not report.ready:
+        path.unlink(missing_ok=True)
+        details = "; ".join(f"{name}: {detail}" for name, detail in report.checks)
+        raise NativeVectorError(f"Generated SVG failed its own native-vector gate: {details}")
+    return report
+
+
 def build_svg_for_preset(spec: AssetSpec, destination: str | Path, preset: str = "modular_ribbon") -> NativeVectorReport:
     """Dispatch only to explicitly registered native-vector presets."""
     normalized = preset.strip().casefold()
@@ -189,6 +236,8 @@ def build_svg_for_preset(spec: AssetSpec, destination: str | Path, preset: str =
         return build_modular_ribbon_svg(spec, destination)
     if normalized == "technical_badge":
         return build_technical_badge_svg(spec, destination)
+    if normalized == "geometric_pattern":
+        return build_geometric_pattern_svg(spec, destination)
     raise NativeVectorError(f"Unsupported native-vector preset: {preset!r}.")
 
 

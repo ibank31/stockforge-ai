@@ -228,3 +228,28 @@ def test_true_alpha_finalizer_refuses_opaque_rgb_source(tmp_path: Path) -> None:
 
     with pytest.raises(PngAlphaFinalizeError, match="no real alpha"):
         prepare_true_alpha_png(source, tmp_path / "output.png")
+
+
+def test_geometric_pattern_preset_builds_native_repeat_tile(tmp_path: Path) -> None:
+    from stockforge.native_vector import build_svg_for_preset
+
+    spec = _spec(
+        asset_id="pattern-tile",
+        asset_type="graphic",
+        product_kind="native_vector",
+        delivery_format="svg",
+        layout_mode="square",
+        background_policy="white",
+        medium="editable SVG pattern geometry",
+        palette=("#164E63", "#F8FAFC", "#F59E0B"),
+        tags=("native_vector_patterns", "pattern-tile"),
+    )
+
+    report = build_svg_for_preset(spec, tmp_path / "pattern-tile.svg", preset="geometric_pattern")
+
+    assert report.ready is True
+    assert report.native_paths_only is True
+    svg = (tmp_path / "pattern-tile.svg").read_text(encoding="utf-8")
+    assert "<pattern" in svg
+    assert "patternUnits=\"userSpaceOnUse\"" in svg
+    assert "<image" not in svg

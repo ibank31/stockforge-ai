@@ -88,6 +88,8 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         candidate_niches=("geometric repeat", "decorative background", "pattern element"),
         blockers=("edge gate exists but a dedicated tile builder is not complete", "a square preview is not proof of seamlessness"),
         next_step="Build a tile-aware preset, run horizontal and vertical seam checks, then review the repeated result.",
+        recommended_lane_keys=("native_vector_patterns",),
+        recommended_concept_keys=("pattern-tile",),
     ),
     AssetTypePolicy(
         key="transparent_cutout",

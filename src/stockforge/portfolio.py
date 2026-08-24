@@ -188,6 +188,10 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
         "title": "Editable Technical Badge Vector Element",
         "keywords": ("editable vector", "technical badge", "SVG paths", "geometric badge", "radial connection", "flat illustration", "isolated graphic", "white background", "design component", "abstract vector"),
     },
+    ("native_vector_patterns", "pattern-tile"): {
+        "title": "Editable Geometric Repeat Pattern Tile",
+        "keywords": ("seamless pattern", "repeat background", "editable SVG pattern", "geometric tile", "decorative vector", "pattern design", "repeatable background", "native vector", "abstract geometry", "surface pattern"),
+    },
 }
 
 
@@ -518,6 +522,39 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
             _concept("integrity-bridge", "two stable graphite modules linked by a translucent bridge", "trusted handoff", "centered isolated object", "clean copy space right", PALETTES["integrity"], ("trusted connection", "material contrast", "clear silhouette")),
         ),
         notes="No padlocks, shields, hooded people, fingerprints, code text, dashboards, certification claims, or brand references.",
+    ),
+    PortfolioLane(
+        key="native_vector_patterns",
+        name="Native vector repeat patterns",
+        tier="experimental",
+        evidence_confidence="low",
+        opportunity_id="V02",
+        buyer_segment="design_and_content_teams",
+        buyer_job="repeatable decorative background and editable pattern tile",
+        channel="web",
+        asset_family="generic",
+        asset_type="graphic",
+        micro_niche="repeatable geometric SVG pattern",
+        visual_language="controlled geometric tile with editable repeated structure",
+        medium="SVG pattern definitions and native geometry",
+        commercial_use_cases=("decorative background", "packaging pattern study", "presentation texture"),
+        keywords=("seamless pattern", "repeat background", "editable SVG pattern", "geometric tile", "decorative vector", "pattern design", "repeatable background", "native vector", "abstract geometry", "surface pattern"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "pattern-tile",
+                "a repeatable geometric tile with alternating circles and a diamond path",
+                "edge continuity without a visible border",
+                "full square repeat field",
+                "no copy space; pattern is the product",
+                ("#164E63", "#F8FAFC", "#F59E0B"),
+                ("repeatable tile", "edge continuity", "editable pattern geometry"),
+                product_kind="native_vector",
+                delivery_format="svg",
+                background_policy="white",
+            ),
+        ),
+        notes="Experimental tile lane; structural repeatability is tested locally, while visual utility and marketplace acceptance remain human review tasks.",
     ),
     PortfolioLane(
         key="native_vector_elements",

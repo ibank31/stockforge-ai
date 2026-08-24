@@ -2,6 +2,14 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Engine maturation: selector, SVG presets, pattern lane, metadata policy, and delivery tests
+
+### Additional implementation
+
+- Added `native_vector_patterns` with one controlled `pattern-tile` brief.
+- Added a native SVG geometric pattern preset using a real SVG `<pattern>` definition and local structural inspection; no raster trace or provider call is involved.
+- Full verification after this milestone: **269 passed, 1 skipped**; no generation, provider call, or upload was performed.
+
 ## 2026-08-24 — Engine maturation: selector, SVG presets, metadata policy, and delivery tests
 
 ### Additional implementation

@@ -51,7 +51,12 @@ def build_local_native_vector(
     root = Path(project_root).resolve()
     destination = root / "vectors" / f"{spec.asset_id}.svg"
     tags = tuple(str(item).casefold() for item in spec.tags)
-    preset = "technical_badge" if any("technical" in item or "badge" in item or "icon" in item for item in tags) else "modular_ribbon"
+    if any("pattern" in item for item in tags):
+        preset = "geometric_pattern"
+    elif any("technical" in item or "badge" in item or "icon" in item for item in tags):
+        preset = "technical_badge"
+    else:
+        preset = "modular_ribbon"
     report = build_svg_for_preset(spec, destination, preset=preset)
     if not report.ready:
         raise LocalVectorBuildError("Native vector did not pass its technical gate.")
