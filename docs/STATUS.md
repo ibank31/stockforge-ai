@@ -1,181 +1,82 @@
-# Development Status
+# StockForge Development Status
 
-**Date:** 2026-08-21  
-**Branch:** `feat/zerogpu-runtime`
+**Updated:** 2026-08-24
+**Branch:** `main`
+**Latest verified commit:** `7f2f730`
 
 ## Current milestone
 
-**v0.2 Multi-Provider Generation Runtime → Model Registry → Adobe Stock Readiness**
+**Evidence-backed multi-format asset factory for Android/Termux and Adobe Stock.**
 
-StockForge has a verified remote generation provider on Hugging Face ZeroGPU and a verified Kaggle GPU worker. The next architectural step is to separate model management from compute-provider execution and add provider routing/failover.
+StockForge treats generation as one step inside an asset package containing a buyer hypothesis, typed asset specification, prompt, provider execution, visual/technical QA, provenance, metadata, and human-review state. The system must not turn a market signal or a clean file into a claim of sales or marketplace acceptance.
 
-Generation success is still not the same thing as a marketplace-ready asset.
+## Verified production paths
 
-## Completed
+| Path | Format | Execution | Status |
+|---|---|---|---|
+| Conceptual scene / raster illustration | JPEG | Remote ZeroGPU preview, optional finalizer, XMP upload copy | **Verified workflow** |
+| Native geometric object/icon/pattern | SVG | Local deterministic builder, no GPU | **Locally verified; portal not yet verified** |
+| Transparent cutout / overlay | PNG with real alpha | Alpha producer and PNG finalizer | **Blocked until alpha path is validated** |
+| Seamless raster pattern | PNG/JPEG candidate | Local edge-continuity gate | **Gate implemented; commercial review still required** |
 
-### Core foundation
+The JPEG path is the only generative route with a recorded live preview and completed master workflow. Native SVG is a genuine local geometry route, not a raster trace. PNG must never use a white or checkerboard background as a substitute for actual transparency.
 
-- CLI entry point
-- `stockforge version`
-- `stockforge init`
-- `stockforge doctor`
-- SQLite initialization
-- Project creation and listing
-- Project workspace layout
-- Versioned project manifest
-- Atomic manifest writes
-- Project creation rollback handling
-- Initial pytest coverage
-- GitHub Actions CI
+## Completed foundation
 
-### Asset registry
+The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, and Adobe metadata upload-copy workflow.
 
-- Persistent asset registry
-- Asset UUID and project ownership
-- Asset lifecycle status contract
-- File path validation
-- MIME type and file-size support
-- SHA-256 checksum support
-- Artifact lineage contract
+The remote worker contract is aligned with the deployed `generate_remote` endpoint. It uses a durable `stockforge_job_id`, bounded single-image requests, terminal-state polling, and output ingestion. The ZeroGPU deployment entrypoint is `deploy/zerogpu/remote_api.py` for programmatic generation.
 
-### Persistent job queue
+## Current research conclusion
 
-- Persistent job model
-- Durable SQLite-backed queue
-- Priority ordering
-- Atomic worker claiming
-- Attempt counting
-- Bounded retries
-- Job completion/failure/cancellation
-- Job CLI create/list/claim/complete/fail/cancel commands
+The preserved social/marketplace evidence supports three buyer jobs rather than one universal format:
 
-### Plugin and pipeline architecture
+| Buyer job | Recommended lane | Evidence interpretation |
+|---|---|---|
+| Cinematic, surreal, seasonal, workplace, nature, and conceptual scenes | JPEG raster | Motif signal; not proof of sales or format. |
+| Isolated objects, technical clip-art, icons, badges, food/produce, and geometric elements | Native SVG first; PNG later when alpha is real | Utility-asset signal; thumbnail background does not prove transparency. |
+| Patterns, backgrounds, and decorative elements | SVG or raster according to material | Requires an explicit seamless test for seamless claims. |
 
-- Vendor-neutral plugin descriptor/API contract
-- Plugin registry with deterministic lookup
-- Capability-based plugin discovery
-- Plugin API version validation
-- Plugin trust-boundary documentation
-- Versioned pipeline definition
-- Deterministic sequential pipeline runner
-- Pipeline capability validation
-- Pipeline execution error boundary
+Adobe’s public guidance supports transparent PNG utility assets and genuine editable vectors, while its 2026 trend report supports tactile/material, surreal, local-specific, and emotionally useful creative hypotheses. These sources guide experiments; they do not predict revenue.[1] [2] [3]
 
-### Provenance / lineage
+## Current priorities
 
-- Versioned provenance record contract
-- Explicit artifact lineage contract
-- Durable SQLite provenance records
-- Durable SQLite artifact lineage records
-- Provenance/lineage round-trip and validation tests
+1. Expand deterministic native SVG builders for object, technical, food/produce, badge, simple-character, and geometric-pattern families.
+2. Keep JPEG scene generation behind the pre-GPU prompt, rights, layout, quota, and visual-quality gates.
+3. Build a local PNG alpha producer with true-alpha assertion, anti-fringe checks, canvas trimming, sRGB validation, and one controlled portal validation.
+4. Connect evidence logs to buyer-job and format routing without turning engagement or earnings screenshots into sales forecasts.
+5. Keep model/provider registry, health, quota, and failover contracts explicit before adding more GPU providers.
 
-### Hugging Face ZeroGPU — VERIFIED
+## Non-negotiable safety rules
 
-- Space: `ibank31/stockforge-zerogpu`
-- `zero-a10g` runtime
-- Termux-triggered generation
-- Public `/generate` endpoint
-- Z-Image Turbo
-- Qwen3 FP8 mixed text encoder path
-- 1024×1024 / 8-step benchmark
-- Successful image result
-- 44.238 seconds measured GPU-function time in the recorded benchmark
+- Do not generate blindly, retry only by changing seed, or run large batches without a documented buyer hypothesis.
+- Do not treat a preview, upscaled image, local SVG, or technical pass as marketplace acceptance.
+- Do not upload or submit to Adobe automatically; declarations, CAPTCHA, releases, and final submission remain human-controlled.
+- Do not duplicate the same visual as JPEG, PNG, and SVG merely to multiply formats.
+- Do not put credentials in files, commits, logs, or user-facing output.
+- Use the user-approved Android output folders only for visual files; keep technical files in the project workspace.
 
-### Kaggle GPU worker — VERIFIED INFRASTRUCTURE
+## Verification
 
-- Public worker: `iqbalteguh/stockforge-worker-public`
-- CUDA available
-- 2 × Tesla T4 observed
-- ~14.56 GiB VRAM per GPU observed
-- PyTorch CUDA matmul test passed
-- Remote worker job/result contract passed
+The current main branch has passed **253 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
 
-### Kaggle Qwen-Image feasibility — NOT COMPLETE
+The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
-Verified:
+## Source of truth
 
-- DiffSynth-Studio installation from the official GitHub repository succeeds.
-- Qwen-Image pipeline reaches model download/loading.
-- DiffSynth's low-VRAM FP8 + disk-offload configuration is compatible with the intended test path.
+| Purpose | Document |
+|---|---|
+| Navigation | [`docs/README.md`](README.md) |
+| Current status | This file |
+| Current architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Feature state and next work | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
+| Product/format decision | [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) |
+| Marketplace readiness | [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) |
+| Android operation | [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) |
+| History | [`CHANGELOG.md`](CHANGELOG.md) |
 
-Failure observed:
+## References
 
-- `OSError: [Errno 28] No space left on device`
-
-Therefore Kaggle **must not** be marked as a completed Qwen-Image generator yet.
-
-## Research re-baseline — 2026-08-21
-
-New evidence and decisions are recorded in:
-
-- `docs/RESEARCH_GAPS_2026-08-21.md`
-- `docs/MODEL_PROVIDER_ARCHITECTURE.md`
-
-Key decisions:
-
-1. Qwen-Image remains a **top candidate**, not a proven universal best model.
-2. Hugging Face and Kaggle are **compute providers**, not the core model abstraction.
-3. A **Model Registry** is required before scaling the provider count.
-4. Provider capability, health, quota, VRAM, RAM, disk, and model compatibility must be measured and schedulable.
-5. Model preparation/cache must be separated from GPU inference where provider capabilities permit.
-6. Provider failure should trigger policy-driven retry/failover rather than changing the logical generation job.
-7. Model licenses and marketplace rights must be recorded as evidence, not inferred from the word "open-source".
-
-## Current gaps — highest priority
-
-### P0 — Architecture
-
-1. Model Registry contract and implementation.
-2. Unified Generation Job/Result contract.
-3. Provider Capability/Health contract.
-4. Provider Router with quota/health/capability-aware selection.
-5. Provider failover and idempotent execution.
-6. Model cache/delivery abstraction.
-
-### P1 — Runtime
-
-7. Kaggle storage-aware preflight.
-8. Kaggle Qwen-Image end-to-end generation test.
-9. Runtime heartbeat/progress and structured failure diagnostics.
-10. Model benchmark harness comparing candidate generators.
-
-### P1 — Asset quality and marketplace readiness
-
-11. JPEG + sRGB finalization.
-12. Technical image QA.
-13. Anatomy/hand/face/object consistency QA.
-14. OCR/logo/trademark/watermark QA.
-15. Perceptual deduplication and similarity/spam gate.
-16. AI disclosure + people/property/release metadata.
-17. Commercial-value scoring.
-18. Stock title/keyword/category metadata engine.
-19. Human review/submission package.
-
-### P2 — Intelligence and feedback
-
-20. Market opportunity engine.
-21. Commercial concept planner.
-22. Prompt compliance firewall.
-23. Prompt/variation engine.
-24. Controlled batch generation.
-25. Portfolio diversity scoring.
-26. Acceptance/sales feedback loop.
-
-## Important current constraint
-
-Do not optimize the system around unlimited free GPU availability. Kaggle documents notebook session limits and storage constraints; Hugging Face ZeroGPU also has daily quotas. Free compute is a pool of opportunistic capacity that the router must schedule around.
-
-## Documentation source of truth
-
-- Product vision/context: `docs/PROJECT_CONTINUATION.md`
-- Current architecture: `docs/ARCHITECTURE.md`
-- Model/provider design: `docs/MODEL_PROVIDER_ARCHITECTURE.md`
-- Research and gap map: `docs/RESEARCH_GAPS_2026-08-21.md`
-- Feature state: `docs/FEATURE_ROADMAP.md`
-- Adobe readiness: `docs/ADOBE_STOCK_READINESS.md`
-- Dated history: `docs/CHANGELOG.md`
-- Core status: this file
-
-## Completion rule
-
-A feature is complete only when implementation, verification, and repository state are correct. External-provider claims require live evidence. A model is not considered production-ready until generation, quality, licensing/policy, resource footprint, and marketplace suitability have all been evaluated.
+[1]: https://helpx.adobe.com/ie/stock/contributor/help/png-with-transparency.html "Adobe Stock — PNG files with transparency"
+[2]: https://helpx.adobe.com/ie/stock/contributor/help/vector-requirements.html "Adobe Stock — Content Guidelines: Vectors"
+[3]: https://blog.adobe.com/en/publish/2026/01/08/how-creators-leveraging-adobe-2026-creative-trends "Adobe — 2026 Creative Trends"

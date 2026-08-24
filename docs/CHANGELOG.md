@@ -2,17 +2,21 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Documentation consolidation
+
+The active documentation set was consolidated around `docs/README.md`, `docs/STATUS.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_ROADMAP.md`, `docs/SESSION_HANDOVER.md`, and the current research/marketplace references. Superseded handovers, stale branch-era briefs, duplicated marketplace research, and an old merge-resolution note were removed after their relevant decisions were preserved in the active documents. Historical entries below remain as history and are not current status claims.
+
 ## 2026-08-21 — Multi-provider architecture and Kaggle Qwen-Image findings
 
 ### DONE — research re-baseline
 
 Added:
 
-- `docs/RESEARCH_GAPS_2026-08-21.md`
+- research re-baseline and model/provider design, later consolidated into the active status and roadmap
 - `docs/MODEL_PROVIDER_ARCHITECTURE.md`
 - updated `docs/ARCHITECTURE.md`
 - updated `docs/STATUS.md`
-- updated `docs/PROJECT_CONTINUATION.md`
+- updated the active architecture and status documents
 
 ### Verified findings
 
@@ -212,7 +216,7 @@ Added `docs/FEATURE_ROADMAP.md` as the authoritative project feature matrix.
 
 ## 2026-08-19 — Core/project foundation
 
-Existing completed foundation recorded in `docs/STATUS.md` and `docs/PROJECT_CONTINUATION.md` includes:
+Existing completed foundation is recorded in `docs/STATUS.md` and the historical entries in this changelog, including:
 
 - CLI foundation
 - project initialization

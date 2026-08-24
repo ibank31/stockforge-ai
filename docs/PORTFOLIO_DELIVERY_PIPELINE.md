@@ -1,7 +1,7 @@
 # Portfolio Delivery Pipeline
 
-**Status:** Approved implementation plan for the active standalone portfolio path.  
-**Scope:** Connect an approved portfolio brief to one remote generation, immutable execution provenance, deterministic technical checks, draft marketplace metadata, and a human-review package.  
+**Status:** Approved implementation plan for the active standalone portfolio path.
+**Scope:** Connect an approved portfolio brief to one remote generation, immutable execution provenance, deterministic technical checks, draft marketplace metadata, and a human-review package.
 **Non-goal:** Automatic marketplace submission or a claim that an image is legally accepted, commercially successful, or technically accepted by a marketplace.
 
 ## Current Gap
@@ -105,17 +105,9 @@ The machine runs existing technical image inspection for each portfolio artifact
 
 Before a final contributor upload, the reviewer must verify: no textual artifacts, no logos/brands/IP, accurate description/keywords, truthful GenAI declaration, visual geometry/material quality, distinctness within portfolio, required releases/people/property fields, policy compliance, and final technical state.
 
-## Orphan Cleanup Decision
+## Documentation boundary
 
-The old Reality layer was oriented around people, tools, equipment, environment, and scene realism. There are no active callers in the standalone portfolio/generation path. The following tracked files are removed as obsolete and replaced by the standalone portfolio requirements:
-
-- `src/stockforge/reality.py`
-- `src/stockforge/reality_prompt.py`
-- `docs/REALITY_ACTIVE_PATH.md`
-- `docs/REALITY_GENERATION_GATE.md`
-- `docs/REALITY_RULES.md`
-
-The historical asset-factory document is retained because most of its contract remains useful, but its Reality-layer reference is removed. Locally generated `__pycache__`, the audit scratch file, and untracked `uv.lock` are not source deliverables; they are removed from the working tree and are not committed.
+The standalone portfolio path uses the active contracts in `docs/STATUS.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_ROADMAP.md`, and `docs/TERMUX_CONTROL_PLANE.md`. Obsolete Reality-layer implementation notes are no longer part of the active documentation set. Historical implementation details belong in `docs/CHANGELOG.md`, not in the operator workflow.
 
 ## Definition of Done
 

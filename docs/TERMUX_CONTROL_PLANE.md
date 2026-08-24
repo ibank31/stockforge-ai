@@ -105,7 +105,7 @@ Untuk production portfolio, jangan mulai dari prompt bebas atau batch besar. Bua
 cd ~/stockforge-ai
 source .venv/bin/activate
 
-git pull --ff-only origin feat/asset-factory-architecture
+git pull --ff-only origin main
 
 # Lihat sepuluh lane riset, tier prioritas, dan batas batch awal.
 python -m stockforge.cli portfolio lanes

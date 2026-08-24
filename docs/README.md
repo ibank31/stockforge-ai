@@ -1,0 +1,64 @@
+# StockForge Documentation
+
+Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah snapshot status saat ini; `ARCHITECTURE.md` adalah desain sistem aktif; `FEATURE_ROADMAP.md` adalah daftar pekerjaan; `CHANGELOG.md` adalah sejarah.** Dokumen lain menjadi referensi teknis yang lebih spesifik dan tidak boleh diperlakukan sebagai status terbaru kecuali disebut oleh dokumen aktif.
+
+## Mulai dari sini
+
+| Kebutuhan | Dokumen |
+|---|---|
+| Memahami kondisi terbaru dan batasan proyek | [`STATUS.md`](STATUS.md) |
+| Melanjutkan sesi berikutnya | [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) |
+| Memahami arsitektur dan alur asset factory | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Melihat pekerjaan selesai dan berikutnya | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
+| Membaca sejarah keputusan dan verifikasi | [`CHANGELOG.md`](CHANGELOG.md) |
+
+## Produk dan format
+
+- [`MULTIFORMAT_ENGINE_V1.md`](MULTIFORMAT_ENGINE_V1.md) — kontrak routing JPEG, native SVG, dan PNG alpha.
+- [`FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) — keputusan niche/format berbasis evidence terbaru.
+- [`ADOBE_MULTIFORMAT_EVIDENCE_2026-08-24.md`](ADOBE_MULTIFORMAT_EVIDENCE_2026-08-24.md) — bukti marketplace dan scope inferensi.
+- [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) — standar teknis, policy, metadata, dan human review sebelum upload.
+- [`ADOBE_STOCK_READINESS.md`](ADOBE_STOCK_READINESS.md) — gate kesiapan Adobe Stock.
+
+## Operasi dan delivery
+
+- [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) — workflow Android/Termux.
+- [`PORTFOLIO_PRODUCTION_ENGINE.md`](PORTFOLIO_PRODUCTION_ENGINE.md) — perencanaan portfolio dan brief.
+- [`PORTFOLIO_DELIVERY_PIPELINE.md`](PORTFOLIO_DELIVERY_PIPELINE.md) — review package dan delivery.
+- [`GPU_QUOTA_RUNBOOK.md`](GPU_QUOTA_RUNBOOK.md) — aturan penggunaan quota.
+- [`GPU_WASTE_PREVENTION_2026-08-24.md`](GPU_WASTE_PREVENTION_2026-08-24.md) — pre-GPU guard.
+- [`FINALIZER_AND_INFRASTRUCTURE_ROADMAP.md`](FINALIZER_AND_INFRASTRUCTURE_ROADMAP.md) — finalizer dan infrastructure follow-up.
+
+## Engineering contracts
+
+- [`CORE_CONTRACTS.md`](CORE_CONTRACTS.md)
+- [`ASSET_REGISTRY.md`](ASSET_REGISTRY.md)
+- [`JOB_QUEUE.md`](JOB_QUEUE.md)
+- [`PIPELINE_CONTRACT.md`](PIPELINE_CONTRACT.md)
+- [`PLUGIN_CONTRACT.md`](PLUGIN_CONTRACT.md)
+- [`MODEL_PROVIDER_ARCHITECTURE.md`](MODEL_PROVIDER_ARCHITECTURE.md)
+- [`provider-backends.md`](provider-backends.md)
+- [`PROVIDER_SECURITY.md`](PROVIDER_SECURITY.md)
+- [`IMAGE_QA_PREFLIGHT.md`](IMAGE_QA_PREFLIGHT.md)
+- [`VISION_QA.md`](VISION_QA.md)
+- [`VISION_ENSEMBLE.md`](VISION_ENSEMBLE.md)
+
+## Intelligence and research
+
+- [`MARKET_INTELLIGENCE.md`](MARKET_INTELLIGENCE.md)
+- [`BUYER_SEGMENTS.md`](BUYER_SEGMENTS.md)
+- [`BUYER_MARKET_MATRIX.md`](BUYER_MARKET_MATRIX.md)
+- [`CONCEPT_ENGINE_V4.md`](CONCEPT_ENGINE_V4.md)
+- [`PROMPT_COMPILER.md`](PROMPT_COMPILER.md)
+- [`PRODUCTION_INTELLIGENCE_V2.md`](PRODUCTION_INTELLIGENCE_V2.md)
+- [`VISION_PROVIDER_BENCHMARK.md`](VISION_PROVIDER_BENCHMARK.md)
+- [`PORTFOLIO_STANDALONE_RESEARCH_2026.md`](PORTFOLIO_STANDALONE_RESEARCH_2026.md)
+- [`FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md`](FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md)
+
+## Riset terarsip tetapi masih menjadi bukti
+
+Direktori [`research/`](research/) berisi catatan sumber dan audit. Dokumen riset tidak otomatis menjadi keputusan produksi; keputusan aktif harus diringkas di `STATUS.md` atau `FORMAT_AND_NICHE_DECISION_2026-08-24.md`.
+
+## Aturan pemeliharaan
+
+Setiap perubahan status harus memperbarui `STATUS.md` dan menambahkan entry ke `CHANGELOG.md`. Dokumen dengan tanggal lama boleh tetap dipertahankan bila merupakan bukti yang tidak tergantikan; dokumen yang hanya mengulang status atau handoff harus dihapus atau digabungkan, bukan dibuatkan salinan baru.
