@@ -1,267 +1,31 @@
-# StockForge AI — Buyer Segment Intelligence
+# Buyer Segment Intelligence: Standalone Asset Portfolio
 
-**Version:** 1.0  
-**Date:** 2026-08-20  
-**Status:** Research foundation; scoring model defined, automated collection not yet implemented
+**Version:** 2.0
+**Status:** Portfolio-first planning model
 
-## Why buyer intelligence exists
+Marketplace queries menunjukkan istilah yang dicari, tetapi tidak cukup untuk menjelaskan fungsi sebuah aset. StockForge memodelkan buyer, pekerjaan komunikasi, channel, dan kebutuhan komposisi sebelum membuat candidate. Segmen berikut merupakan heuristik perencanaan, bukan bukti bahwa buyer tertentu akan membeli aset tertentu.
 
-A marketplace query tells us what people search for. It does not tell us why an asset is useful. StockForge therefore models the **buyer and the communication job** behind an asset.
+| Segment | Pengguna | Pekerjaan komunikasi | Aset standalone yang dicari | Larangan default |
+|---|---|---|---|---|
+| Web/product teams | product designers, developer advocates, product marketers | landing page, feature explainer, docs, deck | metafora 3D, material atmosphere, icon object | UI palsu, layar, perangkat bermerek, teks |
+| Brand marketing teams | brand/campaign/content teams | campaign, ad, email, hero web | visual sensori, playful conceptual object, prop kreatif | komposisi ramai, props acak, klaim merek |
+| Editorial/content teams | editors, newsletter producers, content strategists | article art, newsletter, explainer | simbol editorial, craft element, texture | tulisan di gambar, scene tanpa kebutuhan, metafora tidak jelas |
+| Small business commerce | merchants, shop managers, growth teams | product page, promotion, packaging insert | generic product-adjacent prop, sticker, material | label, packaging text, logo, tangan |
+| Social creator teams | creators, community/social managers | post, story, thumbnail, serial content | bold icon-like object, playful surreal metaphor | objek jamak, teks/angka, crop yang rapuh |
+| Local brand storytelling | hospitality and local brand teams | campaign, packaging, editorial | natural motif atau craft element dengan provenance | apropriasi budaya, klaim lokasi/komunitas yang tidak didukung |
 
-Primary evidence from Shutterstock identifies three broad customer groups: corporate professionals/organizations, media and broadcast companies, and SMBs/individual creators. Shutterstock also describes use across websites, advertising, annual reports, brochures, employee communications, newsletters, email marketing, presentations, digital advertising, websites/apps, print, video, and content marketing. Adobe's 2026 trend research likewise emphasizes relevance, usefulness, human connection, authenticity, and regional specificity.
+## Aturan buyer-first
 
-These broad groups must be converted into actionable buyer segments.
+Setiap candidate wajib menjawab: siapa yang akan menggunakannya, pekerjaan komunikasi apa yang dapat ia bantu, di channel mana ia dipakai, dan mengapa satu objek standalone lebih berguna daripada visual dekoratif generik. Jika alasan tersebut belum didukung evidence atau masih hipotesis, candidate tetap berstatus `REVIEW`.
 
-## Buyer hierarchy
+## Standalone-first composition
 
-```text
-MARKETPLACE
-  ↓
-CUSTOMER TYPE
-  ↓
-INDUSTRY
-  ↓
-JOB ROLE / CREATIVE ROLE
-  ↓
-COMMUNICATION TASK
-  ↓
-PLACEMENT / CHANNEL
-  ↓
-VISUAL REQUIREMENT
-  ↓
-ASSET CONCEPT
-```
+Untuk batch awal, mesin memakai satu subjek lengkap pada latar putih bersih, dengan ruang kosong yang dapat dipakai desainer. Manusia, tangan, alat, perangkat, layar, angka, text, frame, perangko, dan prop tambahan dilarang kecuali AssetSpec menjadikannya subjek inti dan evidence mendukung pengecualian tersebut.
 
-## Core buyer segments
+## Portfolio balancing
 
-### 1. Brand / Marketing teams
-
-**Who:** marketing managers, brand managers, campaign teams, content strategists.
-
-**Work:** websites, campaigns, social, email, landing pages, product launches, thought leadership.
-
-**They buy:** instantly understandable scenes, authentic people, strong focal point, usable negative space, multiple aspect-ratio compositions.
-
-**StockForge opportunity:** create assets with an explicit communication message rather than generic lifestyle scenes.
-
-**Uniqueness levers:**
-- campaign theme
-- audience identity
-- emotion
-- channel-specific framing
-- copy space
-- seasonal/contextual relevance
-
-### 2. Creative agencies
-
-**Who:** art directors, designers, copywriters, creative directors, production teams.
-
-**Work:** client campaigns, advertising, brand systems, presentations, editorial design.
-
-**They buy:** flexible visuals that can be art-directed into a larger composition.
-
-**Uniqueness levers:**
-- unusual but believable visual situations
-- clean separation between subject and background
-- intentional composition
-- multiple crops
-- visual metaphor where commercially useful
-
-### 3. Corporate communications / PR
-
-**Who:** communications managers, PR agencies, internal communications teams, investor-relations teams.
-
-**Work:** annual reports, corporate announcements, employer communications, ESG reports, press materials.
-
-**They buy:** credible business situations, diverse but believable teams, restrained aesthetics, copy space, non-branded environments.
-
-**Uniqueness levers:**
-- specific business topic
-- governance / sustainability / workforce / transformation stories
-- realistic workplace behavior
-- presentation-safe layouts
-
-### 4. SaaS / technology companies
-
-**Who:** product marketing, demand generation, growth teams, startup founders, UX/content teams.
-
-**Work:** landing pages, product marketing, blog posts, case studies, decks, ads.
-
-**They buy:** visual explanations of abstract technology problems.
-
-**Uniqueness levers:**
-- show technology interacting with the physical world
-- specific workflow rather than generic laptop imagery
-- human + system relationship
-- data/technology visual cues without fake readable UI text
-- copy space for product messaging
-
-### 5. Construction / engineering / property companies
-
-**Who:** developers, contractors, engineering consultants, architects, construction software vendors, suppliers.
-
-**Work:** project proposals, tender documents, websites, brochures, investor presentations, safety campaigns, training, case studies.
-
-**They buy:** authentic project workflows, site context, engineering processes, safety, infrastructure, planning, materials, digital transformation.
-
-**Uniqueness levers:**
-- specific construction problem
-- BIM/digital twin
-- safety inspection
-- predictive maintenance
-- infrastructure analytics
-- climate resilience
-- supply-chain visibility
-- regional construction context
-- tender/project communication
-
-### 6. Publishers / editorial content teams
-
-**Who:** publishers, bloggers, educational publishers, magazine teams, online media.
-
-**Work:** articles, explainers, reports, books, newsletters.
-
-**They buy:** literal visual explanations of the article topic, often with room for headlines.
-
-**Uniqueness levers:**
-- topic specificity
-- explanatory composition
-- editorial-safe negative space
-- contextual details
-
-**Important:** StockForge's commercial-first pipeline should avoid generating newsworthy events or real-person depictions merely to chase editorial demand. Adobe and marketplace licensing rules must be respected.
-
-### 7. Social media creators / SMBs
-
-**Who:** small business owners, freelancers, influencers, solo marketers.
-
-**Work:** social posts, ads, blogs, newsletters, simple presentations.
-
-**They buy:** immediately usable, relatable images that communicate one idea quickly.
-
-**Uniqueness levers:**
-- vertical-first compositions
-- strong subject readability
-- relatable everyday situations
-- local/regional authenticity
-- simple visual storytelling
-
-## Buyer-specific composition matrix
-
-| Buyer | Typical job | Preferred visual strategy |
-|---|---|---|
-| Brand marketing | Campaign / landing page | Strong hero + copy space |
-| Creative agency | Campaign composition | Flexible subject/background separation |
-| Corporate comms | Report / announcement | Credible, restrained, presentation-safe |
-| SaaS | Product storytelling | Human + technology workflow |
-| Construction/engineering | Project communication | Authentic site/process context |
-| Publisher | Article illustration | Literal topic clarity + headline space |
-| SMB/social | Quick communication | Vertical, relatable, immediately legible |
-
-## Buyer-specific uniqueness rule
-
-The same subject should **not** be generated identically for every buyer.
-
-Example: construction safety.
-
-### SaaS buyer
-
-Visual problem: communicate digital safety workflow.
-
-Concept: supervisor reviewing a mobile safety anomaly dashboard beside a live site.
-
-### Contractor
-
-Visual problem: communicate site safety culture.
-
-Concept: supervisor conducting a real toolbox briefing with PPE and active work area.
-
-### Engineering consultant
-
-Visual problem: communicate risk assessment.
-
-Concept: engineer comparing site conditions with technical plans and inspection evidence.
-
-### Corporate/ESG team
-
-Visual problem: communicate workforce safety investment.
-
-Concept: safety training in a modern construction environment with deliberate report-style composition.
-
-### Publisher
-
-Visual problem: illustrate construction safety technology.
-
-Concept: contextual close-up showing PPE, inspection device, worker, and site environment.
-
-The topic stays related, but the **communication job changes the image**.
-
-## Buyer-to-asset scoring
-
-Future Concept Engine should calculate:
-
-```text
-buyer_fit
-use_case_fit
-channel_fit
-visual_clarity
-copy_space_fit
-specificity
-regional_relevance
-uniqueness
-saturation_risk
-variation_value
-```
-
-Suggested initial weighting:
-
-| Signal | Weight |
-|---|---:|
-| Buyer/use-case fit | 25 |
-| Visual differentiation | 20 |
-| Marketplace opportunity | 15 |
-| Commercial clarity | 15 |
-| Composition/layout utility | 10 |
-| Regional/context relevance | 5 |
-| Variation potential | 5 |
-| Compliance risk | 5 |
-
-These are **StockForge internal heuristics**, not marketplace rules. They must be validated against portfolio outcomes later.
-
-## Buyer research evidence
-
-Shutterstock states that its customers include corporate professionals and organizations, media/broadcast companies, SMBs and individual creators. It describes business use across websites, advertisements, annual reports, brochures, employee communications, newsletters, email marketing and presentations.
-
-Shutterstock's current use-case documentation explicitly includes digital advertising, website/app builders, print/merchandise, video creation, and content/email marketing.
-
-Shutterstock's customer case studies show use by major brands and organizations including Facebook, Microsoft, AWS, Porsche, Snapchat and others, reinforcing that stock assets serve both internal creative teams and external campaign production.
-
-Adobe's 2026 Creative Trends research states that its trends are informed by commercial campaigns, customer feedback and search history, and emphasizes useful, relevant, relatable and regionally specific visual content.
-
-## Research limitations
-
-Buyer segment labels are useful planning abstractions, not direct evidence that a particular person will purchase a particular image. Marketplace customer databases are not fully public, and public search counts are not sales data.
-
-StockForge must therefore record evidence and confidence rather than presenting buyer assumptions as facts.
-
-## Automation target
-
-Future Market Intelligence should output a buyer profile for every opportunity:
-
-```json
-{
-  "buyer_segment": "construction_technology_marketing",
-  "industry": "construction_technology",
-  "roles": ["product_marketing", "content_marketing", "creative_director"],
-  "communication_jobs": ["website_hero", "blog_article", "case_study", "presentation"],
-  "channels": ["web", "social", "presentation", "email"],
-  "visual_requirements": ["authentic_workflow", "copy_space", "non_branded_ui"],
-  "uniqueness_levers": ["physical_digital_relationship", "specific_workflow"],
-  "confidence": 0.0,
-  "evidence": []
-}
-```
+Satu subject tidak boleh dijadikan seluruh strategi. Scheduler masa depan harus membagi candidate di antara material atmospheres, UI-adjacent 3D metaphors, playful conceptual objects, retro-tech metaphors, human-made collage elements, serta natural/craft motifs. Setiap lane harus memiliki batas batch, catatan evidence, dan deduplication gate sendiri.
 
 ## Principle
 
-**Do not create an image for a niche. Create an image for a buyer's communication problem inside that niche.**
+> Jangan membuat gambar untuk satu niche. Buat aset yang menyelesaikan pekerjaan komunikasi yang jelas, lalu uji apakah aset tersebut dapat dipakai ulang oleh lebih dari satu buyer dan channel.

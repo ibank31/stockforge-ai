@@ -5,7 +5,7 @@ from stockforge.market_intelligence import MarketEvidence, MarketOpportunity
 def make_opportunity() -> MarketOpportunity:
     return MarketOpportunity(
         marketplace="adobe_stock",
-        query="construction technology",
+        query="tactile material atmosphere",
         result_count=1000,
         demand_score=80,
         growth_score=75,
@@ -19,17 +19,25 @@ def make_opportunity() -> MarketOpportunity:
             MarketEvidence(
                 source="test",
                 url="https://example.com/evidence",
-                observed_at="2026-08-20T00:00:00Z",
+                observed_at="2026-08-24T00:00:00Z",
                 signal="buyer_use_case",
-                value="construction technology workflow",
+                value="web and product teams need compositable standalone visuals",
                 confidence="high",
             ),
         ),
     )
 
 
-def test_registry_is_non_empty():
-    assert len(BUYER_REGISTRY) >= 5
+def test_registry_contains_the_diversified_standalone_portfolio_segments():
+    segments = {buyer.segment for buyer in BUYER_REGISTRY}
+    assert segments == {
+        "web_product_teams",
+        "brand_marketing_teams",
+        "editorial_content_teams",
+        "small_business_commerce",
+        "social_creator_teams",
+        "local_brand_storytelling",
+    }
 
 
 def test_rank_buyers_returns_descending_scores():
@@ -45,9 +53,9 @@ def test_build_buyer_concept_brief_contains_constraints():
     brief = build_buyer_concept_brief(
         opportunity,
         buyer,
-        visual_problem="show physical and digital construction coordination",
-        subject="site supervisor reviewing field data",
-        composition="wide hero with copy space on right",
+        visual_problem="provide a flexible standalone material metaphor",
+        subject="single translucent resin pebble",
+        composition="single centered object with clean copy space",
     )
     assert brief["buyer"]["segment"] == buyer.segment
     assert brief["generation_constraints"]["visual_requirements"]

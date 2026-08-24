@@ -7,7 +7,7 @@ def opportunity():
     buyer = BUYER_REGISTRY[0].to_profile()
     return MarketOpportunity(
         marketplace="adobe_stock",
-        query="construction technology",
+        query="tactile material atmosphere",
         result_count=1000,
         demand_score=80,
         growth_score=75,
@@ -20,25 +20,28 @@ def opportunity():
         evidence=(MarketEvidence(
             source="test",
             url="https://example.com/evidence",
-            observed_at="2026-08-20T00:00:00Z",
+            observed_at="2026-08-24T00:00:00Z",
             signal="buyer_use_case",
-            value="construction software marketing",
+            value="compositable standalone visual for product marketing",
             confidence="high",
         ),),
     )
 
 
-def test_plan_creates_distinct_angles():
+def test_plan_creates_distinct_standalone_angles():
     plan = build_concept_plan(opportunity(), BUYER_REGISTRY[0], max_variants=4)
     assert len(plan.concepts) == 4
-    assert len({c.angle for c in plan.concepts}) == 4
-    assert all(c.uniqueness_levers for c in plan.concepts)
+    assert len({concept.angle for concept in plan.concepts}) == 4
+    assert all(concept.uniqueness_levers for concept in plan.concepts)
+    assert all("single" in concept.composition for concept in plan.concepts)
+    assert all("single tactile 3D interface metaphor" in concept.subject for concept in plan.concepts)
+    assert all("clean white studio background" in concept.environment for concept in plan.concepts)
 
 
 def test_plan_carries_buyer_job_and_channel():
     plan = build_concept_plan(opportunity(), BUYER_REGISTRY[0], max_variants=2)
-    assert all(c.buyer_job for c in plan.concepts)
-    assert all(c.channel for c in plan.concepts)
+    assert all(concept.buyer_job for concept in plan.concepts)
+    assert all(concept.channel for concept in plan.concepts)
 
 
 def test_variant_limit_is_guarded():

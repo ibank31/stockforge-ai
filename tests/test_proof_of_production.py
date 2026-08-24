@@ -36,7 +36,7 @@ class FakeProductionGenerator(ImageGenerator):
 
 def request() -> GenerationRequest:
     return GenerationRequest(
-        prompt="commercial construction workspace",
+        prompt="single tactile translucent resin pebble on a clean white background",
         width=2000,
         height=2000,
         model_id="proof-model",

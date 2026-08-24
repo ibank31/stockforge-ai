@@ -3,31 +3,31 @@ from stockforge.market_intelligence import BuyerProfile, MarketEvidence, MarketO
 
 def evidence():
     return (MarketEvidence(
-        source="Adobe Stock",
-        url="https://stock.adobe.com/",
-        observed_at="2026-08-20",
-        signal="supply",
-        value="dynamic marketplace result count",
+        source="Adobe 2026 Creative Trends",
+        url="https://business.adobe.com/resources/creative-trends-report.html",
+        observed_at="2026-08-24",
+        signal="cross_industry_visual_demand",
+        value="content leaders identify visual content as critical for key business communication",
         confidence="high",
     ),)
 
 
 def buyer():
     return BuyerProfile(
-        segment="construction_technology_marketing",
-        industry="construction_technology",
-        roles=("product_marketing", "content_marketing"),
-        communication_jobs=("website_hero", "blog_article"),
+        segment="web_product_teams",
+        industry="software_and_digital_products",
+        roles=("product_marketing", "developer_advocacy"),
+        communication_jobs=("landing_page", "feature_explainer"),
         channels=("web", "presentation"),
-        visual_requirements=("authentic_workflow", "copy_space"),
-        uniqueness_levers=("physical_digital_relationship", "specific_workflow"),
+        visual_requirements=("clear_silhouette", "compositing_flexibility"),
+        uniqueness_levers=("single_visual_metaphor", "material_specificity"),
     )
 
 
 def opportunity(**overrides):
     values = dict(
         marketplace="adobe_stock",
-        query="construction AI safety workflow",
+        query="tactile material atmosphere",
         result_count=10000,
         demand_score=80,
         growth_score=75,
@@ -74,11 +74,11 @@ def test_concept_brief_preserves_buyer_and_evidence():
     item = opportunity()
     brief = build_concept_brief(
         item,
-        visual_problem="communicate digital safety workflow",
-        subject="site supervisor reviewing a mobile inspection workflow",
-        composition="subject left with clean copy space right",
+        visual_problem="provide a flexible standalone material metaphor",
+        subject="single translucent resin pebble",
+        composition="single centered object with clean copy space",
     )
-    assert brief["buyer"] == "construction_technology_marketing"
-    assert brief["visual_problem"] == "communicate digital safety workflow"
-    assert brief["uniqueness_levers"] == ["physical_digital_relationship", "specific_workflow"]
+    assert brief["buyer"] == "web_product_teams"
+    assert brief["visual_problem"] == "provide a flexible standalone material metaphor"
+    assert brief["uniqueness_levers"] == ["single_visual_metaphor", "material_specificity"]
     assert len(brief["evidence"]) == 1

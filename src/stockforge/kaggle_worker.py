@@ -31,7 +31,7 @@ def repo_root() -> Path:
 def worker_dir() -> Path:
     """Return the Kaggle worker directory, overridable for custom layouts."""
     configured = os.environ.get("STOCKFORGE_KAGGLE_DIR")
-    return Path(configured).expanduser().resolve() if configured else repo_root() / "infrastructure/providers/kaggle"
+    return Path(configured).expanduser().resolve() if configured else repo_root() / "deploy/kaggle"
 
 
 def metadata_path() -> Path:

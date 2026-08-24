@@ -197,8 +197,8 @@ Acceptance / sales feedback
 - Seed: `2157290427964887587`
 - GPU-function seconds: `44.238`
 - Result: successful image returned by ZeroGPU API
-- Asset concept: construction project planning meeting
-- Result assessment: commercially promising, **not yet Adobe submission-ready**
+- Asset concept: standalone portfolio baseline; prior multi-object benchmark retired
+- Result assessment: generation infrastructure proven; first asset requires standalone quality-gate compliance before portfolio use
 
 ---
 

@@ -43,6 +43,11 @@ class JobManager:
             raise JobError("worker_id must be between 1 and 128 characters.")
         return self.database.claim_next_job(worker_id)
 
+    def claim(self, job_id: str, worker_id: str) -> Job:
+        if not worker_id or len(worker_id) > 128:
+            raise JobError("worker_id must be between 1 and 128 characters.")
+        return self.database.claim_job(job_id, worker_id)
+
     def complete(self, job_id: str, result: dict | None = None) -> Job:
         return self.database.complete_job(job_id, result or {})
 

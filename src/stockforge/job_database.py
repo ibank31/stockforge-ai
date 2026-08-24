@@ -118,6 +118,21 @@ class JobDatabase(Database):
             claimed = conn.execute("SELECT * FROM jobs WHERE id = ?", (row["id"],)).fetchone()
         return self._job_from_row(claimed)
 
+    def claim_job(self, job_id: str, worker_id: str) -> Job:
+        """Atomically claim one known queued job without taking another queue item."""
+        with self.connect() as conn:
+            updated = conn.execute(
+                """UPDATE jobs
+                SET status = 'running', worker_id = ?, attempts = attempts + 1,
+                    started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND status = 'queued' AND available_at <= CURRENT_TIMESTAMP""",
+                (worker_id, job_id),
+            )
+            if updated.rowcount != 1:
+                raise JobError("Only an available queued job can be claimed.")
+            row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        return self._job_from_row(row)
+
     def complete_job(self, job_id: str, result: dict[str, Any]) -> Job:
         with self.connect() as conn:
             updated = conn.execute(

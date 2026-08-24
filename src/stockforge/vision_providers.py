@@ -69,7 +69,7 @@ class QwenVLProvider:
                 "artifact_risk, unexpected_text, ip_risk, commercial. "
                 f"Context: {context}"
             )
-            # Keep the actual message construction isolated until the first
+            # Keep the actual message assembly isolated until the first
             # benchmark, because Transformers processor APIs vary by release.
             return ProviderResult(self.name, {}, raw={"prompt": prompt, "image": str(image_path)})
         except Exception as exc:

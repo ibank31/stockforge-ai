@@ -21,10 +21,11 @@ class RemoteGradioError(ProviderRuntimeError):
 class RemoteGradioProvider(GenerationProvider):
     """Call a Gradio worker using POST -> event_id -> SSE completion."""
 
-    def __init__(self, *, provider_id: str, base_url: str, output_dir: Path, token: str | None = None, api_name: str = "generate_remote", timeout_seconds: float = 300.0, capabilities: frozenset[str] | None = None) -> None:
+    def __init__(self, *, provider_id: str, base_url: str, output_dir: Path, token: str | None = None, api_name: str = "generate", timeout_seconds: float = 300.0, capabilities: frozenset[str] | None = None) -> None:
         self.provider_id = provider_id
         self.base_url = base_url.rstrip("/")
         self.output_dir = Path(output_dir).resolve()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         self.token = token
         self.api_name = api_name.strip("/")
         self.timeout_seconds = timeout_seconds
@@ -40,7 +41,7 @@ class RemoteGradioProvider(GenerationProvider):
     def generate(self, request: GenerationRequest) -> GenerationResult:
         job = self.submit(request)
         terminal = self.wait(job.provider_job_id)
-        if terminal.state != "succeeded" or terminal.result is None:
+        if terminal.state not in {"completed", "succeeded"} or terminal.result is None:
             raise RemoteGradioError(terminal.error_message or "Remote generation failed")
         return terminal.result
 
@@ -49,8 +50,15 @@ class RemoteGradioProvider(GenerationProvider):
         existing = self._jobs.get(durable_id)
         if existing is not None:
             return existing
-        payload = {"data": [request.prompt, request.width, request.height, request.steps, request.seed or 0, request.seed is None, durable_id]}
-        event = self._request_json("POST", f"/gradio_api/call/{self.api_name}", payload)
+        payload = {
+            "prompt": request.prompt,
+            "width": request.width,
+            "height": request.height,
+            "steps": request.steps,
+            "seed": request.seed or 0,
+            "randomize_seed": request.seed is None,
+        }
+        event = self._request_json("POST", f"/gradio_api/call/v2/{self.api_name}", payload)
         event_id = str(event.get("event_id") or "")
         if not event_id:
             raise RemoteGradioError("Remote worker did not return event_id")
@@ -63,15 +71,18 @@ class RemoteGradioProvider(GenerationProvider):
         cached = self._jobs.get(provider_job_id)
         if cached is None:
             raise RemoteGradioError(f"Unknown provider job: {provider_job_id}")
-        if cached.state in {"succeeded", "failed", "cancelled"}:
+        if cached.state in {"completed", "succeeded", "failed", "cancelled"}:
             return cached
         return self._poll(provider_job_id)
 
-    def wait(self, provider_job_id: str) -> ProviderJob:
-        deadline = time.monotonic() + self.timeout_seconds
+    def wait(self, provider_job_id: str, *, timeout_seconds: float | None = None) -> ProviderJob:
+        effective_timeout = self.timeout_seconds if timeout_seconds is None else timeout_seconds
+        if effective_timeout <= 0:
+            raise RemoteGradioError("timeout_seconds must be positive")
+        deadline = time.monotonic() + effective_timeout
         while time.monotonic() < deadline:
             current = self.status(provider_job_id)
-            if current.state in {"succeeded", "failed", "cancelled"}:
+            if current.state in {"completed", "succeeded", "failed", "cancelled"}:
                 return current
             time.sleep(1.0)
         failed = ProviderJob(provider_job_id, "failed", error_code="provider_timeout", error_message="Remote generation timed out")
@@ -97,7 +108,7 @@ class RemoteGradioProvider(GenerationProvider):
             refs = self._materialize_outputs(values[0], durable_id)
             self._outputs[durable_id] = refs
             result = GenerationResult(status="succeeded", artifact_ids=(f"provider:{durable_id}:0",), provider_job_id=durable_id, seed=int(values[1]) if len(values) > 1 and values[1] is not None else None, parameters={"remote_provider": self.provider_id, "gpu_seconds": values[2] if len(values) > 2 else None})
-            job = ProviderJob(durable_id, "succeeded", result=result)
+            job = ProviderJob(durable_id, "completed", result=result)
         elif event in {"error", "exception"}:
             job = ProviderJob(durable_id, "failed", error_code="remote_generation_failed", error_message=data or event)
         else:

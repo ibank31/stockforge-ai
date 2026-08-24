@@ -61,40 +61,41 @@ def _channels(buyer: BuyerRegistryEntry) -> tuple[str, ...]:
 
 
 def _default_scene(buyer: BuyerRegistryEntry) -> tuple[str, str, str]:
-    if buyer.segment == "construction_saas_marketing":
+    """Return a broad, standalone-first default without importing an industry scene."""
+    if buyer.segment == "web_product_teams":
         return (
-            "site supervisor reviewing project information on a tablet",
-            "compare live field conditions with non-branded digital project data",
-            "active construction site with authentic equipment and restrained technology cues",
+            "a single tactile 3D interface metaphor with a clear, extraction-friendly silhouette",
+            "give a product team a flexible hero or explainer asset without UI text or branding",
+            "clean white studio background with no people, hands, screens, devices, or extra props",
         )
-    if buyer.segment == "construction_contractor":
+    if buyer.segment == "brand_marketing_teams":
         return (
-            "construction supervisor conducting a documented site safety inspection",
-            "identify and document a specific site safety condition",
-            "active worksite with credible PPE, materials, barriers, and work context",
+            "one playful surreal object with a readable visual metaphor",
+            "create immediate campaign impact while preserving generous copy space",
+            "clean white studio background with no people, hands, tools, devices, or unrelated props",
         )
-    if buyer.segment == "engineering_consultant":
+    if buyer.segment == "editorial_content_teams":
         return (
-            "engineer inspecting infrastructure while reviewing technical documentation",
-            "measure and assess a real engineering condition",
-            "infrastructure site with realistic surveying and inspection context",
+            "one editorial symbolic object with tactile crafted material detail",
+            "communicate a story at thumbnail size without requiring headline text inside the image",
+            "clean white studio background with no people, hands, screens, numbers, or decorative frames",
         )
-    if buyer.segment == "property_marketing":
+    if buyer.segment == "small_business_commerce":
         return (
-            "resident or prospective buyer experiencing a completed development",
-            "show how the built environment supports a specific lifestyle need",
-            "regionally grounded residential environment with believable materials and landscaping",
+            "one material-rich generic product-adjacent prop with no brand identity",
+            "supply a flexible visual accent for commerce, email, and packaging layouts",
+            "clean white studio background with no people, hands, labels, packaging text, or extra props",
         )
-    if buyer.segment == "saas_enterprise_marketing":
+    if buyer.segment == "social_creator_teams":
         return (
-            "professional using software to solve a concrete workplace problem",
-            "show a human decision enabled by technology rather than abstract holograms",
-            "credible workplace with restrained, non-branded digital interface cues",
+            "one bold, playful, standalone icon-like object",
+            "achieve immediate recognition across square and vertical social crops",
+            "clean white studio background with no people, hands, text, numbers, screens, or props",
         )
     return (
-        "professional performing a concrete sustainability-related workplace action",
-        "show a measurable human action and its real-world consequence",
-        "credible workplace or operational environment with restrained visual symbolism",
+        "one tactile craft or natural motif with a complete silhouette",
+        "support authentic brand storytelling without claiming a culture or location not in the brief",
+        "clean white studio background with no people, hands, stamps, postmarks, tools, or extra props",
     )
 
 
@@ -128,10 +129,10 @@ def build_concept_plan(
 
     variants: list[ConceptVariant] = []
     templates = (
-        ("hero", "wide environmental hero", "right", "subject left, clean copy space right"),
-        ("workflow", "observational workflow scene", "left", "balanced editorial composition with negative space"),
-        ("detail", "operational detail", "top", "tight detail with controlled background separation"),
-        ("decision", "human decision moment", "right", "medium shot with contextual environment and copy space"),
+        ("hero", "standalone hero asset", "right", "single centered object with clean copy space right"),
+        ("editorial", "standalone editorial object", "left", "single object with balanced negative space and no environmental context"),
+        ("detail", "material detail asset", "top", "single complete object with tactile detail and controlled edge separation"),
+        ("social", "standalone social asset", "right", "single bold object with square-crop resilience and no supporting props"),
     )
     for index, (angle, composition_name, copy_space, composition) in enumerate(templates[:max_variants], start=1):
         variants.append(

@@ -1,28 +1,28 @@
-from stockforge.prompt_compiler import compile_prompt
 from stockforge.concept_engine import ConceptVariant
+from stockforge.prompt_compiler import compile_prompt
 
 
 def make_concept() -> ConceptVariant:
     return ConceptVariant(
-        concept_id="construction-saas-hero-1",
+        concept_id="web-product-material-hero-1",
         angle="hero",
-        visual_problem="show physical and digital construction coordination",
-        subject="site supervisor reviewing project information on a tablet",
-        action="compare live field conditions with non-branded digital project data",
-        environment="active construction site with authentic equipment",
-        composition="subject left, clean copy space right",
+        visual_problem="provide a compositable tactile material metaphor",
+        subject="single translucent resin pebble with soft internal color gradient",
+        action="communicate product value through one clear non-text visual metaphor",
+        environment="clean white studio background with no people, hands, devices, screens, or props",
+        composition="single centered object, clean copy space right",
         copy_space="right",
-        uniqueness_levers=("physical_digital_relationship", "specific_workflow"),
-        buyer_job="website_hero",
+        uniqueness_levers=("single_visual_metaphor", "material_specificity"),
+        buyer_job="landing_page",
         channel="web",
     )
 
 
 def test_compiler_contains_concept_and_buyer_job():
     package = compile_prompt(make_concept())
-    assert "site supervisor" in package.prompt
-    assert "website_hero" in package.prompt
-    assert "physical_digital_relationship" in package.prompt
+    assert "translucent resin pebble" in package.prompt
+    assert "landing_page" in package.prompt
+    assert "single_visual_metaphor" in package.prompt
 
 
 def test_compiler_adds_ip_and_quality_constraints():
