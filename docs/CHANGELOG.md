@@ -2,6 +2,14 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Engine maturation: selector, SVG presets, metadata policy, and delivery tests
+
+### Additional implementation
+
+- Centralized nonvisual keyword filtering so workflow/use-case terms are excluded from portfolio drafts as well as final upload metadata.
+- Preserved the existing upload-bundle constant as a compatibility alias and kept the final portal fields manual.
+- Full verification after this milestone: **267 passed, 1 skipped**; no generation, provider call, or upload was performed.
+
 ## 2026-08-24 — Engine maturation: selector, SVG presets, native-vector lane, and delivery tests
 
 ### Additional implementation

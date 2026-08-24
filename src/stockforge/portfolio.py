@@ -15,6 +15,7 @@ from typing import Literal
 from .asset_prompt_compiler import compile_asset_prompt
 from .asset_spec import AssetSpec
 from .prompt_compiler import PromptPackage
+from .metadata_policy import filter_visual_keywords
 
 
 Tier = Literal["first", "secondary", "experimental"]
@@ -632,11 +633,12 @@ def _metadata_for(lane: PortfolioLane, concept: LaneConcept) -> PortfolioMetadat
     reviewed = REVIEWED_CONCEPT_METADATA.get((lane.key, concept.key), {})
     title = str(reviewed.get("title") or f"{lane.name}: {concept.subject}")
     raw_keywords = reviewed.get("keywords")
-    keywords = (
+    raw_keyword_candidates = (
         tuple(raw_keywords)
         if isinstance(raw_keywords, tuple)
         else tuple(dict.fromkeys((*lane.keywords, *concept.originality_levers, lane.asset_type)))
     )
+    keywords, _removed_nonvisual = filter_visual_keywords(raw_keyword_candidates)
     metadata = PortfolioMetadataDraft(
         title=title,
         keywords=keywords,

@@ -12,6 +12,7 @@ from typing import Any
 
 from .adobe_gate import inspect_image
 from .database import Database
+from .metadata_policy import NONVISUAL_METADATA_KEYWORDS
 
 
 class AdobeUploadBundleError(RuntimeError):
@@ -33,18 +34,7 @@ MAX_KEYWORDS = 50
 # These phrases describe workflow, buyer use, or the generation method rather
 # than visible subject matter.  They must never be embedded in an Adobe upload
 # JPEG, even if they appeared in an earlier portfolio draft.
-NONVISUAL_UPLOAD_KEYWORDS = frozenset({
-    "website hero background",
-    "website background",
-    "presentation cover",
-    "brand system",
-    "generative ai",
-    "marketing landing page",
-    "saas launch",
-    "agency presentation",
-    "social media element",
-    "small business social",
-})
+NONVISUAL_UPLOAD_KEYWORDS = NONVISUAL_METADATA_KEYWORDS
 
 
 @dataclass(frozen=True, slots=True)
