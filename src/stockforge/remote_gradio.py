@@ -21,7 +21,7 @@ class RemoteGradioError(ProviderRuntimeError):
 class RemoteGradioProvider(GenerationProvider):
     """Call a Gradio worker using POST -> event_id -> SSE completion."""
 
-    def __init__(self, *, provider_id: str, base_url: str, output_dir: Path, token: str | None = None, api_name: str = "generate_remote", timeout_seconds: float = 300.0, capabilities: frozenset[str] | None = None) -> None:
+    def __init__(self, *, provider_id: str, base_url: str, output_dir: Path, token: str | None = None, api_name: str = "generate", timeout_seconds: float = 300.0, capabilities: frozenset[str] | None = None) -> None:
         self.provider_id = provider_id
         self.base_url = base_url.rstrip("/")
         self.output_dir = Path(output_dir).resolve()
@@ -50,8 +50,15 @@ class RemoteGradioProvider(GenerationProvider):
         existing = self._jobs.get(durable_id)
         if existing is not None:
             return existing
-        payload = {"data": [request.prompt, request.width, request.height, request.steps, request.seed or 0, request.seed is None, durable_id]}
-        event = self._request_json("POST", f"/gradio_api/call/{self.api_name}", payload)
+        payload = {
+            "prompt": request.prompt,
+            "width": request.width,
+            "height": request.height,
+            "steps": request.steps,
+            "seed": request.seed or 0,
+            "randomize_seed": request.seed is None,
+        }
+        event = self._request_json("POST", f"/gradio_api/call/v2/{self.api_name}", payload)
         event_id = str(event.get("event_id") or "")
         if not event_id:
             raise RemoteGradioError("Remote worker did not return event_id")
@@ -64,7 +71,7 @@ class RemoteGradioProvider(GenerationProvider):
         cached = self._jobs.get(provider_job_id)
         if cached is None:
             raise RemoteGradioError(f"Unknown provider job: {provider_job_id}")
-        if cached.state in {"succeeded", "failed", "cancelled"}:
+        if cached.state in {"completed", "succeeded", "failed", "cancelled"}:
             return cached
         return self._poll(provider_job_id)
 
@@ -72,7 +79,7 @@ class RemoteGradioProvider(GenerationProvider):
         deadline = time.monotonic() + self.timeout_seconds
         while time.monotonic() < deadline:
             current = self.status(provider_job_id)
-            if current.state in {"succeeded", "failed", "cancelled"}:
+            if current.state in {"completed", "succeeded", "failed", "cancelled"}:
                 return current
             time.sleep(1.0)
         failed = ProviderJob(provider_job_id, "failed", error_code="provider_timeout", error_message="Remote generation timed out")
