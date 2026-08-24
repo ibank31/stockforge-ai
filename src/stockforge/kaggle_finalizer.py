@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import shutil
@@ -108,9 +109,19 @@ def submit(*, request: str | Path, project_root: str | Path, accelerator: str = 
     with tempfile.TemporaryDirectory(prefix="stockforge-kaggle-finalizer-") as temporary:
         staged = Path(temporary) / "worker"
         shutil.copytree(finalizer_dir(), staged)
-        (staged / "input").mkdir()
-        shutil.copy2(source_path, staged / "input" / source_path.name)
-        shutil.copy2(request_path, staged / "request.json")
+        # Kaggle kernel pushes reliably carry code but do not preserve arbitrary
+        # request/input sidecars. Embed the one selected preview and request in a
+        # transient Python module that is deleted with this staging directory.
+        staged_input = staged / "stockforge_staged_input.py"
+        request_b64 = base64.b64encode(request_path.read_bytes()).decode("ascii")
+        source_b64 = base64.b64encode(source_path.read_bytes()).decode("ascii")
+        staged_input.write_text(
+            "# Generated transiently by StockForge; never commit this file.\\n"
+            f"REQUEST_B64 = {request_b64!r}\\n"
+            f"SOURCE_NAME = {source_path.name!r}\\n"
+            f"SOURCE_B64 = {source_b64!r}\\n",
+            encoding="utf-8",
+        )
         result = _run(
             ["kaggle", "kernels", "push", "-p", str(staged), "--accelerator", accelerator]
         )

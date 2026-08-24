@@ -7,6 +7,7 @@ request into one JPEG master plus a manifest for the Termux control plane.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -35,6 +36,20 @@ def sha256_file(path: Path) -> str:
 
 def srgb_bytes() -> bytes:
     return ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+
+
+def materialize_staged_input() -> None:
+    """Restore the one request/preview embedded by the private Termux staging step."""
+    try:
+        from stockforge_staged_input import REQUEST_B64, SOURCE_B64, SOURCE_NAME
+    except ImportError:
+        return
+    request_bytes = base64.b64decode(REQUEST_B64)
+    source_bytes = base64.b64decode(SOURCE_B64)
+    REQUEST_PATH.write_bytes(request_bytes)
+    input_dir = Path("input")
+    input_dir.mkdir(parents=True, exist_ok=True)
+    (input_dir / Path(str(SOURCE_NAME)).name).write_bytes(source_bytes)
 
 
 def load_request() -> dict:
@@ -184,6 +199,7 @@ def finalize(data: dict, source_path: Path) -> dict:
 
 
 def main() -> None:
+    materialize_staged_input()
     data = load_request()
     result = finalize(data, source_file(data))
     (OUTPUT_DIR / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
