@@ -44,10 +44,12 @@ def test_native_object_recommendation_resolves_to_valid_svg_briefs() -> None:
 
     policy = select_asset_type("native_object")
     lane = lane_for(policy.recommended_lane_keys[0])
-    brief = build_brief(lane.key, "modular-ribbon")
+    brief = build_brief(lane.key, policy.recommended_concept_keys[0])
 
+    assert brief.concept.key == "folder-upload"
     assert brief.asset_spec.product_kind == "native_vector"
     assert brief.asset_spec.delivery_format == "svg"
+    assert "file management" in brief.asset_spec.buyer_job
     assert brief.metadata.human_review_required is True
 
 

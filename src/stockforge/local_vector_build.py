@@ -53,7 +53,9 @@ def build_local_native_vector(
     tags = tuple(str(item).casefold() for item in spec.tags)
     if any("pattern" in item for item in tags):
         preset = "geometric_pattern"
-    elif any("technical" in item or "badge" in item or "icon" in item for item in tags):
+    elif any("folder" in item and "upload" in item for item in tags):
+        preset = "folder_upload"
+    elif any("technical" in item or "badge" in item for item in tags):
         preset = "technical_badge"
     else:
         preset = "modular_ribbon"

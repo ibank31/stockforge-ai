@@ -2,6 +2,17 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Research-backed folder-upload SVG lane and semantic trial preparation
+
+### DONE — one-candidate implementation preparation
+
+- Completed deep research using Adobe Stock technical/design/legal guidance, Adobe and Envato trend reports, Etsy buyer-context signals, and Adobe search snapshots. The evidence supports a buyer-job-first SVG strategy rather than abstract decorative geometry.
+- Added the `folder-upload` concept as the default `native_object` recommendation, tied to file management and cloud workflow use cases.
+- Added a deterministic native SVG folder-upload preset with a recognizable folder silhouette, integrated upload arrow, tight square framing, transparent canvas, and no text/raster/script/external content.
+- Kept `modular-ribbon` and `technical-badge` available only as legacy/regression concepts; the rejected modular-ribbon trial remains evidence that technical validity does not prove buyer-fit.
+- Added regression coverage for selector resolution and folder-upload structural safety.
+- Full verification: **273 passed, 1 skipped, 45 non-blocking Pillow deprecation warnings**. No provider, GPU, Kaggle, portal, upload, or new folder-upload trial was run.
+
 ## 2026-08-24 — Engine maturation: selector, SVG presets, pattern gate, metadata policy, and delivery tests
 
 ### Additional implementation

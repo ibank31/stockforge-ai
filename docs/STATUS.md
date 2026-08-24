@@ -23,9 +23,9 @@ The JPEG path is the only generative route with a recorded live preview and comp
 
 ## Completed foundation
 
-The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, Adobe metadata upload-copy workflow, deterministic native SVG presets for modular ribbons, technical badges, and geometric patterns, plus dedicated native-vector element and pattern lanes.
+The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, Adobe metadata upload-copy workflow, deterministic native SVG presets for a research-backed folder-upload icon, modular ribbons, technical badges, and geometric patterns, plus dedicated native-vector element and pattern lanes.
 
-`portfolio asset-types` lists the supported asset categories. `portfolio readiness --asset-type <type>` explains the chosen format, readiness state, blockers, candidate niches, and next step without calling a provider. `portfolio plan-type --asset-type <type>` turns a supported choice into one evidence-aligned brief with niche, prompt, format route, and no-generation notice. `portfolio trial-readiness` requires a written hypothesis and purpose before a future provider call, and enforces one candidate per trial. The selector fails closed rather than silently converting an unsupported type into JPEG.
+`portfolio asset-types` lists the supported asset categories. `portfolio readiness --asset-type <type>` explains the chosen format, readiness state, blockers, candidate niches, and next step without calling a provider. `portfolio plan-type --asset-type <type>` turns a supported choice into one evidence-aligned brief with niche, prompt, format route, and no-generation notice; `native_object` now defaults to the research-backed `folder-upload` icon hypothesis. `portfolio trial-readiness` requires a written hypothesis and purpose before a future provider call, and enforces one candidate per trial. The selector fails closed rather than silently converting an unsupported type into JPEG.
 
 The remote worker contract is aligned with the deployed `generate_remote` endpoint. It uses a durable `stockforge_job_id`, bounded single-image requests, terminal-state polling, and output ingestion. The ZeroGPU deployment entrypoint is `deploy/zerogpu/remote_api.py` for programmatic generation.
 
@@ -43,7 +43,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Current priorities
 
-1. Expand deterministic native SVG builders for object, technical, food/produce, badge, simple-character, and geometric-pattern families.
+1. Complete the semantic review and one controlled local trial for the research-backed folder-upload SVG icon, then expand deterministic native SVG builders for technical, food/produce, badge, simple-character, and geometric-pattern families only when each has a clear buyer job.
 2. Keep JPEG scene generation behind the pre-GPU prompt, rights, layout, quota, and visual-quality gates.
 3. Build a local PNG alpha producer with true-alpha assertion, anti-fringe checks, canvas trimming, sRGB validation, and one controlled portal validation.
 4. Connect evidence logs to buyer-job and format routing without turning engagement or earnings screenshots into sales forecasts.
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **272 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
+The current main branch has passed **273 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass after the folder-upload lane changes; the working tree must be rechecked after the milestone commit.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
@@ -79,6 +79,7 @@ Every reviewed generation can be recorded in the project-local append-only ledge
 | Current architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | Feature state and next work | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
 | Product/format decision | [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) |
+| SVG market research | [`research/SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) and [`research/svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) |
 | Marketplace readiness | [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) |
 | Android operation | [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) |
 | History | [`CHANGELOG.md`](CHANGELOG.md) |

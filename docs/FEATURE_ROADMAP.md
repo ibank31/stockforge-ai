@@ -25,7 +25,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Intelligence | Market evidence and buyer taxonomy | DONE | Deterministic module tests; evidence remains human/public-source bounded |
 | Intelligence | Concept planner and prompt compiler | DONE | Concept/prompt tests |
 | Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types`, `portfolio readiness`, and `portfolio plan-type` dry-run; includes recommended research lanes and never calls a provider |
-| Intelligence | Native vector utility lane | DONE | Two controlled briefs: modular ribbon and technical badge; local SVG route only |
+| Intelligence | Native vector utility lane | DONE | Research-backed `folder-upload` brief leads the lane; legacy modular ribbon and technical badge remain regression/history briefs; local SVG route only |
 | Intelligence | Native vector pattern lane | DONE | One controlled repeatable geometric tile brief; local SVG route with structural repeatability gate and one-trial readiness |
 | Generation | Provider-neutral GenerationRequest/Result | DONE | Generation contract tests |
 | Generation | Provider capability/quota router | DONE | Router tests, including exhausted quota |
@@ -33,7 +33,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Generation | Hugging Face ZeroGPU preview route | LIVE | Recorded Z-Image Turbo benchmark and selected preview workflow |
 | Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
 | Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow |
-| Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon, technical badge, and geometric pattern presets pass local structure/repeatability tests; pattern is eligible for one local trial, while broader object/icon family and Adobe portal remain pending |
+| Format | Native SVG deterministic route | IN PROGRESS | Folder-upload, modular ribbon, technical badge, and geometric pattern presets pass local native-structure tests; folder-upload is the next controlled local trial hypothesis, while human semantic review and Adobe portal validation remain pending |
 | Format | PNG true-alpha route | BLOCKED | Conservative alpha normalizer exists; production route still needs anti-fringe, trim policy, and one portal validation |
 | Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
 | QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |
@@ -53,7 +53,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 
 ## Active priorities
 
-1. Complete native SVG builders for object, technical, food/produce, badge, simple-character, and geometric-pattern families; modular ribbon and technical badge are the first controlled presets.
+1. Validate the research-backed folder-upload single-icon hypothesis through semantic review and one controlled local SVG trial, then expand native SVG builders for technical, food/produce, badge, simple-character, and pattern families only when each has a clear buyer job.
 2. Keep PNG alpha blocked until its producer and portal path are independently verified.
 3. Strengthen provider health, quota, retry, and failover without duplicating logical jobs.
 4. Add semantic/commercial QA benchmarks using labeled internal outputs, not generic leaderboards alone.

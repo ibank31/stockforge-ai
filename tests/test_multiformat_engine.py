@@ -6,7 +6,7 @@ import pytest
 from stockforge.adobe_png_gate import inspect_transparent_png
 from stockforge.asset_spec import AssetSpec, AssetSpecError
 from stockforge.format_router import FormatRoutingError, require_production_route, route_asset_spec
-from stockforge.native_vector import build_modular_ribbon_svg, inspect_native_svg
+from stockforge.native_vector import build_folder_upload_svg, build_modular_ribbon_svg, inspect_native_svg
 
 
 def _spec(**overrides: object) -> AssetSpec:
@@ -109,6 +109,32 @@ def test_native_vector_route_builds_auditable_svg_without_gpu(tmp_path: Path) ->
     assert report.transparent_background is True
     assert report.native_paths_only is True
     assert inspect_native_svg(tmp_path / "modular-ribbon.svg").ready is True
+
+
+def test_folder_upload_preset_builds_recognizable_native_svg_without_raster_or_text(tmp_path: Path) -> None:
+    spec = _spec(
+        asset_id="folder-upload",
+        asset_type="icon",
+        product_kind="native_vector",
+        delivery_format="svg",
+        layout_mode="square",
+        background_policy="transparent",
+        medium="editable SVG folder and upload arrow geometry",
+        subject="a single recognizable folder icon with one upward upload arrow",
+        palette=("#164E63", "#F8FAFC", "#F59E0B"),
+        tags=("native_vector_elements", "folder-upload"),
+    )
+
+    report = build_folder_upload_svg(spec, tmp_path / "folder-upload.svg")
+
+    assert report.ready is True
+    assert report.native_paths_only is True
+    assert report.transparent_background is True
+    svg = (tmp_path / "folder-upload.svg").read_text(encoding="utf-8")
+    assert "native-vector-folder-upload-v1" in svg
+    assert "folder upload icon" in svg
+    assert "<text" not in svg
+    assert "<image" not in svg
 
 
 def test_native_vector_rejects_scene_contract() -> None:

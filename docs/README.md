@@ -55,6 +55,8 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 - [`VISION_PROVIDER_BENCHMARK.md`](VISION_PROVIDER_BENCHMARK.md)
 - [`PORTFOLIO_STANDALONE_RESEARCH_2026.md`](PORTFOLIO_STANDALONE_RESEARCH_2026.md)
 - [`FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md`](FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md)
+- [`SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) — deep research SVG market, buyer jobs, competition proxies, trends, and first folder-upload hypothesis.
+- [`svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) — raw source notes and caveats for the SVG research.
 
 ## Riset terarsip tetapi masih menjadi bukti
 

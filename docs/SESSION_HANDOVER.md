@@ -17,7 +17,7 @@ Mulai sesi baru dengan membaca:
 ## Current product decision
 
 - **JPEG raster:** aktif untuk scene konseptual, surreal, seasonal, workplace, nature, dan visual dengan lighting/depth kompleks.
-- **Native SVG:** aktif secara lokal untuk object/icon/technical/geometric assets yang genuine editable.
+- **Native SVG:** aktif secara lokal untuk genuine editable object/icon/technical/geometric assets; default `native_object` sekarang adalah research-backed `folder-upload` single icon.
 - **PNG transparan:** masih blocked sampai true alpha producer, anti-fringe, trim, sRGB, dan portal validation lulus.
 - **Seamless pattern:** wajib lulus `seamless_pattern` edge gate dan review visual.
 - **Quote/typography dan video:** research only.
@@ -34,7 +34,7 @@ Setiap GPU job harus memiliki buyer hypothesis dan tujuan yang jelas. Jangan mel
 
 ## Current engineering state
 
-Branch remote dan lokal hanya `main`. Commit aktif terakhir adalah `deffddf`; current SVG trial evidence is stored under `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **272 passed, 1 skipped**. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
+Branch remote dan lokal hanya `main`. Folder-upload SVG lane changes are prepared on top of the rejected modular-ribbon evidence; the next commit must update this handover's exact hash. Current SVG trial evidence is stored under `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **273 passed, 1 skipped**. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
 
 ## Output and learning contract
 
@@ -44,4 +44,4 @@ After a human review, record the result with `portfolio evaluate`. The append-on
 
 ## Next safe work
 
-The asset-type selector, readiness report, trial-readiness guard, and native SVG pattern/object presets are complete. One local modular-ribbon SVG trial was built and passed structural checks; its technical status is PASS but its commercial status remains REVIEW_REQUIRED. Evidence is in `trial_outputs/svg_modular_ribbon/`. Do not mark it upload-ready or add a learning score until human review is recorded. PNG remains blocked until an alpha-capable path and portal validation are complete. A future remote generation requires a documented hypothesis, one controlled candidate, full review, and an evaluation record before it can inform any future engine change.
+The asset-type selector, readiness report, trial-readiness guard, and native SVG pattern/object presets are complete. The rejected local modular-ribbon SVG trial remains evidence: structural status PASS, commercial status rejected at **2/10** because the buyer could not identify the object or its use. Deep research now supports `folder-upload` as the default `native_object` hypothesis; its deterministic preset, metadata, artboard contract, and regression gates are implemented, but no folder-upload trial has been run. Evidence is in `trial_outputs/svg_modular_ribbon/` and `docs/research/SVG_MARKET_RESEARCH_2026-08-24.md`. Do not mark any SVG upload-ready or claim portal acceptance. PNG remains blocked until an alpha-capable path and portal validation are complete. A future trial requires the documented hypothesis, one controlled candidate, full human review, and an evaluation record before it can inform any future engine change.

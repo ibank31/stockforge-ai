@@ -136,6 +136,74 @@ def build_modular_ribbon_svg(spec: AssetSpec, destination: str | Path) -> Native
     return report
 
 
+def build_folder_upload_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
+    """Build one recognizable folder-upload icon for file-management workflows."""
+    route = require_production_route(spec)
+    if route.product_kind != "native_vector":
+        raise NativeVectorError("Native SVG construction requires product_kind='native_vector'.")
+    if spec.background_policy not in {"transparent", "white"}:
+        raise NativeVectorError("Native SVG products require a transparent or white background policy.")
+    if spec.text_policy != "none":
+        raise NativeVectorError("Native SVG preset does not support text-bearing products.")
+    if spec.isolation_policy != "isolated" or spec.layout_mode != "square":
+        raise NativeVectorError("Folder-upload icon requires isolated square framing.")
+
+    width = height = 2048
+    primary, _secondary, accent = _palette(spec)
+    root = ET.Element(f"{{{SVG_NS}}}svg", {
+        "width": str(width),
+        "height": str(height),
+        "viewBox": f"0 0 {width} {height}",
+        "version": "1.1",
+        "data-stockforge": "native-vector-folder-upload-v1",
+        "aria-label": "folder upload icon",
+    })
+    if spec.background_policy == "white":
+        _append(root, "rect", x="0", y="0", width=str(width), height=str(height), fill="#FFFFFF")
+
+    group = _append(root, "g", stroke_linecap="round", stroke_linejoin="round")
+    # The orange folder body and dark tab produce a two-part silhouette that
+    # remains legible at thumbnail size. The white upward arrow is integrated
+    # into the folder front so the buyer job is visible without a caption.
+    _append(
+        group,
+        "path",
+        d="M 360 700 Q 360 620 440 620 L 790 620 L 930 790 L 1688 790 Q 1768 790 1768 870 L 1768 1430 Q 1768 1510 1688 1510 L 440 1510 Q 360 1510 360 1430 Z",
+        fill=accent,
+        stroke=primary,
+        stroke_width="72",
+    )
+    _append(
+        group,
+        "path",
+        d="M 360 840 Q 360 760 440 760 L 790 760 L 930 930 L 1688 930",
+        fill="none",
+        stroke=primary,
+        stroke_width="72",
+    )
+    _append(
+        group,
+        "path",
+        d="M 1030 1360 L 1030 1030 M 860 1200 L 1030 1030 L 1200 1200",
+        fill="none",
+        stroke="#F8FAFC",
+        stroke_width="108",
+    )
+
+    raw = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    path = Path(destination).expanduser().resolve()
+    if path.suffix.lower() != ".svg":
+        raise NativeVectorError("Native vector destination must use the .svg extension.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    report = inspect_native_svg(path)
+    if not report.ready:
+        path.unlink(missing_ok=True)
+        details = "; ".join(f"{name}: {detail}" for name, detail in report.checks)
+        raise NativeVectorError(f"Generated SVG failed its own native-vector gate: {details}")
+    return report
+
+
 def build_technical_badge_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
     """Build one editable technical badge without text, logos, or raster embeds."""
     route = require_production_route(spec)
@@ -234,6 +302,8 @@ def build_svg_for_preset(spec: AssetSpec, destination: str | Path, preset: str =
     normalized = preset.strip().casefold()
     if normalized == "modular_ribbon":
         return build_modular_ribbon_svg(spec, destination)
+    if normalized == "folder_upload":
+        return build_folder_upload_svg(spec, destination)
     if normalized == "technical_badge":
         return build_technical_badge_svg(spec, destination)
     if normalized == "geometric_pattern":
