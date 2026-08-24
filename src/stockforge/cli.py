@@ -34,6 +34,7 @@ from .artifact import sha256_file
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
 from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
+from .model_catalog import list_image_models
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .release_package import build_release_package
 from .termux_control import (
@@ -148,6 +149,19 @@ def provider_configure(
     typer.echo(f"Endpoint: {provider.endpoint}")
     typer.echo(f"Profile: {profile}")
     typer.echo(f"Secret environment variable: {provider.secret_env or '-'}")
+
+
+@provider_app.command("models")
+def provider_models(json_output: bool = typer.Option(False, "--json")) -> None:
+    """List evidence-backed image models without configuring or calling a provider."""
+    records = [record.to_dict() for record in list_image_models()]
+    if json_output:
+        typer.echo(json.dumps(records, indent=2))
+        return
+    for record in records:
+        typer.echo(
+            f"{record['profile']}\t{record['readiness']}\t{record['license_id']}\t{record['primary_use']}"
+        )
 
 
 @provider_app.command("list")
@@ -321,7 +335,12 @@ def _run_one_generation(
     project_record = projects[0]
     project_root = Path(project_record["path"]).resolve()
     try:
-        base_request = profile_for(profile).request(prompt, seed=seed, canvas=canvas)
+        base_request = profile_for(profile).request(
+            prompt,
+            seed=seed,
+            canvas=canvas,
+            apply_standalone_policy=portfolio_context is None,
+        )
         parameters = dict(base_request.parameters)
         if portfolio_context is not None:
             parameters["portfolio"] = portfolio_context
@@ -659,7 +678,7 @@ def portfolio_generate(
     provider: str | None = typer.Option(None, "--provider"),
     profile: str = typer.Option("z-image-turbo", "--profile"),
     seed: int | None = typer.Option(None, "--seed", min=0),
-    canvas: str = typer.Option("square", "--canvas", help="Pre-approved canvas: square or hero-landscape."),
+    canvas: str | None = typer.Option(None, "--canvas", help="Optional override: square or hero-landscape. Defaults to the brief's layout recommendation."),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """Generate exactly one selected saved brief with immutable portfolio lineage."""
@@ -675,13 +694,14 @@ def portfolio_generate(
             )
         context = portfolio_snapshot(data, selected, plan_path)
         context["pre_gpu_gate"] = preflight
+        selected_canvas = canvas or str(preflight["recommended_canvas"])
         output = _run_one_generation(
             project=project,
             prompt=selected["prompt_package"]["prompt"],
             provider=provider,
             profile=profile,
             seed=seed,
-            canvas=canvas,
+            canvas=selected_canvas,
             dry_run=dry_run,
             portfolio_context=context,
         )

@@ -124,6 +124,24 @@ def select_brief(plan: dict[str, Any], brief_id: str) -> dict[str, Any]:
     return brief
 
 
+def recommended_canvas(brief: dict[str, Any]) -> str:
+    """Select a bounded canvas from the saved visual contract, not preference.
+
+    Horizontal copy-space briefs need a landscape canvas for the direction to be
+    useful.  Other standalone assets retain the cheaper square default.
+    """
+    asset_spec = brief.get("asset_spec") if isinstance(brief, dict) else None
+    if not isinstance(asset_spec, dict):
+        return "square"
+    layout = " ".join(
+        str(asset_spec.get(field, ""))
+        for field in ("composition", "negative_space")
+    ).casefold()
+    if "copy space" in layout and re.search(r"\b(left|right)\b", layout):
+        return "hero-landscape"
+    return "square"
+
+
 def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, Any]:
     """Return a local, deterministic decision before a portfolio brief may use GPU.
 
@@ -236,6 +254,7 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
         "gpu_eligible": not blockers,
         "lane_key": lane_key,
         "brief_id": brief.get("brief_id"),
+        "recommended_canvas": recommended_canvas(brief),
         "checks": checks,
         "blockers": blockers,
         "notice": "Local pre-GPU decision only; human visual review remains required after generation.",

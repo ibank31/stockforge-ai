@@ -5,7 +5,7 @@ from typer.testing import CliRunner
 
 from stockforge.cli import app
 from stockforge.portfolio import PortfolioError, build_brief, lane_for, list_lanes, plan_batch
-from stockforge.portfolio_io import preview_preflight
+from stockforge.portfolio_io import preview_preflight, recommended_canvas
 
 
 runner = CliRunner()
@@ -31,12 +31,25 @@ def test_all_priority_lanes_build_a_safe_seed_brief():
         assert "human review" in " ".join(brief.asset_spec.quality_gates).lower()
 
 
+def test_directional_copy_space_selects_hero_landscape_while_other_layouts_stay_square():
+    directional = build_brief("retro_tech_developer_metaphors", "cloud-module").to_dict()
+    square = build_brief("ai_governance", "review-gate").to_dict()
+
+    assert recommended_canvas(directional) == "hero-landscape"
+    assert recommended_canvas(square) == "hero-landscape"
+
+    square["asset_spec"]["composition"] = "centered isolated object"
+    square["asset_spec"]["negative_space"] = "clean copy space above"
+    assert recommended_canvas(square) == "square"
+
+
 def test_all_priority_lane_seed_briefs_pass_the_local_pre_gpu_contract():
     for lane in list_lanes():
         brief = build_brief(lane.key, lane.concepts[0].key).to_dict()
         report = preview_preflight({"lane": brief["lane"], "briefs": [brief]}, brief)
 
         assert report["gpu_eligible"] is True, (lane.key, report["blockers"])
+        assert report["recommended_canvas"] in {"square", "hero-landscape"}
         assert all(item["status"] == "pass" for item in report["checks"])
 
 

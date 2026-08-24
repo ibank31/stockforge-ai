@@ -35,6 +35,37 @@ def test_z_image_profile_is_bounded_for_free_worker():
     assert "stamp, postmark" in request.prompt
 
 
+def test_compiled_portfolio_prompt_preserves_directional_layout_contract():
+    compiled = "Primary subject: one clear modular tower on the left third. Negative-space contract: one third clean white copy space on the right."
+
+    request = profile_for("z-image-turbo").request(
+        compiled,
+        seed=42,
+        canvas="hero-landscape",
+        apply_standalone_policy=False,
+    )
+
+    assert request.prompt == compiled
+    assert "centered and clearly separated" not in request.prompt
+    assert request.parameters["asset_policy"] == "portfolio_compiled_contract_v2"
+    assert request.parameters["prompt_mode"] == "portfolio_compiled"
+
+
+def test_conditional_model_profile_is_blocked_before_worker_routing():
+    with pytest.raises(TermuxControlError, match="not an active free production profile"):
+        profile_for("qwen-image")
+
+
+def test_provider_model_catalog_is_local_and_exposes_readiness():
+    result = runner.invoke(app, ["provider", "models", "--json"])
+
+    assert result.exit_code == 0, result.output
+    records = __import__("json").loads(result.output)
+    assert records[0]["profile"] == "z-image-turbo"
+    assert records[0]["readiness"] == "verified_free"
+    assert any(item["profile"] == "qwen-image" and item["readiness"] == "conditional" for item in records)
+
+
 def test_hero_landscape_canvas_preserves_pixel_budget_and_provenance():
     request = profile_for("z-image-turbo").request(
         "thick recycled-fiber paper arch",

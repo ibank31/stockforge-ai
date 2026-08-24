@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from .generation import GenerationRequest
+from .model_catalog import model_record
 from .provider_config import ProviderConfig, ProviderConfigError, ProviderConfigStore
 from .provider_orchestration import ProviderCandidate, ProviderCapabilities, ProviderRouter
 from .remote_gradio import RemoteGradioProvider
@@ -85,10 +86,22 @@ class GenerationProfile:
         *,
         seed: int | None = None,
         canvas: str = "square",
+        apply_standalone_policy: bool = True,
     ) -> GenerationRequest:
+        """Build a bounded request without silently overriding a compiled brief.
+
+        Direct Termux prompts remain wrapped in the strict standalone policy.
+        Portfolio prompts already include a validated subject, material, and
+        directional composition contract, so re-wrapping them with a generic
+        centered-object instruction would erase the intended layout.
+        """
         width, height = canvas_dimensions(canvas)
+        cleaned = str(prompt).strip()
+        if not cleaned:
+            raise TermuxControlError("A generation prompt is required.")
+        effective_prompt = standalone_prompt(cleaned) if apply_standalone_policy else cleaned
         return GenerationRequest(
-            prompt=standalone_prompt(prompt),
+            prompt=effective_prompt,
             width=width,
             height=height,
             steps=self.steps,
@@ -102,12 +115,13 @@ class GenerationProfile:
                 "canvas": str(canvas).strip().lower(),
                 "estimated_gpu_seconds": self.estimated_gpu_seconds,
                 "quota_policy": "single-candidate",
-                "asset_policy": "standalone_single_subject_v1",
+                "asset_policy": "standalone_single_subject_v1" if apply_standalone_policy else "portfolio_compiled_contract_v2",
+                "prompt_mode": "standalone_wrapped" if apply_standalone_policy else "portfolio_compiled",
             },
         )
 
 
-FREE_PROFILES: dict[str, GenerationProfile] = {
+GENERATION_PROFILES: dict[str, GenerationProfile] = {
     "z-image-turbo": GenerationProfile(
         name="z-image-turbo",
         model_id="z-image-turbo",
@@ -131,12 +145,38 @@ FREE_PROFILES: dict[str, GenerationProfile] = {
 }
 
 
-def profile_for(name: str) -> GenerationProfile:
+def profile_for(name: str, *, require_verified_free: bool = True) -> GenerationProfile:
+    """Return a profile only when its model-access evidence permits this route.
+
+    Conditional models remain in the catalog for planning and benchmark work,
+    but normal Termux and portfolio generation must not accidentally spend GPU
+    on an unavailable, access-gated, or unbenchmarked worker.
+    """
     try:
-        return FREE_PROFILES[name]
+        record = model_record(name)
     except KeyError as exc:
-        supported = ", ".join(sorted(FREE_PROFILES))
+        supported = ", ".join(sorted(GENERATION_PROFILES))
         raise TermuxControlError(f"Unsupported generation profile: {name}. Supported profiles: {supported}") from exc
+    if require_verified_free and record.readiness != "verified_free":
+        requirements = "; ".join(record.activation_requirements)
+        raise TermuxControlError(
+            f"Profile {record.profile!r} is {record.readiness}, not an active free production profile. "
+            f"Activation requires: {requirements}"
+        )
+    try:
+        return GENERATION_PROFILES[record.profile]
+    except KeyError as exc:
+        raise TermuxControlError(
+            f"Profile {record.profile!r} has no implemented StockForge execution profile yet."
+        ) from exc
+
+
+def verified_free_profile_names() -> tuple[str, ...]:
+    """Return profiles safe for ordinary no-card, no-trial generation routing."""
+    return tuple(
+        name for name in sorted(GENERATION_PROFILES)
+        if model_record(name).readiness == "verified_free"
+    )
 
 
 def provider_store(workspace: Path) -> ProviderConfigStore:
