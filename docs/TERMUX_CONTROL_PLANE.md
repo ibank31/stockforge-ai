@@ -96,3 +96,46 @@ unzip -o '<PATH_DARI_release_package.path>' \
 ## Profil model dan Kaggle
 
 `z-image-turbo` adalah profile default untuk Space ZeroGPU karena runtime live memakai FP8 Z-Image Turbo yang telah diverifikasi. `qwen-image` tetap profile alternatif dan hanya boleh dipakai pada worker yang secara eksplisit menyatakan dukungannya. Kaggle tetap fallback eksperimental; lakukan `python -m stockforge.cli kaggle test`, `doctor`, dan `quota` sebelum memakai quota GPU.
+
+## Portfolio Engine: Batch Niche yang Aman
+
+Untuk production portfolio, jangan mulai dari prompt bebas atau batch besar. Buat dahulu plan deterministik yang menyimpan buyer job, prompt package, metadata draft, deklarasi GenAI, dan checklist human review. Perintah ini **tidak** memanggil GPU dan tidak membuat aset menjadi `submission_ready`.
+
+```bash
+cd ~/stockforge-ai
+source .venv/bin/activate
+
+git pull --ff-only origin feat/asset-factory-architecture
+
+# Lihat sepuluh lane riset, tier prioritas, dan batas batch awal.
+python -m stockforge.cli portfolio lanes
+
+# Preview dua brief; hasil JSON memuat prompt, negative prompt, metadata, dan checklist review.
+python -m stockforge.cli portfolio plan \
+  --lane ai_governance \
+  --count 2
+
+# Simpan batch plan ke project; contoh lane produksi awal.
+python -m stockforge.cli portfolio create-batch \
+  --project stock-assets \
+  --lane tactile_material_atmospheres \
+  --count 5
+
+# Tampilkan plan yang sudah tersimpan sebelum generation.
+python -m stockforge.cli portfolio list \
+  --project stock-assets \
+  --status planned
+```
+
+| Tier | Lane | Batas test awal |
+|---|---|---:|
+| First | `ai_governance` | 20 |
+| First | `playful_surreal_product_metaphors` | 20 |
+| First | `tactile_material_atmospheres` | 20 |
+| Secondary | `synthetic_media_trust`, `returns_recommerce`, `digital_accessibility` | 15 per lane |
+| Experimental | `retro_tech_developer_metaphors`, `human_made_collage_elements` | 15 dan 10 |
+| Experimental | `circular_packaging_systems`, `software_supply_chain_integrity` | 10 per lane |
+
+Gunakan `portfolio plan` untuk memilih satu brief yang paling sesuai, lalu salin nilai `prompt_package.prompt` ke perintah generation yang telah diuji. Jalankan **satu kandidat per generation**. Setelah gambar selesai, lakukan technical check, periksa visual pada resolusi penuh, pastikan metadata benar-benar cocok dengan gambar, lalu pertahankan hanya aset yang berbeda secara komersial. Jangan upload beruntun berdasarkan seed, crop, atau perubahan warna saja.
+
+Dokumen desain lengkap dan batasan status ada di [`PORTFOLIO_PRODUCTION_ENGINE.md`](PORTFOLIO_PRODUCTION_ENGINE.md). Fase ini membuat plan dan manifest; linkage otomatis dari brief ke image, agregasi QA, dan batch execution terikat kuota dikerjakan sebagai tahap berikutnya.

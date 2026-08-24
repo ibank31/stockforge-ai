@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import socket
+from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 import typer
 
@@ -23,6 +25,7 @@ from .kaggle_worker import KaggleWorkerError, doctor as kaggle_doctor, list_kern
 from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
+from .portfolio import PortfolioError, lane_for, list_lanes, plan_batch, plan_manifest
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .release_package import build_release_package
 from .termux_control import (
@@ -40,12 +43,14 @@ job_app = typer.Typer(help="Create and operate persistent jobs.")
 adobe_app = typer.Typer(help="Adobe Stock readiness checks.")
 kaggle_app = typer.Typer(help="Control the Kaggle GPU worker without a browser.")
 provider_app = typer.Typer(help="Configure remote GPU workers for Termux-controlled generation.")
+portfolio_app = typer.Typer(help="Plan evidence-aligned, human-review-required portfolio batches.")
 app.add_typer(project_app, name="project")
 app.add_typer(asset_app, name="asset")
 app.add_typer(job_app, name="job")
 app.add_typer(adobe_app, name="adobe")
 app.add_typer(kaggle_app, name="kaggle")
 app.add_typer(provider_app, name="provider")
+app.add_typer(portfolio_app, name="portfolio")
 
 
 def _initialized() -> tuple[ConfigManager, object, Database, ProjectManager]:
@@ -145,6 +150,143 @@ def provider_list() -> None:
         raise typer.Exit()
     for name in names:
         typer.echo(name)
+
+
+@portfolio_app.command("lanes")
+def portfolio_lanes(json_output: bool = typer.Option(False, "--json")) -> None:
+    """List evidence-aligned lanes and their initial safe batch caps."""
+    lanes = list_lanes()
+    if json_output:
+        typer.echo(json.dumps([
+            {
+                "key": lane.key,
+                "name": lane.name,
+                "tier": lane.tier,
+                "evidence_confidence": lane.evidence_confidence,
+                "opportunity_id": lane.opportunity_id,
+                "test_cap": lane.test_cap,
+                "seed_concepts": len(lane.concepts),
+                "notes": lane.notes,
+            }
+            for lane in lanes
+        ], indent=2))
+        return
+    for lane in lanes:
+        typer.echo(
+            f"{lane.key}\t{lane.tier}\tcap={lane.test_cap}\t"
+            f"seed_concepts={len(lane.concepts)}\t{lane.name}"
+        )
+
+
+@portfolio_app.command("plan")
+def portfolio_plan(
+    lane: str = typer.Option(..., "--lane"),
+    count: int = typer.Option(1, "--count", min=1),
+    json_output: bool = typer.Option(True, "--json/--text"),
+) -> None:
+    """Preview bounded, generation-ready brief cards without calling a remote worker."""
+    try:
+        manifest = plan_manifest(lane, count)
+    except PortfolioError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if json_output:
+        typer.echo(json.dumps(manifest, indent=2))
+        return
+    lane_info = manifest["lane"]
+    typer.echo(f"Lane: {lane_info['name']} ({lane_info['tier']})")
+    typer.echo(f"Status: {manifest['status']}; human review required: yes")
+    for brief in manifest["briefs"]:
+        typer.echo("")
+        typer.echo(f"Brief: {brief['brief_id']}")
+        typer.echo(f"Title draft: {brief['metadata']['title']}")
+        typer.echo(f"Prompt: {brief['prompt_package']['prompt']}")
+        typer.echo(f"Negative prompt: {brief['prompt_package']['negative_prompt']}")
+
+
+def _portfolio_project(project: str) -> tuple[object, Path]:
+    manager = ConfigManager()
+    config = manager.initialize()
+    database = JobDatabase(config.database)
+    database.initialize()
+    projects = [item for item in database.list_projects() if item["name"] == project]
+    if not projects:
+        raise PortfolioError(f"Project not found: {project}")
+    record = projects[0]
+    return record, Path(record["path"]).resolve()
+
+
+@portfolio_app.command("create-batch")
+def portfolio_create_batch(
+    project: str = typer.Option(..., "--project", "-p"),
+    lane: str = typer.Option(..., "--lane"),
+    count: int = typer.Option(1, "--count", min=1),
+) -> None:
+    """Write a project-local, human-review-required batch plan without generating images."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        manifest = plan_manifest(lane, count)
+    except PortfolioError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    batch_id = f"{lane_for(lane).key}-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}"
+    manifest["batch_id"] = batch_id
+    manifest["created_at"] = datetime.now(UTC).isoformat()
+    destination_dir = project_root / "portfolio-plans"
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    destination = destination_dir / f"{batch_id}.json"
+    temporary = destination.with_suffix(".json.tmp")
+    try:
+        temporary.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+    typer.echo(json.dumps({
+        "batch_id": batch_id,
+        "path": str(destination),
+        "status": manifest["status"],
+        "brief_ids": [item["brief_id"] for item in manifest["briefs"]],
+        "notice": "No remote GPU call was made. Each brief remains human_review_required before marketplace submission.",
+    }, indent=2))
+
+
+@portfolio_app.command("list")
+def portfolio_list(
+    project: str = typer.Option(..., "--project", "-p"),
+    status: str | None = typer.Option(None, "--status"),
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    """List project-local portfolio plans; this never claims marketplace acceptance."""
+    try:
+        _record, project_root = _portfolio_project(project)
+    except PortfolioError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    plans: list[dict[str, object]] = []
+    for path in sorted((project_root / "portfolio-plans").glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if data.get("kind") != "stockforge.portfolio_batch_plan":
+            continue
+        if status is not None and data.get("status") != status:
+            continue
+        plans.append({
+            "batch_id": data.get("batch_id", path.stem),
+            "lane": data.get("lane", {}).get("key", "-"),
+            "status": data.get("status", "-"),
+            "brief_count": len(data.get("briefs", [])),
+            "path": str(path),
+        })
+    if json_output:
+        typer.echo(json.dumps(plans, indent=2))
+        return
+    if not plans:
+        typer.echo("No matching portfolio plans.")
+        return
+    for item in plans:
+        typer.echo(
+            f"{item['batch_id']}\t{item['lane']}\t{item['status']}\t"
+            f"briefs={item['brief_count']}\t{item['path']}"
+        )
 
 
 @app.command("generate")
