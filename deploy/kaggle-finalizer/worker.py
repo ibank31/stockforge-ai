@@ -21,7 +21,7 @@ REQUEST_PATH = Path(os.getenv("STOCKFORGE_FINALIZER_REQUEST", "request.json"))
 OUTPUT_DIR = Path("/kaggle/working/stockforge-finalizer-output")
 WEIGHTS_DIR = Path("/kaggle/working/stockforge-realesrgan")
 WEIGHTS_URL = (
-    "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.0/"
+    "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/"
     "RealESRGAN_x4plus.pth"
 )
 
