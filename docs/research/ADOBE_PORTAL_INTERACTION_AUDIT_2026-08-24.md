@@ -37,3 +37,8 @@ The portal automatically placed the asset into its submission selection after me
 The disabled Submit control exposed the portal state `submissionEligibilityDisabledReason: PAYMENT_PROVIDER_NOT_CONFIGURED`. The account had validated tax information but no payout provider. After the user configured PayPal, the portal enabled `Submit 1 file`.
 
 On 2026-08-24, with explicit user confirmation, one reviewed GenAI asset (`192ff467-92c8-4bed-b352-e9bc03a75696.jpg`) was selected and the enabled Submit control was activated. The portal redirected to the post-submission reminder/review paths. The currently rendered In Review list had not populated yet at the time of immediate verification; it should be treated as a post-submission pending-state observation, not as approval or rejection.
+
+
+## Submission completion status
+
+After the controlled workflow revealed the Adobe Terms and Conditions and CAPTCHA steps, the user completed those human-only steps directly in the Adobe Contributor portal and reported that the fiber-arch asset was submitted. This is recorded as a **user-reported submission**; it is not evidence of acceptance, sale, or marketplace approval. The recommended Android workflow remains: upload JPEGs manually from `READY_TO_UPLOAD`, consult metadata from `METADATA_REFERENCE`, complete portal declarations/Terms/CAPTCHA personally, then submit only after review.
