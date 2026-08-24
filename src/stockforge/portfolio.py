@@ -41,6 +41,7 @@ class LaneConcept:
     delivery_format: str = "jpeg"
     layout_mode: str = "square"
     background_policy: str = "white"
+    isolation_policy: str = "isolated"
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,6 +193,10 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
         "title": "Editable Folder Upload Icon for File Management",
         "keywords": ("folder upload icon", "file management", "cloud workflow", "editable SVG", "native vector", "upload arrow", "folder symbol", "digital file storage", "web UI icon", "mobile UI icon", "bold geometric icon"),
     },
+    ("native_vector_utility_sets", "file-flow-micro-set"): {
+        "title": "File Management Utility Icon Set for Web and Cloud Workflows",
+        "keywords": ("file management icons", "file flow icon set", "upload download icons", "folder icon", "cloud storage icon", "sync icon", "archive icon", "file sharing icon", "editable SVG icons", "web UI icon set", "mobile UI icons", "bold geometric icons"),
+    },
     ("native_vector_patterns", "pattern-tile"): {
         "title": "Editable Geometric Repeat Pattern Tile",
         "keywords": ("seamless pattern", "repeat background", "editable SVG pattern", "geometric tile", "decorative vector", "pattern design", "repeatable background", "native vector", "abstract geometry", "surface pattern"),
@@ -233,8 +238,9 @@ def _concept(
     delivery_format: str = "jpeg",
     layout_mode: str = "square",
     background_policy: str = "white",
+    isolation_policy: str = "isolated",
 ) -> LaneConcept:
-    if layout_mode == "square":
+    if layout_mode == "square" and isolation_policy == "isolated":
         composition = "single centered object with tight square product framing"
         negative_space = "minimal clean surrounding margin; no reserved copy space"
     return LaneConcept(
@@ -249,6 +255,7 @@ def _concept(
         delivery_format=delivery_format,
         layout_mode=layout_mode,
         background_policy=background_policy,
+        isolation_policy=isolation_policy,
     )
 
 
@@ -561,6 +568,40 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         notes="Experimental tile lane; structural repeatability is tested locally, while visual utility and marketplace acceptance remain human review tasks.",
     ),
     PortfolioLane(
+        key="native_vector_utility_sets",
+        name="Native vector file-flow utility sets",
+        tier="secondary",
+        evidence_confidence="medium",
+        opportunity_id="V02",
+        buyer_segment="web_product_teams",
+        buyer_job="coherent file-management action icon set for web, mobile UI, documentation, and presentations",
+        channel="web",
+        asset_family="generic",
+        asset_type="icon_set",
+        micro_niche="file-flow utility micro-set for upload, storage, and transfer actions",
+        visual_language="bold geometric duotone utility icon system with consistent proportions",
+        medium="editable SVG compound shapes and outlined strokes in one organized icon sheet",
+        commercial_use_cases=("web and mobile UI", "file-management workflow", "cloud-storage documentation", "product onboarding", "presentation diagram system"),
+        keywords=("file management icons", "file flow icon set", "upload download icons", "folder icon", "cloud storage icon", "sync icon", "archive icon", "file sharing icon", "editable SVG icons", "web UI icon set", "mobile UI icons", "bold geometric icons"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "file-flow-micro-set",
+                "a compact set of eight distinct file-management action icons: folder, upload, download, cloud storage, sync, archive, file, and share",
+                "consistent icon geometry communicates a complete file-flow workflow without text or brand references",
+                "organized square icon sheet with eight clearly separated icons and consistent spacing",
+                "transparent negative space between each icon; no reserved copy space",
+                ("#164E63", "#F8FAFC", "#F59E0B"),
+                ("coherent utility family", "eight distinct file actions", "consistent geometry", "editable compound shapes", "thumbnail readability"),
+                product_kind="native_vector",
+                delivery_format="svg",
+                background_policy="transparent",
+                isolation_policy="cluster",
+            ),
+        ),
+        notes="Higher-value micro-set hypothesis grounded in marketplace signals about coverage, consistency, separate utility, and immediate reuse; one local icon-sheet trial only.",
+    ),
+    PortfolioLane(
         key="native_vector_elements",
         name="Native vector utility elements",
         tier="secondary",
@@ -742,7 +783,7 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         composition=concept.composition,
         negative_space=concept.negative_space,
         background_policy=concept.background_policy,
-        isolation_policy="isolated",
+        isolation_policy=concept.isolation_policy,
         text_policy="none",
         branding_policy="no_branding",
         originality_levers=concept.originality_levers,

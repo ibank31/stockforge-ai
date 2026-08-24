@@ -204,6 +204,80 @@ def build_folder_upload_svg(spec: AssetSpec, destination: str | Path) -> NativeV
     return report
 
 
+def build_file_flow_micro_set_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
+    """Build one coherent eight-icon file-flow utility sheet locally."""
+    route = require_production_route(spec)
+    if route.product_kind != "native_vector":
+        raise NativeVectorError("Native SVG construction requires product_kind='native_vector'.")
+    if spec.background_policy not in {"transparent", "white"}:
+        raise NativeVectorError("Native SVG products require a transparent or white background policy.")
+    if spec.text_policy != "none":
+        raise NativeVectorError("Native SVG preset does not support text-bearing products.")
+    if spec.isolation_policy != "cluster" or spec.layout_mode != "square":
+        raise NativeVectorError("File-flow micro-set requires a separated square icon-sheet framing.")
+
+    width = height = 2048
+    primary, _secondary, accent = _palette(spec)
+    root = ET.Element(f"{{{SVG_NS}}}svg", {
+        "width": str(width),
+        "height": str(height),
+        "viewBox": f"0 0 {width} {height}",
+        "version": "1.1",
+        "data-stockforge": "native-vector-file-flow-micro-set-v1",
+        "aria-label": "file flow utility icon set",
+    })
+    if spec.background_policy == "white":
+        _append(root, "rect", x="0", y="0", width=str(width), height=str(height), fill="#FFFFFF")
+
+    sheet = _append(root, "g", fill="none", stroke_linecap="round", stroke_linejoin="round")
+    positions = ((300, 560), (790, 560), (1280, 560), (1770, 560), (300, 1450), (790, 1450), (1280, 1450), (1770, 1450))
+    for index, (cx, cy) in enumerate(positions):
+        group = _append(sheet, "g", id=f"file-flow-icon-{index + 1}", transform=f"translate({cx} {cy})")
+        if index == 0:  # folder
+            _append(group, "path", d="M -150 -90 Q -150 -125 -115 -125 L -35 -125 L 5 -82 L 150 -82 Q 175 -82 175 -55 L 175 105 Q 175 130 150 130 L -115 130 Q -150 130 -150 95 Z", fill=accent, stroke=primary, stroke_width="28")
+            _append(group, "path", d="M -150 -55 Q -150 -82 -115 -82 L -35 -82 L 5 -40 L 150 -40", stroke=primary, stroke_width="28")
+        elif index == 1:  # upload
+            _append(group, "path", d="M -135 70 L 135 70 L 135 115 L -135 115 Z", fill=accent, stroke=primary, stroke_width="28")
+            _append(group, "path", d="M 0 75 L 0 -105 M -72 -34 L 0 -105 L 72 -34", stroke=primary, stroke_width="32")
+        elif index == 2:  # download
+            _append(group, "path", d="M -135 70 L 135 70 L 135 115 L -135 115 Z", fill=accent, stroke=primary, stroke_width="28")
+            _append(group, "path", d="M 0 -105 L 0 45 M -72 -22 L 0 45 L 72 -22", stroke=primary, stroke_width="32")
+        elif index == 3:  # cloud storage
+            _append(group, "path", d="M -118 72 C -175 72 -190 10 -150 -20 C -142 -72 -88 -105 -40 -82 C 6 -140 100 -115 112 -50 C 172 -48 188 72 118 72 Z", fill=accent, stroke=primary, stroke_width="28")
+            _append(group, "path", d="M -58 28 L 58 28", stroke=primary, stroke_width="24")
+        elif index == 4:  # sync
+            _append(group, "path", d="M -100 -35 A 112 112 0 0 1 80 -75", stroke=primary, stroke_width="28")
+            _append(group, "polygon", points="78,-115 135,-72 72,-48", fill=accent, stroke=primary, stroke_width="18")
+            _append(group, "path", d="M 100 35 A 112 112 0 0 1 -80 75", stroke=primary, stroke_width="28")
+            _append(group, "polygon", points="-78,115 -135,72 -72,48", fill=accent, stroke=primary, stroke_width="18")
+        elif index == 5:  # archive
+            _append(group, "path", d="M -145 -90 L 145 -90 L 120 115 L -120 115 Z", fill=accent, stroke=primary, stroke_width="28")
+            _append(group, "path", d="M -145 -90 L -122 -125 L 122 -125 L 145 -90 Z", stroke=primary, stroke_width="28")
+            _append(group, "path", d="M -45 5 L 45 5", stroke=primary, stroke_width="28")
+        elif index == 6:  # file/document
+            _append(group, "path", d="M -105 -130 L 35 -130 L 112 -52 L 112 130 L -105 130 Z", fill=accent, stroke=primary, stroke_width="28")
+            _append(group, "path", d="M 35 -130 L 35 -52 L 112 -52", stroke=primary, stroke_width="28")
+            _append(group, "path", d="M -48 20 L 55 20 M -48 68 L 55 68", stroke=primary, stroke_width="20")
+        else:  # share
+            _append(group, "line", x1="-68", y1="-5", x2="58", y2="-70", stroke=primary, stroke_width="24")
+            _append(group, "line", x1="-68", y1="5", x2="58", y2="70", stroke=primary, stroke_width="24")
+            for x, y in ((-100, 0), (92, -92), (92, 92)):
+                _append(group, "circle", cx=str(x), cy=str(y), r="45", fill=accent, stroke=primary, stroke_width="24")
+
+    raw = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    path = Path(destination).expanduser().resolve()
+    if path.suffix.lower() != ".svg":
+        raise NativeVectorError("Native vector destination must use the .svg extension.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    report = inspect_native_svg(path)
+    if not report.ready:
+        path.unlink(missing_ok=True)
+        details = "; ".join(f"{name}: {detail}" for name, detail in report.checks)
+        raise NativeVectorError(f"Generated SVG failed its own native-vector gate: {details}")
+    return report
+
+
 def build_technical_badge_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
     """Build one editable technical badge without text, logos, or raster embeds."""
     route = require_production_route(spec)
@@ -304,6 +378,8 @@ def build_svg_for_preset(spec: AssetSpec, destination: str | Path, preset: str =
         return build_modular_ribbon_svg(spec, destination)
     if normalized == "folder_upload":
         return build_folder_upload_svg(spec, destination)
+    if normalized == "file_flow_micro_set":
+        return build_file_flow_micro_set_svg(spec, destination)
     if normalized == "technical_badge":
         return build_technical_badge_svg(spec, destination)
     if normalized == "geometric_pattern":

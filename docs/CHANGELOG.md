@@ -2,6 +2,17 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — File-flow micro-set value upgrade prepared
+
+### DONE — product and contract preparation; no generation
+
+- Added a separate `icon_set` asset type and `native_vector_utility_sets` lane so a higher-value micro-set is not hidden inside the single-icon baseline.
+- Added the `file-flow-micro-set` hypothesis: one coherent eight-action SVG sheet covering folder, upload, download, cloud storage, sync, archive, file, and share.
+- Added explicit clustered native-vector support, deterministic local builder dispatch, transparent square artboard rules, and structural tests for eight distinct editable icon groups.
+- Preserved `native_object` / `folder-upload` as the baseline control and kept modular-ribbon/technical-badge as historical regression concepts.
+- Added global discoverability research notes and a platform-specific, anti-spam market-intelligence plan. No ranking guarantee, keyword stuffing, duplicate submission, or automatic platform action is supported.
+- Full verification after the implementation: **275 passed, 1 skipped, 45 non-blocking Pillow deprecation warnings**. No provider, GPU, Kaggle, portal, upload, or micro-set generation was performed.
+
 ## 2026-08-24 — Folder-upload SVG trial executed for human review
 
 ### REVIEW_REQUIRED — local controlled trial

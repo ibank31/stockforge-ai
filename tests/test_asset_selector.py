@@ -8,6 +8,7 @@ def test_all_asset_types_have_explicit_format_and_readiness() -> None:
 
     assert {item.key for item in policies} == {
         "scene",
+        "icon_set",
         "native_object",
         "technical_icon",
         "seamless_pattern",
@@ -37,6 +38,22 @@ def test_transparent_cutout_stays_blocked() -> None:
 def test_unknown_asset_type_fails_closed() -> None:
     with pytest.raises(AssetSelectionError, match="Unsupported asset type"):
         select_asset_type("anything_else")
+
+
+def test_icon_set_recommendation_resolves_to_clustered_svg_brief() -> None:
+    from stockforge.portfolio import build_brief, lane_for
+
+    policy = select_asset_type("icon_set")
+    lane = lane_for(policy.recommended_lane_keys[0])
+    brief = build_brief(lane.key, policy.recommended_concept_keys[0])
+
+    assert brief.concept.key == "file-flow-micro-set"
+    assert brief.asset_spec.asset_type == "icon_set"
+    assert brief.asset_spec.product_kind == "native_vector"
+    assert brief.asset_spec.delivery_format == "svg"
+    assert brief.asset_spec.isolation_policy == "cluster"
+    assert "file-management" in brief.asset_spec.buyer_job
+    assert brief.metadata.human_review_required is True
 
 
 def test_native_object_recommendation_resolves_to_valid_svg_briefs() -> None:

@@ -159,8 +159,12 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
     checks: list[dict[str, str]] = []
 
     product_kind = str(asset_spec.get("product_kind", "raster_illustration"))
+    isolation_policy = str(asset_spec.get("isolation_policy", "isolated"))
+    allowed_isolation = {"isolated"}
+    if product_kind == "native_vector" and str(asset_spec.get("asset_type", "")) == "icon_set":
+        allowed_isolation.add("cluster")
     required_policies = {
-        "isolation_policy": "isolated",
+        "isolation_policy": isolation_policy if isolation_policy in allowed_isolation else "isolated",
         "text_policy": "none",
         "branding_policy": "no_branding",
     }
@@ -178,7 +182,7 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
     checks.append({
         "name": "standalone-policy",
         "status": "pass" if not wrong_policies else "fail",
-        "detail": "All standalone policies are explicit." if not wrong_policies else "; ".join(wrong_policies),
+        "detail": "Explicit isolated/controlled-cluster policies are valid." if not wrong_policies else "; ".join(wrong_policies),
     })
 
     lower_subject = subject.casefold()

@@ -10,7 +10,7 @@ ASSET_FAMILIES = frozenset({
     "material_atmosphere", "ui_3d_metaphor", "surreal_concept",
     "retro_tech_nostalgia", "craft_element", "organic_motif", "generic",
 })
-ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "texture", "graphic"})
+ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "icon_set", "texture", "graphic"})
 BACKGROUND_POLICIES = frozenset({"white", "transparent", "neutral", "scene"})
 ISOLATION_POLICIES = frozenset({"isolated", "cluster", "scene"})
 TEXT_POLICIES = frozenset({"none", "abstract", "controlled", "required"})

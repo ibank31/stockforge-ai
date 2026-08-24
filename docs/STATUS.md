@@ -23,7 +23,7 @@ The JPEG path is the only generative route with a recorded live preview and comp
 
 ## Completed foundation
 
-The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, Adobe metadata upload-copy workflow, deterministic native SVG presets for a research-backed folder-upload icon, modular ribbons, technical badges, and geometric patterns, plus dedicated native-vector element and pattern lanes.
+The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, Adobe metadata upload-copy workflow, deterministic native SVG presets for the research-backed folder-upload baseline, a new eight-action file-flow micro-set, modular ribbons, technical badges, and geometric patterns, plus dedicated native-vector element, utility-set, and pattern lanes.
 
 `portfolio asset-types` lists the supported asset categories. `portfolio readiness --asset-type <type>` explains the chosen format, readiness state, blockers, candidate niches, and next step without calling a provider. `portfolio plan-type --asset-type <type>` turns a supported choice into one evidence-aligned brief with niche, prompt, format route, and no-generation notice; `native_object` now defaults to the research-backed `folder-upload` icon hypothesis. `portfolio trial-readiness` requires a written hypothesis and purpose before a future provider call, and enforces one candidate per trial. The selector fails closed rather than silently converting an unsupported type into JPEG.
 
@@ -43,7 +43,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Current priorities
 
-1. Complete human visual/commercial review of the folder-upload SVG trial, record the user's decision without inventing category scores, and only then decide whether to improve the lane or validate one manual portal upload.
+1. Evaluate whether the file-flow micro-set materially raises buyer value above the single folder-upload baseline; keep the micro-set at one controlled local trial until its product, semantic, and platform-specific metadata gates are complete.
 2. Keep JPEG scene generation behind the pre-GPU prompt, rights, layout, quota, and visual-quality gates.
 3. Build a local PNG alpha producer with true-alpha assertion, anti-fringe checks, canvas trimming, sRGB validation, and one controlled portal validation.
 4. Connect evidence logs to buyer-job and format routing without turning engagement or earnings screenshots into sales forecasts.
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **273 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The folder-upload trial evidence is durable at commit `ace69e7`; the working tree must be rechecked after this status synchronization.
+The current main branch has passed **275 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. The folder-upload trial evidence remains durable, and the micro-set implementation has not been generated. The working tree must be rechecked after this documentation milestone.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
@@ -80,6 +80,7 @@ Every reviewed generation can be recorded in the project-local append-only ledge
 | Feature state and next work | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
 | Product/format decision | [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) |
 | SVG market research | [`research/SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) and [`research/svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) |
+| Global discoverability and value plan | [`research/svg_global_discoverability_notes_2026-08-24.md`](research/svg_global_discoverability_notes_2026-08-24.md) and [`research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md`](research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md) |
 | Marketplace readiness | [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) |
 | Android operation | [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) |
 | History | [`CHANGELOG.md`](CHANGELOG.md) |
