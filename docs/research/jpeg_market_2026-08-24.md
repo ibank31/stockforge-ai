@@ -60,3 +60,14 @@ Adobe’s active category guide explains that categories help customers filter c
 
 Source:
 - [Adobe — Choose the right category for your content](https://helpx.adobe.com/stock/contributor/content-policies-guidelines/metadata/choose-right-category-content.html), accessed August 24, 2026.
+
+## Global visual trend signals
+
+Adobe’s 2026 Creative Trends report describes four broad creative directions: All the Feels (sensory, tactile, bold visuals), Connectioneering (authentic emotional connection), Surreal Silliness (unexpected playful concepts), and Local Flavor (regional specificity and cultural authenticity). Adobe states that the report combines internal/external research, Creative Cloud community feedback, commercial campaigns, and search-history analysis; it is a trend forecast, not a guarantee that a particular stock image will sell.[6] [7]
+
+Envato’s 2026 photography trend article describes AI-assisted editing, cinematic photography, candid/authentic photography, mobile-first framing, drone/aerial views, motion blur, analog/vintage aesthetics, age-positive casting, messy aesthetics, and screenshot culture. These are editorial trend signals from a marketplace education channel. Some are unsuitable or risky for Adobe Stock without careful filtering: screenshot culture may involve UI/text/third-party IP; celebrity/brand references and recognizable properties require rights review; heavy blur, noise, grading, or AI artifacts can conflict with Adobe quality guidance. The safe use is to treat trend signals as concept inputs, then filter them through buyer job, legal risk, distinctness, technical quality, and platform policy.[8]
+
+Sources:
+- [6] [Adobe — 2026 Creative Trends Forecast](https://business.adobe.com/resources/creative-trends-report.html)
+- [7] [Adobe — How creators are leveraging Adobe’s 2026 Creative Trends](https://blog.adobe.com/en/publish/2026/01/08/how-creators-leveraging-adobe-2026-creative-trends)
+- [8] [Envato — 10 photography trends shaping the way we shoot in 2026](https://elements.envato.com/learn/photography-trends)

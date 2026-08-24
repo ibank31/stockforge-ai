@@ -1,5 +1,5 @@
 from stockforge.asset_prompt_compiler import compile_asset_prompt
-from stockforge.asset_spec import standalone_asset_spec
+from stockforge.asset_spec import AssetSpec, standalone_asset_spec
 
 
 def _spec():
@@ -31,6 +31,44 @@ def test_compiler_preserves_standalone_constraints():
     assert "meters" in package.negative_prompt
     assert "hands" in package.negative_prompt
     assert "stamps" in package.negative_prompt
+
+
+def test_scene_jpeg_policy_allows_human_story_subjects_but_keeps_safety_guards():
+    spec = AssetSpec(
+        asset_id="asset-scene-001",
+        market_opportunity_id="opportunity-authentic-remote-work",
+        buyer_segment="web_product_teams",
+        buyer_job="authentic remote-work and collaboration communication",
+        channel="web and presentation",
+        asset_family="ui_3d_metaphor",
+        asset_type="3d",
+        micro_niche="authentic remote work collaboration",
+        subject="two diverse coworkers collaborating at home around a shared table",
+        visual_language="natural documentary commercial photography",
+        medium="soft daylight, realistic skin and fabric texture",
+        product_kind="raster_illustration",
+        delivery_format="jpeg",
+        layout_mode="hero_landscape",
+        palette=("natural daylight", "warm neutral", "soft blue"),
+        composition="candid collaborative moment with clear focal interaction",
+        negative_space="clean copy space on the left for a headline",
+        background_policy="scene",
+        isolation_policy="scene",
+        text_policy="none",
+        branding_policy="no_branding",
+        originality_levers=("authentic gesture", "regional realism", "clear copy space"),
+        variation_policy="retain only commercially distinct variants",
+        commercial_use_cases=("website hero", "remote work article", "team collaboration campaign"),
+        quality_gates=("thumbnail readability", "natural anatomy", "no accidental text or branding"),
+    )
+
+    package = compile_asset_prompt(spec)
+
+    assert "two diverse coworkers collaborating" in package.prompt
+    assert "deformed anatomy" in package.negative_prompt
+    assert "extra fingers" in package.negative_prompt
+    assert "readable text" in package.negative_prompt
+    assert "hands, fingers, faces, bodies, tools, measuring devices" not in package.negative_prompt
 
 
 def test_compiler_returns_canonical_prompt_package_with_commercial_fields():

@@ -20,6 +20,20 @@ _BASE_NEGATIVE = (
     "white halo, colored fringe, broken extraction edges",
 )
 
+_SCENE_NEGATIVE = (
+    "multiple unrelated subjects, crowded composition, accidental background people, "
+    "unrelated props, cluttered set dressing",
+    "deformed anatomy, extra fingers, fused limbs, malformed faces, duplicated subjects, unnatural proportions",
+    "readable text, fake typography, letters, numbers, labels, logos, trademarks, watermarks, signatures, stamps, postmarks",
+    "recognizable copyrighted artwork or characters, celebrity likenesses",
+    "deformed geometry, malformed object structure, duplicated elements",
+    "plastic texture, CGI appearance, generic AI aesthetic",
+    "oversaturated colors, excessive HDR, glow, cinematic effects",
+    "dirty background, gray background, background contamination",
+    "blur, compression artifacts, oversharpening, chromatic aberration",
+    "white halo, colored fringe, broken extraction edges",
+)
+
 _LEGAL_CONSTRAINTS = (
     "Avoid brands, trademarks, logos, copyrighted characters, and celebrity or public-figure likenesses.",
     "Do not imply endorsement by a real company or person.",
@@ -108,9 +122,10 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         *spec.originality_levers,
         *spec.metadata_hints,
     )
+    negative_terms = _SCENE_NEGATIVE if spec.delivery_format == "jpeg" and spec.isolation_policy == "scene" else _BASE_NEGATIVE
     return PromptPackage(
         prompt=prompt,
-        negative_prompt="; ".join(_BASE_NEGATIVE),
+        negative_prompt="; ".join(negative_terms),
         quality_constraints=quality,
         legal_constraints=_LEGAL_CONSTRAINTS,
         metadata_hints=metadata,
