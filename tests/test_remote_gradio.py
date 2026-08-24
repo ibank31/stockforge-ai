@@ -85,4 +85,4 @@ def test_remote_provider_wait_returns_completed_job(tmp_path: Path, monkeypatch)
     completed = ProviderJob("job-123", "completed")
     monkeypatch.setattr(provider, "status", lambda _: completed)
 
-    assert provider.wait("job-123") == completed
+    assert provider.wait("job-123", timeout_seconds=0.1) == completed

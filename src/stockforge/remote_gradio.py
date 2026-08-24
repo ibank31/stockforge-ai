@@ -75,8 +75,11 @@ class RemoteGradioProvider(GenerationProvider):
             return cached
         return self._poll(provider_job_id)
 
-    def wait(self, provider_job_id: str) -> ProviderJob:
-        deadline = time.monotonic() + self.timeout_seconds
+    def wait(self, provider_job_id: str, *, timeout_seconds: float | None = None) -> ProviderJob:
+        effective_timeout = self.timeout_seconds if timeout_seconds is None else timeout_seconds
+        if effective_timeout <= 0:
+            raise RemoteGradioError("timeout_seconds must be positive")
+        deadline = time.monotonic() + effective_timeout
         while time.monotonic() < deadline:
             current = self.status(provider_job_id)
             if current.state in {"completed", "succeeded", "failed", "cancelled"}:
