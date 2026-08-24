@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-24
 **Branch:** `main`
-**Latest verified commit:** `647ba26` (docs baseline; next JPEG preflight milestone pending verification)
+**Latest verified commit:** `3b7d7c3` (JPEG metadata preflight committed and pushed)
 
 ## Current milestone
 
