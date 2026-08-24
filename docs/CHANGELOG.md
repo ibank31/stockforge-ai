@@ -2,6 +2,15 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — JPEG scene prompt safety tuned
+
+### DONE — conditional human-centered scene guard
+
+- Added a JPEG-scene-specific negative prompt policy that permits approved human-centered commercial stories while retaining anatomy, text, logo, artifact, chromatic-aberration, halo, and IP safeguards.
+- Isolated-object and vector routes retain the stricter no-people/hands/faces/devices policy.
+- Added regression coverage for the conditional split.
+- Full verification: **283 passed, 1 skipped, 45 non-blocking Pillow deprecation warnings**. No generation, provider call, Kaggle run, upload, or submission was performed.
+
 ## 2026-08-24 — File-flow micro-set trial executed for buyer-value review
 
 ### REVIEW_REQUIRED — one local controlled candidate
