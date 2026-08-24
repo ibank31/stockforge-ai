@@ -65,9 +65,9 @@ def test_submit_stages_verified_request_and_preview(tmp_path: Path, monkeypatch)
     def fake_run(args, *, check=False):
         calls.append(args)
         staged = Path(args[args.index("-p") + 1])
-        staged_module = (staged / "stockforge_staged_input.py").read_text(encoding="utf-8")
-        assert "REQUEST_B64" in staged_module and "SOURCE_B64" in staged_module
-        assert "preview.webp" in staged_module
+        staged_worker = (staged / "worker.py").read_text(encoding="utf-8")
+        assert "REQUEST_B64" in staged_worker and "SOURCE_B64" in staged_worker
+        assert "preview.webp" in staged_worker
         return subprocess.CompletedProcess(args, 0, "submitted\n")
 
     monkeypatch.setattr("stockforge.kaggle_finalizer._run", fake_run)

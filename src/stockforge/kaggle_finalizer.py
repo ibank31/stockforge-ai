@@ -109,19 +109,17 @@ def submit(*, request: str | Path, project_root: str | Path, accelerator: str = 
     with tempfile.TemporaryDirectory(prefix="stockforge-kaggle-finalizer-") as temporary:
         staged = Path(temporary) / "worker"
         shutil.copytree(finalizer_dir(), staged)
-        # Kaggle kernel pushes reliably carry code but do not preserve arbitrary
-        # request/input sidecars. Embed the one selected preview and request in a
-        # transient Python module that is deleted with this staging directory.
-        staged_input = staged / "stockforge_staged_input.py"
+        # Kaggle pushes only the declared code file reliably. Embed the one
+        # selected request/preview directly in its transient copy of worker.py;
+        # this file is deleted with the staging directory and is never committed.
+        worker_path = staged / str(load_metadata()["code_file"])
         request_b64 = base64.b64encode(request_path.read_bytes()).decode("ascii")
         source_b64 = base64.b64encode(source_path.read_bytes()).decode("ascii")
-        staged_input.write_text(
-            "# Generated transiently by StockForge; never commit this file.\\n"
-            f"REQUEST_B64 = {request_b64!r}\\n"
-            f"SOURCE_NAME = {source_path.name!r}\\n"
-            f"SOURCE_B64 = {source_b64!r}\\n",
-            encoding="utf-8",
-        )
+        with worker_path.open("a", encoding="utf-8") as handle:
+            handle.write("\\n# StockForge transient staged input; do not commit.\\n")
+            handle.write(f"REQUEST_B64 = {request_b64!r}\\n")
+            handle.write(f"SOURCE_NAME = {source_path.name!r}\\n")
+            handle.write(f"SOURCE_B64 = {source_b64!r}\\n")
         result = _run(
             ["kaggle", "kernels", "push", "-p", str(staged), "--accelerator", accelerator]
         )

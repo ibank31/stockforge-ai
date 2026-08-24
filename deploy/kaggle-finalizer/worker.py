@@ -41,15 +41,25 @@ def srgb_bytes() -> bytes:
 def materialize_staged_input() -> None:
     """Restore the one request/preview embedded by the private Termux staging step."""
     try:
-        from stockforge_staged_input import REQUEST_B64, SOURCE_B64, SOURCE_NAME
-    except ImportError:
-        return
-    request_bytes = base64.b64decode(REQUEST_B64)
-    source_bytes = base64.b64decode(SOURCE_B64)
+        request_b64 = globals()["REQUEST_B64"]
+        source_b64 = globals()["SOURCE_B64"]
+        source_name = globals()["SOURCE_NAME"]
+    except KeyError:
+        # Compatibility only for an already-staged legacy bundle. New submits
+        # append the variables directly to this script because Kaggle transmits
+        # the declared code file rather than arbitrary sidecar files.
+        try:
+            from stockforge_staged_input import REQUEST_B64 as request_b64
+            from stockforge_staged_input import SOURCE_B64 as source_b64
+            from stockforge_staged_input import SOURCE_NAME as source_name
+        except ImportError:
+            return
+    request_bytes = base64.b64decode(request_b64)
+    source_bytes = base64.b64decode(source_b64)
     REQUEST_PATH.write_bytes(request_bytes)
     input_dir = Path("input")
     input_dir.mkdir(parents=True, exist_ok=True)
-    (input_dir / Path(str(SOURCE_NAME)).name).write_bytes(source_bytes)
+    (input_dir / Path(str(source_name)).name).write_bytes(source_bytes)
 
 
 def load_request() -> dict:
