@@ -32,7 +32,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
 | Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow |
 | Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon and technical badge presets pass local structure tests; broader object/icon family and Adobe portal remain pending |
-| Format | PNG true-alpha route | BLOCKED | Needs alpha producer, anti-fringe, trim, sRGB, and one portal validation |
+| Format | PNG true-alpha route | BLOCKED | Conservative alpha normalizer exists; production route still needs anti-fringe, trim policy, and one portal validation |
 | Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
 | QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |
 | QA | Deduplication and similarity controls | DONE | Exact/perceptual pipeline tests |

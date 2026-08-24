@@ -2,6 +2,20 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Engine maturation: selector, SVG presets, and conservative PNG alpha
+
+### DONE — deterministic pre-generation controls
+
+- Added `portfolio asset-types` and `portfolio readiness` so an asset type maps to an explicit format, execution mode, readiness state, blockers, and next step without provider calls.
+- Added a deterministic technical-badge SVG preset while preserving the existing modular-ribbon builder.
+- Added a conservative true-alpha PNG normalizer that rejects opaque RGB sources, preserves the source, embeds sRGB, and leaves anti-fringe quality as human review.
+- Added tests for selector fail-closed behavior, SVG preset safety, and alpha-source preservation.
+- Full verification: **265 passed, 1 skipped**; no generation or upload was performed.
+
+### Current limitation
+
+PNG remains blocked from production until anti-fringe/trim policy and one portal validation are complete. The broader SVG family and marketplace validation remain in progress.
+
 ## 2026-08-24 — Documentation consolidation
 
 The active documentation set was consolidated around `docs/README.md`, `docs/STATUS.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_ROADMAP.md`, `docs/SESSION_HANDOVER.md`, and the current research/marketplace references. Superseded handovers, stale branch-era briefs, duplicated marketplace research, and an old merge-resolution note were removed after their relevant decisions were preserved in the active documents. Historical entries below remain as history and are not current status claims.

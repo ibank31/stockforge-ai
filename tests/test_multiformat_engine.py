@@ -201,3 +201,30 @@ def test_technical_badge_preset_builds_native_svg_without_text_or_raster(tmp_pat
     assert "<text" not in svg
     assert "<image" not in svg
     assert "native-vector-technical-badge-v1" in svg
+
+
+def test_true_alpha_finalizer_preserves_source_and_writes_reviewable_png(tmp_path: Path) -> None:
+    from stockforge.png_alpha_finalize import prepare_true_alpha_png
+
+    source = tmp_path / "source.png"
+    destination = tmp_path / "normalized.png"
+    _write_png(source, alpha=True)
+    source_before = source.read_bytes()
+
+    report = prepare_true_alpha_png(source, destination)
+
+    assert report.ready is True
+    assert report.edge_review_required is True
+    assert report.technical.ready is True
+    assert destination.is_file()
+    assert source.read_bytes() == source_before
+
+
+def test_true_alpha_finalizer_refuses_opaque_rgb_source(tmp_path: Path) -> None:
+    from stockforge.png_alpha_finalize import PngAlphaFinalizeError, prepare_true_alpha_png
+
+    source = tmp_path / "opaque.jpg"
+    Image.new("RGB", (2048, 2048), (255, 255, 255)).save(source, format="JPEG")
+
+    with pytest.raises(PngAlphaFinalizeError, match="no real alpha"):
+        prepare_true_alpha_png(source, tmp_path / "output.png")
