@@ -183,3 +183,45 @@ unzip -o '<PATH_DARI_release_package.path>' \
 ```
 
 Setelah ekstrak, buka gambar pada ukuran penuh. Lengkapi checklist: hapus keyword yang tidak benar-benar tampak, pastikan tidak ada teks/brand/artefak, bandingkan dengan aset lain agar tidak duplikat, lakukan finalization/technical check bila perlu, dan isi pengungkapan GenAI secara jujur di marketplace. Mesin tidak mengubah `review_ready` menjadi `submission_ready` secara otomatis.
+
+
+## Master Finalizer via Kaggle: Preview → 4× AI Upscale → Review ZIP
+
+Gunakan jalur ini **hanya setelah** satu preview lolos inspeksi awal. Ia tidak cocok untuk memperbesar semua hasil generation. Command `prepare-master`, `doctor`, `status`, `output`, dan `import-kaggle-master` tidak memakai GPU; hanya `kaggle-finalizer submit` yang mengirim satu job GPU privat.
+
+```bash
+# 1. Buat request terikat pada preview yang telah dipilih. Tidak memakai GPU.
+REQUEST=$(python -m stockforge.cli portfolio prepare-master \
+  --project stock-assets \
+  --execution '<EXECUTION_ID_PREVIEW>' \
+  --artifact '<ARTIFACT_ID_PREVIEW>' \
+  --minimum-megapixels 6 \
+  --scale 4 | python -c 'import json,sys; print(json.load(sys.stdin)["path"])')
+
+# 2. Validasi bundle dan akses Kaggle. Tidak memakai GPU.
+python -m stockforge.cli kaggle-finalizer doctor
+python -m stockforge.cli kaggle-finalizer test
+
+# 3. Jalankan SATU finalizer AI 4× pada GPU Kaggle privat.
+# Ini memakai quota GPU Kaggle.
+python -m stockforge.cli kaggle-finalizer submit \
+  --project stock-assets \
+  --request "$REQUEST"
+
+# 4. Periksa status hingga selesai. Tidak memakai GPU tambahan.
+python -m stockforge.cli kaggle-finalizer status
+python -m stockforge.cli kaggle-finalizer logs
+
+# 5. Unduh output Kaggle ke proyek. Tidak memakai GPU.
+python -m stockforge.cli kaggle-finalizer output \
+  --project stock-assets
+
+# 6. Verifikasi checksum/request/format/ukuran lalu buat ZIP review master.
+# Ganti RESULT_DIR dengan folder output yang tercetak oleh command sebelumnya.
+python -m stockforge.cli portfolio import-kaggle-master \
+  --project stock-assets \
+  --request "$REQUEST" \
+  --result-dir '<RESULT_DIR>'
+```
+
+Worker hanya menerima request `prepared_no_gpu` dengan SHA-256 preview yang cocok. Ia mengunduh bobot RealESRGAN x4plus bila belum tersedia, menghasilkan master JPEG RGB/sRGB, lalu membuat `result.json`; hasil tanpa manifest, checksum, dimensi target, atau gate teknis yang sesuai akan ditolak saat import. Meski sukses, status akhir tetap `review_ready`: periksa master pada ukuran 100%, bandingkan dengan preview, dan jangan upload jika ada detail rekaan, halo, blur, kerusakan tekstur, perubahan objek, pseudo-teks, atau risiko hak/IP.

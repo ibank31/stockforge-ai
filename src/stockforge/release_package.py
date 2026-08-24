@@ -60,8 +60,8 @@ def build_release_package(
         artifact = database.get_artifact(artifact_id)
         if artifact is None:
             raise ReleasePackageError(f"Execution artifact is missing: {artifact_id}")
-        if artifact.project_id != project_id or artifact.kind != "generated-image":
-            raise ReleasePackageError(f"Execution artifact is not an eligible generated image: {artifact_id}")
+        if artifact.project_id != project_id or artifact.kind not in {"generated-image", "finalized-master"}:
+            raise ReleasePackageError(f"Execution artifact is not an eligible image artifact: {artifact_id}")
         source = (root / artifact.relative_path).resolve()
         try:
             source.relative_to(root)
@@ -70,6 +70,10 @@ def build_release_package(
         if not source.is_file():
             raise ReleasePackageError(f"Generated artifact file is missing: {artifact.relative_path}")
         artifacts.append((artifact, source))
+
+    def package_file(artifact, source: Path) -> str:
+        directory = "masters" if artifact.kind == "finalized-master" else "images"
+        return f"{directory}/{artifact.id}{source.suffix.lower()}"
 
     target_dir = Path(destination_dir or root / "deliveries").resolve()
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -83,11 +87,11 @@ def build_release_package(
             report = inspect_image(source)
             technical_reports.append({
                 "artifact_id": artifact.id,
-                "file": f"images/{artifact.id}{source.suffix.lower()}",
+                "file": package_file(artifact, source),
                 "report": report.to_dict(),
             })
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "status": "review_ready",
         "notice": "This package contains generated outputs that passed execution persistence. It is not a marketplace acceptance guarantee; human compliance review remains required.",
         "execution": execution.to_dict(),
@@ -99,7 +103,7 @@ def build_release_package(
                 "sha256": artifact.sha256,
                 "mime_type": artifact.mime_type,
                 "size_bytes": artifact.size_bytes,
-                "file": f"images/{artifact.id}{source.suffix.lower()}",
+                "file": package_file(artifact, source),
             }
             for artifact, source in artifacts
         ],
@@ -114,7 +118,7 @@ def build_release_package(
     try:
         with zipfile.ZipFile(temporary_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for artifact, source in artifacts:
-                archive.write(source, f"images/{artifact.id}{source.suffix.lower()}")
+                archive.write(source, package_file(artifact, source))
             archive.writestr("manifest.json", json.dumps(manifest, indent=2, sort_keys=True) + "\n")
             if portfolio is not None:
                 metadata = portfolio.get("metadata")
@@ -131,7 +135,7 @@ def build_release_package(
                 keyword_text = ", ".join(str(item) for item in metadata.get("keywords", []))
                 for artifact, source in artifacts:
                     writer.writerow([
-                        f"images/{artifact.id}{source.suffix.lower()}",
+                        package_file(artifact, source),
                         str(metadata.get("title", "")),
                         keyword_text,
                         str(metadata.get("created_using_generative_ai", True)).lower(),
@@ -143,10 +147,18 @@ def build_release_package(
                     "TECHNICAL_READINESS.json",
                     json.dumps(technical_reports, indent=2, sort_keys=True) + "\n",
                 )
+                master_finalization = execution.parameters.get("master_finalization")
+                if master_finalization is not None:
+                    archive.writestr(
+                        "MASTER_FINALIZATION.json",
+                        json.dumps(master_finalization, indent=2, sort_keys=True) + "\n",
+                    )
                 checklist_lines = [
                     "# StockForge Portfolio Review Checklist",
                     "",
                     "**Package status:** `review_ready` only. This file does not approve marketplace submission.",
+                    "- [ ] If this package contains `masters/`, inspect the JPEG at 100% and compare it with its preview before upload.",
+                    "- [ ] Review `MASTER_FINALIZATION.json` where present; it records the visual transform but does not certify its quality.",
                     "",
                     "## Required human checks",
                     "",

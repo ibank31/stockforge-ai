@@ -23,11 +23,16 @@ from .job import JobError
 from .job_database import JobDatabase
 from .job_manager import JobManager
 from .kaggle_worker import KaggleWorkerError, doctor as kaggle_doctor, list_kernels, push as kaggle_push, quota as kaggle_quota, remote as kaggle_remote, validate_local
+from .kaggle_finalizer import doctor as kaggle_finalizer_doctor, remote as kaggle_finalizer_remote, submit as kaggle_finalizer_submit, validate_local as validate_kaggle_finalizer
 from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
 from .portfolio import PortfolioError, lane_for, list_lanes, plan_manifest
 from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, select_brief
+from .artifact import sha256_file
+from .master_finalizer import MasterFinalizationError, MasterTarget
+from .master_registry import MasterRegistryError, register_master_candidate
+from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .release_package import build_release_package
 from .termux_control import (
@@ -44,6 +49,7 @@ asset_app = typer.Typer(help="Register and inspect project assets.")
 job_app = typer.Typer(help="Create and operate persistent jobs.")
 adobe_app = typer.Typer(help="Adobe Stock readiness checks.")
 kaggle_app = typer.Typer(help="Control the Kaggle GPU worker without a browser.")
+kaggle_finalizer_app = typer.Typer(help="Control the private Kaggle AI-upscale finalizer without a browser.")
 provider_app = typer.Typer(help="Configure remote GPU workers for Termux-controlled generation.")
 portfolio_app = typer.Typer(help="Plan evidence-aligned, human-review-required portfolio batches.")
 app.add_typer(project_app, name="project")
@@ -51,6 +57,7 @@ app.add_typer(asset_app, name="asset")
 app.add_typer(job_app, name="job")
 app.add_typer(adobe_app, name="adobe")
 app.add_typer(kaggle_app, name="kaggle")
+app.add_typer(kaggle_finalizer_app, name="kaggle-finalizer")
 app.add_typer(provider_app, name="provider")
 app.add_typer(portfolio_app, name="portfolio")
 
@@ -432,6 +439,161 @@ def portfolio_show(
     }, indent=2))
 
 
+@portfolio_app.command("prepare-master")
+def portfolio_prepare_master(
+    project: str = typer.Option(..., "--project", "-p"),
+    execution: str = typer.Option(..., "--execution"),
+    artifact: str | None = typer.Option(None, "--artifact"),
+    minimum_megapixels: float = typer.Option(6.0, "--minimum-megapixels", min=4.0, max=100.0),
+    scale: int = typer.Option(4, "--scale"),
+) -> None:
+    """Prepare one lineage-bound master-finalizer request; never calls GPU."""
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        source_execution = database.get_execution(execution)
+        if source_execution is None or source_execution.project_id != record["id"]:
+            raise PortfolioError("Execution does not belong to the requested project.")
+        if not source_execution.artifact_ids:
+            raise PortfolioError("Execution has no output artifact to finalize.")
+        source_id = artifact or source_execution.artifact_ids[0]
+        if source_id not in source_execution.artifact_ids:
+            raise PortfolioError("Requested artifact is not an output of the supplied execution.")
+        source = database.get_artifact(source_id)
+        if source is None or source.project_id != record["id"] or source.kind != "generated-image":
+            raise PortfolioError("Requested artifact is not an eligible generated preview.")
+        source_path = (project_root / source.relative_path).resolve()
+        try:
+            source_path.relative_to(project_root)
+        except ValueError as exc:
+            raise PortfolioError("Preview artifact path escapes the project workspace.") from exc
+        if not source_path.is_file():
+            raise PortfolioError("Preview artifact file is missing from the project workspace.")
+        target = MasterTarget(minimum_megapixels=minimum_megapixels, scale=scale)
+        from PIL import Image
+        with Image.open(source_path) as image:
+            image.load()
+            width, height = image.size
+        expected_width, expected_height = width * target.scale, height * target.scale
+        expected_megapixels = (expected_width * expected_height) / 1_000_000
+        if expected_megapixels < target.minimum_megapixels:
+            raise PortfolioError(
+                f"Requested scale produces {expected_megapixels:.2f} MP, below target {target.minimum_megapixels:.2f} MP."
+            )
+        if expected_megapixels > 100:
+            raise PortfolioError(f"Requested scale produces {expected_megapixels:.2f} MP, above 100 MP.")
+        portfolio = source_execution.parameters.get("portfolio")
+        if portfolio is not None and not isinstance(portfolio, dict):
+            raise PortfolioError("Execution portfolio context is invalid.")
+        request_id = f"master-{source.id}-{uuid4().hex[:8]}"
+        payload = {
+            "schema_version": 1,
+            "kind": "stockforge.master_finalizer_request",
+            "request_id": request_id,
+            "status": "prepared_no_gpu",
+            "project_id": record["id"],
+            "source": {
+                "artifact_id": source.id,
+                "execution_id": source_execution.id,
+                "relative_path": source.relative_path,
+                "sha256": sha256_file(source_path),
+                "width": width,
+                "height": height,
+            },
+            "target": {
+                "mode": "ai_upscale",
+                "scale": target.scale,
+                "minimum_megapixels": target.minimum_megapixels,
+                "expected_width": expected_width,
+                "expected_height": expected_height,
+                "expected_megapixels": round(expected_megapixels, 4),
+                "format": "jpeg",
+                "color_space": "sRGB",
+            },
+            "destination": f"masters/{source.id}-master.jpg",
+            "portfolio": portfolio,
+            "human_review_required": True,
+            "provider_options": ["kaggle-realesrgan", "future-burst-finalizer"],
+            "notice": "This request did not call GPU. A finalizer provider must perform visual upscale, then the result requires 100% human review before marketplace submission.",
+        }
+        destination_dir = project_root / "master-finalizer-requests"
+        destination_dir.mkdir(parents=True, exist_ok=True)
+        destination = destination_dir / f"{request_id}.json"
+        destination.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except (PortfolioError, MasterFinalizationError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({"path": str(destination), **payload}, indent=2))
+
+
+@portfolio_app.command("import-kaggle-master")
+def portfolio_import_kaggle_master(
+    project: str = typer.Option(..., "--project", "-p"),
+    request: str = typer.Option(..., "--request"),
+    result_dir: str = typer.Option(..., "--result-dir"),
+) -> None:
+    """Verify/import one Kaggle finalizer output and build a review package; never calls GPU."""
+    try:
+        record, project_root = _portfolio_project(project)
+        request_path = Path(request).expanduser().resolve()
+        try:
+            request_path.relative_to(project_root)
+        except ValueError as exc:
+            raise PortfolioError("Finalizer request must be inside the requested project workspace.") from exc
+        payload = json.loads(request_path.read_text(encoding="utf-8"))
+        if payload.get("kind") != "stockforge.master_finalizer_request":
+            raise PortfolioError("Finalizer request kind is invalid.")
+        source_data = payload.get("source")
+        if not isinstance(source_data, dict):
+            raise PortfolioError("Finalizer request source is invalid.")
+        source_artifact_id = source_data.get("artifact_id")
+        source_execution_id = source_data.get("execution_id")
+        if not isinstance(source_artifact_id, str) or not isinstance(source_execution_id, str):
+            raise PortfolioError("Finalizer request lacks source artifact/execution identity.")
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        source_artifact = database.get_artifact(source_artifact_id)
+        source_execution = database.get_execution(source_execution_id)
+        if source_artifact is None or source_execution is None:
+            raise PortfolioError("Original preview artifact or execution is no longer available.")
+        report = import_kaggle_master(
+            request_path=request_path,
+            result_dir=result_dir,
+            project_root=project_root,
+        )
+        master, master_execution = register_master_candidate(
+            database=database,
+            project_id=record["id"],
+            project_root=project_root,
+            source_artifact=source_artifact,
+            source_execution=source_execution,
+            report=report,
+        )
+        package = build_release_package(
+            database=database,
+            project_id=record["id"],
+            project_root=project_root,
+            execution_id=master_execution.id,
+        )
+    except (
+        PortfolioError,
+        KaggleMasterImportError,
+        MasterRegistryError,
+        OSError,
+        ValueError,
+        json.JSONDecodeError,
+    ) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({
+        "status": "review_ready",
+        "master_artifact_id": master.id,
+        "master_execution_id": master_execution.id,
+        "master_finalization": report.to_dict(),
+        "release_package": package.to_dict(),
+        "notice": "GPU was not called by import. Review the master JPEG at 100% before any marketplace submission.",
+    }, indent=2))
+
+
 @portfolio_app.command("generate")
 def portfolio_generate(
     project: str = typer.Option(..., "--project", "-p"),
@@ -665,6 +827,78 @@ def job_cancel(job_id: str = typer.Argument(...)) -> None:
     except JobError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"Cancelled job: {job.id}")
+
+
+@kaggle_finalizer_app.command("test")
+def kaggle_finalizer_test() -> None:
+    """Validate finalizer bundle locally. Never pushes or uses GPU."""
+    try:
+        info = validate_kaggle_finalizer()
+    except KaggleWorkerError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo("KAGGLE FINALIZER TEST: PASS")
+    typer.echo(f"Worker: {info['worker_dir']}")
+    typer.echo(f"Kernel: {info['metadata']['id']}")
+    typer.echo("Mode: private one-shot 4x AI upscale")
+
+
+@kaggle_finalizer_app.command("doctor")
+def kaggle_finalizer_doctor_cmd() -> None:
+    """Check Kaggle CLI/auth/finalizer files. Never pushes or uses GPU."""
+    checks = kaggle_finalizer_doctor()
+    failed = False
+    for name, ok, detail in checks:
+        typer.echo(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
+        failed |= not ok
+    raise typer.Exit(code=1 if failed else 0)
+
+
+@kaggle_finalizer_app.command("submit")
+def kaggle_finalizer_submit_cmd(
+    project: str = typer.Option(..., "--project", "-p"),
+    request: str = typer.Option(..., "--request"),
+    accelerator: str = typer.Option("NvidiaTeslaT4", "--accelerator", "-a"),
+) -> None:
+    """Push one prepared master request to private Kaggle GPU finalizer."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        code = kaggle_finalizer_submit(request=request, project_root=project_root, accelerator=accelerator)
+    except (KaggleWorkerError, PortfolioError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
+
+
+@kaggle_finalizer_app.command("status")
+def kaggle_finalizer_status(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> None:
+    """Read finalizer kernel status through the Kaggle API."""
+    raise typer.Exit(code=kaggle_finalizer_remote("status", kernel))
+
+
+@kaggle_finalizer_app.command("logs")
+def kaggle_finalizer_logs(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> None:
+    """Read finalizer kernel logs through the Kaggle API."""
+    raise typer.Exit(code=kaggle_finalizer_remote("logs", kernel))
+
+
+@kaggle_finalizer_app.command("output")
+def kaggle_finalizer_output(
+    project: str = typer.Option(..., "--project", "-p"),
+    kernel: str | None = typer.Option(None, "--kernel", "-k"),
+    destination: str | None = typer.Option(None, "--destination", "-d"),
+) -> None:
+    """Download finalizer output into the project without using GPU."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        output_dir = Path(destination).expanduser() if destination else project_root / "kaggle-finalizer-output"
+        output_dir = output_dir.resolve()
+        try:
+            output_dir.relative_to(project_root)
+        except ValueError as exc:
+            raise PortfolioError("Finalizer output destination must remain inside the project workspace.") from exc
+        code = kaggle_finalizer_remote("output", kernel, output_dir)
+    except (KaggleWorkerError, PortfolioError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
 
 
 @kaggle_app.command("test")
