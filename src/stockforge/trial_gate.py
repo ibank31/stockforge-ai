@@ -19,6 +19,7 @@ class TrialReadiness:
     hypothesis: str
     purpose: str
     single_candidate_only: bool
+    trial_allowed: bool
     provider_call_allowed: bool
     blockers: tuple[str, ...]
     next_step: str
@@ -46,16 +47,23 @@ def assess_trial_readiness(*, asset_type: str, hypothesis: str, purpose: str) ->
     blockers = list(policy.blockers)
     if policy.readiness == "BLOCKED":
         status = "BLOCKED"
+        trial_allowed = False
         provider_allowed = False
         next_step = policy.next_step
     elif policy.readiness == "REVIEW_REQUIRED":
         status = "REVIEW_REQUIRED"
+        trial_allowed = False
         provider_allowed = False
         next_step = policy.next_step
     else:
         status = "READY_FOR_TRIAL"
-        provider_allowed = True
-        next_step = "Run exactly one candidate only after the human confirms this hypothesis and the selected brief preflight passes."
+        trial_allowed = True
+        provider_allowed = policy.execution_mode != "local_native_vector_build"
+        next_step = (
+            "Build exactly one local candidate only after the human confirms this hypothesis and the selected brief preflight passes."
+            if not provider_allowed
+            else "Run exactly one remote candidate only after the human confirms this hypothesis and the selected brief preflight passes."
+        )
     return TrialReadiness(
         asset_type=policy.key,
         delivery_format=policy.delivery_format,
@@ -63,6 +71,7 @@ def assess_trial_readiness(*, asset_type: str, hypothesis: str, purpose: str) ->
         hypothesis=hypothesis_text,
         purpose=purpose_text,
         single_candidate_only=True,
+        trial_allowed=trial_allowed,
         provider_call_allowed=provider_allowed,
         blockers=tuple(blockers),
         next_step=next_step,

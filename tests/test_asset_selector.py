@@ -76,6 +76,7 @@ def test_trial_readiness_allows_only_explicit_single_candidate_scene() -> None:
     )
 
     assert readiness.readiness == "READY_FOR_TRIAL"
+    assert readiness.trial_allowed is True
     assert readiness.provider_call_allowed is True
     assert readiness.single_candidate_only is True
 
@@ -90,5 +91,21 @@ def test_trial_readiness_keeps_png_blocked() -> None:
     )
 
     assert readiness.readiness == "BLOCKED"
+    assert readiness.trial_allowed is False
     assert readiness.provider_call_allowed is False
     assert any("alpha" in item.casefold() for item in readiness.blockers)
+
+
+def test_trial_readiness_allows_local_svg_but_not_provider_call() -> None:
+    from stockforge.trial_gate import assess_trial_readiness
+
+    readiness = assess_trial_readiness(
+        asset_type="seamless_pattern",
+        hypothesis="A repeatable geometric tile may serve a decorative background buyer job.",
+        purpose="Validate SVG repeatability and human visual utility before portal review.",
+    )
+
+    assert readiness.readiness == "READY_FOR_TRIAL"
+    assert readiness.trial_allowed is True
+    assert readiness.provider_call_allowed is False
+    assert readiness.single_candidate_only is True

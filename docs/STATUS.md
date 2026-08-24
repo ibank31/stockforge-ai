@@ -19,7 +19,7 @@ StockForge treats generation as one step inside an asset package containing a bu
 | Transparent cutout / overlay | PNG with real alpha | Alpha producer and PNG finalizer | **Blocked until alpha path is validated** |
 | Seamless raster pattern | PNG/JPEG candidate | Local edge-continuity gate | **Gate implemented; commercial review still required** |
 
-The JPEG path is the only generative route with a recorded live preview and completed master workflow. Native SVG is a genuine local geometry route, not a raster trace. PNG now has a conservative offline true-alpha normalizer that refuses opaque RGB sources and preserves the source, but PNG must never use a white or checkerboard background as a substitute for actual transparency and remains blocked from production.
+The JPEG path is the only generative route with a recorded live preview and completed master workflow. Native SVG is a genuine local geometry route, not a raster trace. Native geometric pattern now has a local repeatability gate and is eligible for one controlled local trial. PNG now has a conservative offline true-alpha normalizer that refuses opaque RGB sources and preserves the source, but PNG must never use a white or checkerboard background as a substitute for actual transparency and remains blocked from production.
 
 ## Completed foundation
 
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **271 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
+The current main branch has passed **272 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
