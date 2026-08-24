@@ -179,6 +179,14 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
         "title": "Modular Component Chain With Transparent Path",
         "keywords": ("modular components", "transparent path", "graphite ceramic", "clear acrylic", "matte paper", "connected modules", "horizontal object", "isolated object", "white background", "copy space", "minimal 3d"),
     },
+    ("native_vector_elements", "modular-ribbon"): {
+        "title": "Editable Modular Ribbon Vector Element",
+        "keywords": ("editable vector", "modular ribbon", "SVG paths", "geometric element", "connected shapes", "flat illustration", "isolated graphic", "transparent background", "design component", "abstract vector"),
+    },
+    ("native_vector_elements", "technical-badge"): {
+        "title": "Editable Technical Badge Vector Element",
+        "keywords": ("editable vector", "technical badge", "SVG paths", "geometric badge", "radial connection", "flat illustration", "isolated graphic", "white background", "design component", "abstract vector"),
+    },
 }
 
 
@@ -509,6 +517,51 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
             _concept("integrity-bridge", "two stable graphite modules linked by a translucent bridge", "trusted handoff", "centered isolated object", "clean copy space right", PALETTES["integrity"], ("trusted connection", "material contrast", "clear silhouette")),
         ),
         notes="No padlocks, shields, hooded people, fingerprints, code text, dashboards, certification claims, or brand references.",
+    ),
+    PortfolioLane(
+        key="native_vector_elements",
+        name="Native vector utility elements",
+        tier="secondary",
+        evidence_confidence="medium",
+        opportunity_id="V01",
+        buyer_segment="design_and_content_teams",
+        buyer_job="editable icon, badge, or modular design element",
+        channel="web",
+        asset_family="generic",
+        asset_type="icon",
+        micro_niche="editable technical and modular vector element",
+        visual_language="clean flat geometry with restrained material contrast",
+        medium="editable SVG paths, shapes, and strokes",
+        commercial_use_cases=("web illustration", "presentation diagram element", "brand-system component"),
+        keywords=("editable vector", "SVG icon", "technical badge", "modular shape", "geometric design", "flat illustration", "design element", "isolated graphic", "editable paths", "vector component"),
+        test_cap=2,
+        concepts=(
+            _concept(
+                "modular-ribbon",
+                "three modular geometric forms joined by one continuous ribbon",
+                "connection and flow without interface or text",
+                "single centered vector object",
+                "clean surrounding margin",
+                ("#164E63", "#F8FAFC", "#F59E0B"),
+                ("editable path system", "clear silhouette", "non-generic rhythm"),
+                product_kind="native_vector",
+                delivery_format="svg",
+                background_policy="transparent",
+            ),
+            _concept(
+                "technical-badge",
+                "a rounded technical badge with four radial connection lines and one central module",
+                "structured system relationship without symbols or text",
+                "single centered vector object",
+                "clean surrounding margin",
+                ("#164E63", "#F8FAFC", "#F59E0B"),
+                ("radial structure", "editable geometry", "no typography"),
+                product_kind="native_vector",
+                delivery_format="svg",
+                background_policy="white",
+            ),
+        ),
+        notes="Deterministic SVG lane; no raster trace, readable text, logo, or marketplace acceptance claim.",
     ),
 )
 

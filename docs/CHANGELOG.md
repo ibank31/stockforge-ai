@@ -2,6 +2,15 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Engine maturation: selector, SVG presets, native-vector lane, and delivery tests
+
+### Additional implementation
+
+- Added the `native_vector_elements` portfolio lane with two controlled briefs: `modular-ribbon` and `technical-badge`.
+- Linked asset-type recommendations to research lanes so `native_object` and `technical_icon` no longer stop at a generic format label.
+- Updated regression tests for local native-vector execution versus remote raster execution.
+- Full verification after this milestone: **267 passed, 1 skipped**; no generation, provider call, or upload was performed.
+
 ## 2026-08-24 — Engine maturation: selector, SVG presets, conservative PNG alpha, and delivery tests
 
 ### Additional verification

@@ -51,8 +51,8 @@ A future generation preview may be copied to `Download/MACHINE STOCKFORGE/PREVIE
 
 ## Current state
 
-Stage 1 is complete. The selector and readiness report are implemented and tested without generation. Supported types are `scene`, `native_object`, `technical_icon`, `seamless_pattern`, and `transparent_cutout`. Native SVG has modular-ribbon and technical-badge deterministic presets. PNG has a conservative true-alpha normalizer that refuses opaque sources, but the production route remains explicitly blocked. Unsupported asset types fail closed.
+Stage 1 is complete. The selector and readiness report are implemented and tested without generation. Supported types are `scene`, `native_object`, `technical_icon`, `seamless_pattern`, and `transparent_cutout`. Native SVG now has a dedicated `native_vector_elements` lane with modular-ribbon and technical-badge briefs and deterministic presets. PNG has a conservative true-alpha normalizer that refuses opaque sources, but the production route remains explicitly blocked. Unsupported asset types fail closed.
 
 ## Current next action
 
-Continue the deterministic SVG preset family and integrate the true-alpha normalizer into a future PNG production gate only after anti-fringe and portal evidence are available. A generation trial is not yet needed. It becomes justified only when a remaining provider, visual, or marketplace fact cannot be established locally and the exact hypothesis is documented first.
+Continue the deterministic SVG preset family beyond the two controlled briefs and integrate the true-alpha normalizer into a future PNG production gate only after anti-fringe and portal evidence are available. A generation trial is not yet needed. It becomes justified only when a remaining provider, visual, or marketplace fact cannot be established locally and the exact hypothesis is documented first.

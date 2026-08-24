@@ -24,14 +24,15 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Core | Plugin and pipeline contracts | DONE | Contract tests |
 | Intelligence | Market evidence and buyer taxonomy | DONE | Deterministic module tests; evidence remains human/public-source bounded |
 | Intelligence | Concept planner and prompt compiler | DONE | Concept/prompt tests |
-| Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types` and `portfolio readiness` dry-run; never calls a provider |
+| Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types` and `portfolio readiness` dry-run; includes recommended research lanes and never calls a provider |
+| Intelligence | Native vector utility lane | DONE | Two controlled briefs: modular ribbon and technical badge; local SVG route only |
 | Generation | Provider-neutral GenerationRequest/Result | DONE | Generation contract tests |
 | Generation | Provider capability/quota router | DONE | Router tests, including exhausted quota |
 | Generation | Remote Gradio durable adapter | DONE | `generate_remote` contract tests; live endpoint remains runtime-dependent |
 | Generation | Hugging Face ZeroGPU preview route | LIVE | Recorded Z-Image Turbo benchmark and selected preview workflow |
 | Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
 | Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow |
-| Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon and technical badge presets pass local structure tests; broader object/icon family and Adobe portal remain pending |
+| Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon and technical badge presets plus native-vector lane pass local structure tests; broader object/icon family and Adobe portal remain pending |
 | Format | PNG true-alpha route | BLOCKED | Conservative alpha normalizer exists; production route still needs anti-fringe, trim policy, and one portal validation |
 | Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
 | QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |

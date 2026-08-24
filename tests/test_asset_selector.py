@@ -37,3 +37,15 @@ def test_transparent_cutout_stays_blocked() -> None:
 def test_unknown_asset_type_fails_closed() -> None:
     with pytest.raises(AssetSelectionError, match="Unsupported asset type"):
         select_asset_type("anything_else")
+
+
+def test_native_object_recommendation_resolves_to_valid_svg_briefs() -> None:
+    from stockforge.portfolio import build_brief, lane_for
+
+    policy = select_asset_type("native_object")
+    lane = lane_for(policy.recommended_lane_keys[0])
+    brief = build_brief(lane.key, "modular-ribbon")
+
+    assert brief.asset_spec.product_kind == "native_vector"
+    assert brief.asset_spec.delivery_format == "svg"
+    assert brief.metadata.human_review_required is True

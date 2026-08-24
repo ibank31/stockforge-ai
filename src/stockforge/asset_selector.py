@@ -25,12 +25,15 @@ class AssetTypePolicy:
     candidate_niches: tuple[str, ...]
     blockers: tuple[str, ...]
     next_step: str
+    recommended_lane_keys: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
         data["candidate_niches"] = list(self.candidate_niches)
         data["blockers"] = list(self.blockers)
+        data["recommended_lane_keys"] = list(self.recommended_lane_keys)
         return data
+
 
 
 ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
@@ -44,6 +47,7 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         candidate_niches=("surreal conceptual scene", "seasonal commercial scene", "tactile material scene"),
         blockers=("full-size visual review is required after generation", "final marketplace acceptance is not automatic"),
         next_step="Select one evidence-backed scene brief, run preflight, then allow one controlled JPEG trial.",
+        recommended_lane_keys=("playful_surreal_product_metaphors", "tactile_material_atmospheres"),
     ),
     AssetTypePolicy(
         key="native_object",
@@ -55,6 +59,7 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         candidate_niches=("geometric object", "modular icon element", "technical design component"),
         blockers=("current builder is limited to controlled geometric presets", "portal upload validation is still pending"),
         next_step="Choose a supported geometric preset, build locally, inspect SVG structure, then perform one manual upload validation.",
+        recommended_lane_keys=("native_vector_elements",),
     ),
     AssetTypePolicy(
         key="technical_icon",
@@ -66,6 +71,7 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         candidate_niches=("technical component", "food or produce icon", "badge or simple symbol"),
         blockers=("dedicated technical/icon presets are not complete", "visual utility and editability require a human review"),
         next_step="Expand and test the deterministic SVG preset family before a trial is authorized.",
+        recommended_lane_keys=("native_vector_elements",),
     ),
     AssetTypePolicy(
         key="seamless_pattern",
