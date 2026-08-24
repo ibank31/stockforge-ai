@@ -272,6 +272,14 @@ READY_TO_UPLOAD/<batch>/
 
 Setiap folder `asset-*` hanya berisi satu JPEG master yang sudah lolos lineage, audit teknis JPEG/sRGB, metadata review, dan persetujuan pengguna. StockForge menanam title serta keyword yang sudah direview sebagai metadata XMP pada **salinan JPEG upload**; master terdaftar dan lineage asli tidak diubah. Preview, benchmark, ZIP delivery, dan CSV tidak masuk ke folder aset.
 
-Di Adobe Contributor Portal, pilih **Browse** lalu buka satu folder `asset-*` dan pilih file JPEG-nya. Jangan gunakan **Upload CSV** pada Android. Setelah upload, periksa bahwa Adobe membaca title serta keyword XMP yang tertanam; pilih category yang ditampilkan dalam `UPLOAD_METADATA.txt` bila portal belum mengisinya. File `UPLOAD_METADATA.txt` dapat disentuh untuk dibuka di Android sebagai bukti metadata serta checklist visual.
+Di Adobe Contributor Portal, pilih **Browse** lalu buka satu folder `asset-*` dan pilih file JPEG-nya. Jangan gunakan **Upload CSV** pada Android. Setelah upload, periksa bahwa Adobe membaca title serta keyword XMP yang tertanam. File `UPLOAD_METADATA.txt` dapat disentuh untuk dibuka di Android sebagai bukti metadata dan checklist visual.
 
-Tandai **Created using generative AI tools** secara jujur, lengkapi deklarasi orang/properti sesuai aset, dan selesaikan Terms and Conditions serta CAPTCHA sendiri. Tekan **Submit** hanya setelah Anda setuju. StockForge tidak menyediakan command untuk submit otomatis.
+Selesaikan hanya field portal berikut sebelum submission:
+
+1. Ubah **File type** menjadi **Illustrations** untuk visual GenAI/3D seperti fiber-arch, bukan Photos.
+2. Pilih **Graphic Resources** untuk kategori fiber-arch; gunakan category yang direview dalam `UPLOAD_METADATA.txt` untuk aset lain.
+3. Tandai **Created using generative AI tools** secara jujur.
+4. Pilih deklarasi orang/properti sesuai apa yang benar-benar terlihat dan sumber prompt; jangan mengisi otomatis dari asumsi.
+5. Selesaikan Terms and Conditions serta CAPTCHA sendiri, lalu tekan **Submit** hanya setelah Anda setuju.
+
+StockForge tidak menyediakan command untuk submit otomatis.
