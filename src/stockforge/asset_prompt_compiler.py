@@ -80,6 +80,18 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         "one clear visual mechanism that is legible at thumbnail size",
     )
     extras = " ".join(item for item in spec.extra_constraints if not item.startswith("Visual mechanism:"))
+    identity_parts = []
+    if spec.identity_signature:
+        identity_parts.append(f"Niche identity signature: {spec.identity_signature}.")
+    if spec.identity_lighting:
+        identity_parts.append(f"Lighting signature: {spec.identity_lighting}.")
+    if spec.identity_framing:
+        identity_parts.append(f"Identity framing rule: {spec.identity_framing}.")
+    if spec.identity_context:
+        identity_parts.append(f"Identity context: {spec.identity_context}.")
+    if spec.identity_distinctness:
+        identity_parts.append("Distinctness anchors: " + ", ".join(spec.identity_distinctness) + ".")
+    identity_instruction = " ".join(identity_parts)
 
     # Keep buyer/use-case language out of the image-facing instruction.  Terms
     # such as developer, dashboard, packaging, or SaaS can pull a model toward
@@ -94,6 +106,7 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         f"{layout_instruction} {format_instruction} "
         f"{isolation}. {background}. Palette: {palette}. {text}. "
         f"Distinctness levers: {levers}. Visual language: {spec.visual_language}. "
+        f"{identity_instruction} "
         "Prioritize a complete readable silhouette, clean geometry, credible material behavior, "
         "controlled shadow, professional art direction, and a thumbnail-readable focal idea. "
         "Do not add a literal device, interface, business prop, product label, or decorative element unless it is the approved primary subject. "
@@ -123,6 +136,8 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         *spec.metadata_hints,
     )
     negative_terms = _SCENE_NEGATIVE if spec.delivery_format == "jpeg" and spec.isolation_policy == "scene" else _BASE_NEGATIVE
+    if spec.identity_prohibited_shorthand:
+        negative_terms = (*negative_terms, "niche-specific shorthand: " + ", ".join(spec.identity_prohibited_shorthand))
     return PromptPackage(
         prompt=prompt,
         negative_prompt="; ".join(negative_terms),

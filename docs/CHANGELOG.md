@@ -2,6 +2,17 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-25 — JPEG niche identity framework
+
+### DONE — nine-lane prompt identity contract
+
+- Added `JpegNicheIdentity` profiles for all nine JPEG lanes, each with a visual signature, lighting signature, framing rule, environmental context, distinctness anchors, and prohibited shorthand.
+- Persisted the identity fields into JPEG `AssetSpec` records and restored them through the format router, so saved briefs retain the identity contract.
+- Added the identity instructions to compiled JPEG prompts and niche-specific shorthand exclusions to negative prompts; SVG briefs remain unchanged.
+- Added lane-by-lane regression coverage proving nine unique JPEG signatures are present in prompts and that the SVG route does not receive JPEG identity fields.
+- Full verification: **287 passed, 1 skipped, 45 non-blocking Pillow deprecation warnings**. No generation, provider call, Kaggle run, upload, or submission was performed.
+- This milestone improves art-direction consistency only. It does not prove market demand, buyer conversion, Adobe acceptance, semantic quality, legal clearance, or commercial superiority.
+
 ## 2026-08-24 — JPEG metadata preflight and portal category safety
 
 ### DONE — report-only marketplace metadata gate

@@ -1,5 +1,6 @@
 from stockforge.asset_prompt_compiler import compile_asset_prompt
 from stockforge.asset_spec import AssetSpec, standalone_asset_spec
+from stockforge.portfolio import build_brief, list_lanes
 
 
 def _spec():
@@ -19,6 +20,34 @@ def _spec():
         originality_levers=("restrained tactile material", "single clear silhouette"),
         commercial_use_cases=("website hero", "product explainer", "presentation"),
     )
+
+
+def test_each_jpeg_lane_has_unique_identity_in_prompt_and_negative_prompt():
+    jpeg_lanes = [lane for lane in list_lanes() if lane.concepts[0].delivery_format == "jpeg"]
+    signatures = []
+
+    for lane in jpeg_lanes:
+        brief = build_brief(lane.key, lane.concepts[0].key)
+        spec = brief.asset_spec
+        signatures.append(spec.identity_signature)
+        assert spec.identity_signature
+        assert spec.identity_lighting
+        assert spec.identity_framing
+        assert spec.identity_context
+        assert spec.identity_distinctness
+        assert spec.identity_prohibited_shorthand
+        assert spec.identity_signature in brief.prompt_package.prompt
+        assert "niche-specific shorthand:" in brief.prompt_package.negative_prompt
+
+    assert len(jpeg_lanes) == 9
+    assert len(set(signatures)) == len(signatures)
+
+
+def test_svg_briefs_do_not_receive_jpeg_identity_profile():
+    brief = build_brief("native_vector_elements", "folder-upload")
+
+    assert brief.asset_spec.identity_signature == ""
+    assert "Niche identity signature:" not in brief.prompt_package.prompt
 
 
 def test_compiler_preserves_standalone_constraints():

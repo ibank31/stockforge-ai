@@ -62,6 +62,12 @@ class AssetSpec:
     metadata_hints: tuple[str, ...] = ()
     extra_constraints: tuple[str, ...] = ()
     tags: tuple[str, ...] = field(default_factory=tuple)
+    identity_signature: str = ""
+    identity_lighting: str = ""
+    identity_framing: str = ""
+    identity_context: str = ""
+    identity_distinctness: tuple[str, ...] = ()
+    identity_prohibited_shorthand: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         required = {

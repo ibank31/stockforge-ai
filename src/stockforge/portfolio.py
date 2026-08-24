@@ -13,6 +13,7 @@ import re
 from typing import Literal
 
 from .asset_prompt_compiler import compile_asset_prompt
+from .jpeg_niche_identity import identity_for
 from .asset_spec import AssetSpec
 from .prompt_compiler import PromptPackage
 from .metadata_policy import filter_visual_keywords
@@ -764,6 +765,7 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         raise PortfolioError(f"Unsupported concept {concept_key!r} for {lane.key}. Supported concepts: {supported}") from exc
 
     brief_id = f"{lane.key}--{concept.key}"
+    identity = identity_for(lane.key) if concept.delivery_format == "jpeg" else None
     asset_spec = AssetSpec(
         asset_id=brief_id,
         market_opportunity_id=lane.opportunity_id,
@@ -805,6 +807,12 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
             "Honor the explicit product format and layout contract; do not add copy space unless the asset is sold as a hero or background product.",
         ),
         tags=(lane.key, concept.key, lane.tier),
+        identity_signature=identity.signature if identity else "",
+        identity_lighting=identity.lighting if identity else "",
+        identity_framing=identity.framing if identity else "",
+        identity_context=identity.context if identity else "",
+        identity_distinctness=identity.distinctness if identity else (),
+        identity_prohibited_shorthand=identity.prohibited_shorthand if identity else (),
     )
     prompt_package = compile_asset_prompt(asset_spec)
     metadata = _metadata_for(lane, concept)

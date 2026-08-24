@@ -145,6 +145,12 @@ def route_from_dict(value: object) -> FormatRoute:
             metadata_hints=tuple(value.get("metadata_hints", ())),
             extra_constraints=tuple(value.get("extra_constraints", ())),
             tags=tuple(value.get("tags", ())),
+            identity_signature=str(value.get("identity_signature", "")),
+            identity_lighting=str(value.get("identity_lighting", "")),
+            identity_framing=str(value.get("identity_framing", "")),
+            identity_context=str(value.get("identity_context", "")),
+            identity_distinctness=tuple(value.get("identity_distinctness", ())),
+            identity_prohibited_shorthand=tuple(value.get("identity_prohibited_shorthand", ())),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise FormatRoutingError(f"Persisted asset specification is invalid: {exc}") from exc

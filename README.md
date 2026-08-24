@@ -31,7 +31,7 @@ Sistem tidak menganggap generation success sebagai marketplace acceptance. Sebel
 
 ## Dokumentasi
 
-Mulai dari [`docs/README.md`](docs/README.md), lalu gunakan [`docs/STATUS.md`](docs/STATUS.md) untuk kondisi terbaru dan [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) untuk desain aktif. Daftar feature dan pekerjaan berikutnya ada di [`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md); keputusan niche/format terbaru ada di [`docs/research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](docs/research/FORMAT_AND_NICHE_DECISION_2026-08-24.md).
+Mulai dari [`docs/README.md`](docs/README.md), lalu gunakan [`docs/STATUS.md`](docs/STATUS.md) untuk kondisi terbaru dan [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) untuk desain aktif. Daftar feature dan pekerjaan berikutnya ada di [`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md); keputusan niche/format terbaru ada di [`docs/research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](docs/research/FORMAT_AND_NICHE_DECISION_2026-08-24.md). Audit kedalaman knowledge dan visual identity JPEG ada di [`docs/research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md`](docs/research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md).
 
 ## Quality rule
 

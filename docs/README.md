@@ -48,6 +48,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 ## Intelligence and research
 
 - [`MARKET_INTELLIGENCE.md`](MARKET_INTELLIGENCE.md)
+- [`JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md`](research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md) — audit kedalaman knowledge, overlap framing, dan identity framework sembilan niche JPEG.
 - [`BUYER_SEGMENTS.md`](BUYER_SEGMENTS.md)
 - [`BUYER_MARKET_MATRIX.md`](BUYER_MARKET_MATRIX.md)
 - [`CONCEPT_ENGINE_V4.md`](CONCEPT_ENGINE_V4.md)
