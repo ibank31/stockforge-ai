@@ -26,12 +26,14 @@ class AssetTypePolicy:
     blockers: tuple[str, ...]
     next_step: str
     recommended_lane_keys: tuple[str, ...] = ()
+    recommended_concept_keys: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
         data["candidate_niches"] = list(self.candidate_niches)
         data["blockers"] = list(self.blockers)
         data["recommended_lane_keys"] = list(self.recommended_lane_keys)
+        data["recommended_concept_keys"] = list(self.recommended_concept_keys)
         return data
 
 
@@ -48,6 +50,7 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         blockers=("full-size visual review is required after generation", "final marketplace acceptance is not automatic"),
         next_step="Select one evidence-backed scene brief, run preflight, then allow one controlled JPEG trial.",
         recommended_lane_keys=("playful_surreal_product_metaphors", "tactile_material_atmospheres"),
+        recommended_concept_keys=("zipper-cloud", "fiber-arch"),
     ),
     AssetTypePolicy(
         key="native_object",
@@ -60,6 +63,7 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         blockers=("current builder is limited to controlled geometric presets", "portal upload validation is still pending"),
         next_step="Choose a supported geometric preset, build locally, inspect SVG structure, then perform one manual upload validation.",
         recommended_lane_keys=("native_vector_elements",),
+        recommended_concept_keys=("modular-ribbon",),
     ),
     AssetTypePolicy(
         key="technical_icon",
@@ -72,6 +76,7 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         blockers=("dedicated technical/icon presets are not complete", "visual utility and editability require a human review"),
         next_step="Expand and test the deterministic SVG preset family before a trial is authorized.",
         recommended_lane_keys=("native_vector_elements",),
+        recommended_concept_keys=("technical-badge",),
     ),
     AssetTypePolicy(
         key="seamless_pattern",

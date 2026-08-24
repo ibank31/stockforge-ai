@@ -49,3 +49,18 @@ def test_native_object_recommendation_resolves_to_valid_svg_briefs() -> None:
     assert brief.asset_spec.product_kind == "native_vector"
     assert brief.asset_spec.delivery_format == "svg"
     assert brief.metadata.human_review_required is True
+
+
+def test_plan_type_cli_builds_no_generation_svg_brief() -> None:
+    import json
+    from typer.testing import CliRunner
+    from stockforge.cli import app
+
+    result = CliRunner().invoke(app, ["portfolio", "plan-type", "--asset-type", "native_object"])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["status"] == "planned_no_generation"
+    assert payload["format_route"]["delivery_format"] == "svg"
+    assert payload["brief"]["asset_spec"]["product_kind"] == "native_vector"
+    assert "No provider or GPU was called" in payload["notice"]

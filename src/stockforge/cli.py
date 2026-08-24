@@ -32,7 +32,7 @@ from .kaggle_finalizer import doctor as kaggle_finalizer_doctor, remote as kaggl
 from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
-from .portfolio import PortfolioError, lane_for, list_lanes, metadata_from_dict, plan_manifest
+from .portfolio import PortfolioError, build_brief, lane_for, list_lanes, metadata_from_dict, plan_manifest
 from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
 from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
@@ -234,6 +234,34 @@ def portfolio_readiness(
     except AssetSelectionError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(json.dumps(output, indent=2))
+
+
+@portfolio_app.command("plan-type")
+def portfolio_plan_type(
+    asset_type: str = typer.Option(..., "--asset-type", "-t"),
+    concept: str | None = typer.Option(None, "--concept", help="Optional registered concept override."),
+) -> None:
+    """Turn one asset-type choice into a reviewable brief without generation."""
+    try:
+        policy = select_asset_type(asset_type)
+        if not policy.recommended_lane_keys or not policy.recommended_concept_keys:
+            raise PortfolioError("This asset type has no approved brief lane yet; follow its readiness blockers.")
+        lane_key = policy.recommended_lane_keys[0]
+        concept_key = concept or policy.recommended_concept_keys[0]
+        brief = build_brief(lane_key, concept_key).to_dict()
+        route = route_from_dict(brief["asset_spec"])
+    except (AssetSelectionError, PortfolioError, FormatRoutingError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({
+        "kind": "stockforge.asset_type_plan",
+        "status": "planned_no_generation",
+        "selector": policy.to_dict(),
+        "lane_key": lane_key,
+        "concept_key": concept_key,
+        "format_route": route.to_dict(),
+        "brief": brief,
+        "notice": "No provider or GPU was called. Human review is required before any trial.",
+    }, indent=2))
 
 
 @portfolio_app.command("plan")
