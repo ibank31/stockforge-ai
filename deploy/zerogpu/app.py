@@ -21,6 +21,7 @@ HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
 Z_IMAGE_FILE = "z_image_turbo_fp8_e4m3fn.safetensors"
 QWEN_FILE = "qwen_3_4b_fp8_mixed.safetensors"
 AE_FILE = "ae.safetensors"
+ALLOWED_CANVASES = {(1024, 1024), (1344, 768)}
 
 
 def _prepare_models():
@@ -871,8 +872,10 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
     prompt = str(prompt or "").strip()
     if not prompt:
         raise gr.Error("Prompt is required.")
-    if int(width) != 1024 or int(height) != 1024:
-        raise gr.Error("Baseline benchmark is fixed at 1024x1024.")
+    dimensions = (int(width), int(height))
+    if dimensions not in ALLOWED_CANVASES:
+        supported = ", ".join(f"{w}x{h}" for w, h in sorted(ALLOWED_CANVASES))
+        raise gr.Error(f"Supported canvases are {supported}.")
     if not 4 <= int(steps) <= 12:
         raise gr.Error("Steps must be between 4 and 12 for the free-tier benchmark.")
 

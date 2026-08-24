@@ -11,6 +11,7 @@ from stockforge.job_manager import JobManager
 from stockforge.provider_orchestration import ProviderRoutingError
 from stockforge.termux_control import (
     TermuxControlError,
+    canvas_dimensions,
     configure_remote_provider,
     profile_for,
     route_remote_generation,
@@ -32,6 +33,23 @@ def test_z_image_profile_is_bounded_for_free_worker():
     assert "No people, hands" in request.prompt
     assert "measuring instruments" in request.prompt
     assert "stamp, postmark" in request.prompt
+
+
+def test_hero_landscape_canvas_preserves_pixel_budget_and_provenance():
+    request = profile_for("z-image-turbo").request(
+        "thick recycled-fiber paper arch",
+        seed=137,
+        canvas="hero-landscape",
+    )
+
+    assert (request.width, request.height) == (1344, 768)
+    assert request.parameters["canvas"] == "hero-landscape"
+    assert request.width * request.height <= 1024 * 1024
+
+
+def test_canvas_rejects_arbitrary_dimensions():
+    with pytest.raises(TermuxControlError, match="Unsupported canvas"):
+        canvas_dimensions("2048x1024")
 
 
 def test_configured_worker_routes_only_supported_profile(tmp_path: Path):
@@ -122,6 +140,36 @@ def test_termux_generate_dry_run_is_provider_profiled(tmp_path: Path, monkeypatc
     assert '"dry_run": true' in result.output
     assert '"steps": 8' in result.output
     assert '"batch_size": 1' in result.output
+    assert '"canvas": "square"' in result.output
+
+
+def test_termux_generate_dry_run_accepts_hero_landscape_canvas(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / "home"))
+
+    assert runner.invoke(app, ["init"]).exit_code == 0
+    assert runner.invoke(app, ["project", "create", "demo"]).exit_code == 0
+    configured = runner.invoke(
+        app,
+        [
+            "provider", "configure", "--id", "zerogpu", "--endpoint", "https://example.invalid",
+            "--profile", "z-image-turbo",
+        ],
+    )
+    assert configured.exit_code == 0, configured.output
+
+    result = runner.invoke(
+        app,
+        [
+            "generate", "--project", "demo", "--prompt", "isolated material arch",
+            "--provider", "zerogpu", "--profile", "z-image-turbo",
+            "--canvas", "hero-landscape", "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert '"canvas": "hero-landscape"' in result.output
+    assert '"width": 1344' in result.output
+    assert '"height": 768' in result.output
 
 
 def test_kaggle_controller_validates_checked_in_worker(monkeypatch: pytest.MonkeyPatch):

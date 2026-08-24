@@ -16,6 +16,14 @@ class TermuxControlError(ValueError):
     """Raised when a Termux generation command is not safe to submit."""
 
 
+CANVAS_DIMENSIONS: dict[str, tuple[int, int]] = {
+    "square": (1024, 1024),
+    # Nearly the same pixel budget as 1024² while providing a true copy-safe
+    # hero layout. Both dimensions remain divisible by the runtime's 8px latent grid.
+    "hero-landscape": (1344, 768),
+}
+
+
 _STANDALONE_PROMPT_POLICY = (
     "Create exactly one standalone commercial visual asset for flexible web, marketing, "
     "product, editorial, and presentation use. The stated subject is the only primary object. "
@@ -26,6 +34,16 @@ _STANDALONE_PROMPT_POLICY = (
     "watermark, stamp, postmark, dashboard, or unrelated props. Prioritize a clean silhouette, believable "
     "material, restrained palette, and immediate thumbnail recognition."
 )
+
+
+def canvas_dimensions(canvas: str) -> tuple[int, int]:
+    """Return one pre-approved canvas; arbitrary dimensions are intentionally rejected."""
+    normalized = str(canvas).strip().lower()
+    try:
+        return CANVAS_DIMENSIONS[normalized]
+    except KeyError as exc:
+        supported = ", ".join(sorted(CANVAS_DIMENSIONS))
+        raise TermuxControlError(f"Unsupported canvas {canvas!r}. Supported canvases: {supported}") from exc
 
 
 def standalone_prompt(subject: str) -> str:
@@ -61,11 +79,18 @@ class GenerationProfile:
         if self.estimated_gpu_seconds < 1:
             raise TermuxControlError("Estimated GPU seconds must be positive.")
 
-    def request(self, prompt: str, *, seed: int | None = None) -> GenerationRequest:
+    def request(
+        self,
+        prompt: str,
+        *,
+        seed: int | None = None,
+        canvas: str = "square",
+    ) -> GenerationRequest:
+        width, height = canvas_dimensions(canvas)
         return GenerationRequest(
             prompt=standalone_prompt(prompt),
-            width=self.width,
-            height=self.height,
+            width=width,
+            height=height,
             steps=self.steps,
             guidance_scale=self.guidance_scale,
             seed=seed,
@@ -74,6 +99,7 @@ class GenerationProfile:
             model_version=self.model_version,
             parameters={
                 "profile": self.name,
+                "canvas": str(canvas).strip().lower(),
                 "estimated_gpu_seconds": self.estimated_gpu_seconds,
                 "quota_policy": "single-candidate",
                 "asset_policy": "standalone_single_subject_v1",
@@ -178,7 +204,9 @@ def remote_candidate(
         provider_id=config.provider_id,
         available=True,
         generation=True,
-        max_width=1024,
+        # The deployed Space accepts only the control-plane canvas registry;
+        # these maxima let the router admit the approved 1344×768 hero layout.
+        max_width=1344,
         max_height=1024,
         max_batch_size=1,
         models=frozenset(raw_models),

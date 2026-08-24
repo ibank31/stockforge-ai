@@ -59,7 +59,7 @@ python -m stockforge.cli generate \
   --dry-run
 ```
 
-`--dry-run` tidak memanggil GPU. Output harus menunjukkan profile, resolusi 1024×1024, delapan langkah, batch satu, satu kandidat, dan `asset_policy: standalone_single_subject_v1`.
+`--dry-run` tidak memanggil GPU. Default `--canvas square` menghasilkan 1024×1024. Untuk brief web hero dengan ruang copy yang memang membutuhkan orientasi lebar, gunakan `--canvas hero-landscape` (1344×768); keduanya memakai satu kandidat dan batas pixel yang hampir sama. Ukuran lain sengaja ditolak.
 
 ## Menjalankan satu generation
 
@@ -173,6 +173,18 @@ python -m stockforge.cli portfolio generate \
   --provider zerogpu \
   --profile z-image-turbo \
   --seed 42
+
+# Untuk brief dengan copy space horizontal yang eksplisit, gunakan salah satu
+# kanvas yang dibatasi ini; tidak ada ukuran arbitrer.
+python -m stockforge.cli portfolio generate \
+  --project stock-assets \
+  --plan "$PLAN" \
+  --brief "$BRIEF" \
+  --provider zerogpu \
+  --profile z-image-turbo \
+  --canvas hero-landscape \
+  --seed 42 \
+  --dry-run
 ```
 
 Output sukses memuat `release_package.path`. Paket ZIP untuk portfolio sekarang berisi image, `manifest.json`, `portfolio_metadata_draft.json`, `portfolio_metadata_draft.csv`, dan `REVIEW_CHECKLIST.md`. Statusnya tetap `review_ready`, bukan `submission_ready`. Metadata dan checklist adalah draft yang harus diperiksa terhadap gambar akhir; jangan mengunggah batch berdasarkan status generation saja.

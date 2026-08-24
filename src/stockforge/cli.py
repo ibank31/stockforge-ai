@@ -305,6 +305,7 @@ def _run_one_generation(
     provider: str | None,
     profile: str,
     seed: int | None,
+    canvas: str,
     dry_run: bool,
     portfolio_context: dict[str, object] | None = None,
 ) -> dict[str, object]:
@@ -319,7 +320,7 @@ def _run_one_generation(
     project_record = projects[0]
     project_root = Path(project_record["path"]).resolve()
     try:
-        base_request = profile_for(profile).request(prompt, seed=seed)
+        base_request = profile_for(profile).request(prompt, seed=seed, canvas=canvas)
         parameters = dict(base_request.parameters)
         if portfolio_context is not None:
             parameters["portfolio"] = portfolio_context
@@ -351,6 +352,7 @@ def _run_one_generation(
         "project": project,
         "provider": candidate.capabilities.provider_id,
         "profile": profile,
+        "canvas": request.parameters["canvas"],
         "model_id": request.model_id,
         "model_version": request.model_version,
         "width": request.width,
@@ -602,6 +604,7 @@ def portfolio_generate(
     provider: str | None = typer.Option(None, "--provider"),
     profile: str = typer.Option("z-image-turbo", "--profile"),
     seed: int | None = typer.Option(None, "--seed", min=0),
+    canvas: str = typer.Option("square", "--canvas", help="Pre-approved canvas: square or hero-landscape."),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """Generate exactly one selected saved brief with immutable portfolio lineage."""
@@ -616,6 +619,7 @@ def portfolio_generate(
             provider=provider,
             profile=profile,
             seed=seed,
+            canvas=canvas,
             dry_run=dry_run,
             portfolio_context=context,
         )
@@ -631,6 +635,7 @@ def generate(
     provider: str | None = typer.Option(None, "--provider"),
     profile: str = typer.Option("z-image-turbo", "--profile"),
     seed: int | None = typer.Option(None, "--seed", min=0),
+    canvas: str = typer.Option("square", "--canvas", help="Pre-approved canvas: square or hero-landscape."),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """Submit exactly one bounded remote generation from the Termux control plane."""
@@ -641,6 +646,7 @@ def generate(
             provider=provider,
             profile=profile,
             seed=seed,
+            canvas=canvas,
             dry_run=dry_run,
         )
     except PortfolioError as exc:
