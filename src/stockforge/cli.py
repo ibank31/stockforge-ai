@@ -12,6 +12,7 @@ import typer
 
 from . import __version__
 from .adobe_finalize import AdobeFinalizationError, finalize_image
+from .adobe_upload_bundle import AdobeUploadBundleError, prepare_adobe_upload_bundle
 from .adobe_gate import inspect_image
 from .asset import ASSET_TYPES, AssetError
 from .asset_manager import AssetManager
@@ -526,6 +527,31 @@ def portfolio_prepare_master(
     except (PortfolioError, MasterFinalizationError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(json.dumps({"path": str(destination), **payload}, indent=2))
+
+
+@portfolio_app.command("prepare-adobe-upload")
+def portfolio_prepare_adobe_upload(
+    project: str = typer.Option(..., "--project", "-p"),
+    execution: list[str] = typer.Option(..., "--execution", "-e", help="Finalized-master execution ID; repeat for a batch."),
+    approved: bool = typer.Option(False, "--approved", help="Explicitly attest that each selected master passed human visual review."),
+    category: int | None = typer.Option(None, "--category", help="Reviewed Adobe category number (1-21) when no safe lane mapping exists."),
+) -> None:
+    """Create an Adobe portal batch with JPEGs, official-schema CSV, and no submit action."""
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        bundle = prepare_adobe_upload_bundle(
+            database=database,
+            project_id=record["id"],
+            project_root=project_root,
+            execution_ids=tuple(execution),
+            approved_by_user=approved,
+            category=category,
+        )
+        typer.echo(json.dumps(bundle.to_dict(), indent=2))
+    except (AdobeUploadBundleError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @portfolio_app.command("import-kaggle-master")

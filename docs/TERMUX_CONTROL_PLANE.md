@@ -246,3 +246,18 @@ python -m stockforge.cli portfolio import-kaggle-master \
 ```
 
 Worker hanya menerima request `prepared_no_gpu` dengan SHA-256 preview yang cocok. Ia mengunduh bobot RealESRGAN x4plus bila belum tersedia, menghasilkan master JPEG RGB/sRGB, lalu membuat `result.json`; hasil tanpa manifest, checksum, dimensi target, atau gate teknis yang sesuai akan ditolak saat import. Meski sukses, status akhir tetap `review_ready`: periksa master pada ukuran 100%, bandingkan dengan preview, dan jangan upload jika ada detail rekaan, halo, blur, kerusakan tekstur, perubahan objek, pseudo-teks, atau risiko hak/IP. Hapus keyword yang hanya menggambarkan material lane umum tetapi tidak benar-benar terlihat pada master; gunakan `--metadata-review` untuk merekam draft hasil audit tersebut pada paket final.
+
+## Batch Adobe Stock: review → satu command → CSV siap portal
+
+Untuk master yang sudah Anda review secara visual, siapkan batch Adobe tanpa memanggil GPU atau men-submit marketplace:
+
+```bash
+python -m stockforge.cli portfolio prepare-adobe-upload \
+  --project stock-assets \
+  --execution 'MASTER_EXECUTION_ID' \
+  --approved
+```
+
+Ulangi `--execution` untuk setiap master yang sudah review-pass agar semua masuk ke satu batch. Command membuat folder `adobe-upload-bundles/` berisi `images/`, `adobe_metadata.csv`, `UPLOAD_MANIFEST.json`, dan `PORTAL_STEPS.md`. CSV memakai header resmi Adobe: `Filename,Title,Keywords,Category,Releases`. Bundle tetap berstatus `portal_upload_prepared_not_submitted`.
+
+Untuk lane yang belum memiliki pemetaan kategori Adobe aman, tambahkan `--category` dengan angka kategori yang telah direview. Jangan memakai command ini sebelum review visual manusia. Setelah bundle selesai, pada Adobe Contributor Portal pilih **Browse** untuk semua JPEG dalam `images/`, lalu pilih **Upload CSV** untuk `adobe_metadata.csv`. Periksa metadata dan deklarasi **Created using generative AI tools**, kemudian tekan **Submit** hanya bila Anda setuju. StockForge tidak menyediakan command untuk submit otomatis.
