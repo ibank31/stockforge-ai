@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-24
 **Branch:** `main`
-**Latest verified commit:** `9425b54`
+**Latest verified commit:** `7114f00`
 
 ## Current milestone
 
@@ -46,7 +46,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 1. Evaluate whether the file-flow micro-set materially raises buyer value above the single folder-upload baseline; keep the micro-set at one controlled local trial until its product, semantic, and platform-specific metadata gates are complete.
 2. Keep JPEG scene generation behind the pre-GPU prompt, rights, layout, quota, and visual-quality gates.
 3. Build a local PNG alpha producer with true-alpha assertion, anti-fringe checks, canvas trimming, sRGB validation, and one controlled portal validation.
-4. Connect evidence logs to buyer-job and format routing without turning engagement or earnings screenshots into sales forecasts.
+4. Connect the new platform metadata relevance reports to evidence logs and buyer-job routing without turning engagement or earnings screenshots into sales forecasts.
 5. Keep model/provider registry, health, quota, and failover contracts explicit before adding more GPU providers.
 
 ## Non-negotiable safety rules
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **275 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. The folder-upload trial evidence remains durable, and the micro-set implementation has not been generated. The working tree is clean at the value-upgrade commit and must be rechecked after this status synchronization.
+The current main branch has passed **282 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. The folder-upload trial evidence remains durable, and the micro-set implementation has not been generated. Platform-specific metadata relevance safeguards are now implemented; they validate limits, duplicate/spam patterns, category requirements, and visual-first keyword ordering without inventing demand. The working tree must be rechecked after this status synchronization.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 

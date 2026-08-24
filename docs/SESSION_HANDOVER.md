@@ -34,7 +34,7 @@ Setiap GPU job harus memiliki buyer hypothesis dan tujuan yang jelas. Jangan mel
 
 ## Current engineering state
 
-Branch remote dan lokal hanya `main`. Folder-upload SVG lane changes are committed at `28e1c85`, single-trial evidence at `ace69e7`, and the higher-value icon-set/micro-set preparation plus global market notes at `9425b54` on `main`. Current SVG trial evidence is stored under `trial_outputs/folder_upload_svg/` and `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **275 passed, 1 skipped**. The file-flow micro-set has not been generated. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
+Branch remote dan lokal hanya `main`. Folder-upload SVG lane changes are committed at `28e1c85`, single-trial evidence at `ace69e7`, higher-value icon-set/micro-set preparation plus global market notes at `9425b54`, and platform metadata relevance safeguards at `7114f00` on `main`. Current SVG trial evidence is stored under `trial_outputs/folder_upload_svg/` and `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **282 passed, 1 skipped**. The file-flow micro-set has not been generated. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
 
 ## Output and learning contract
 
