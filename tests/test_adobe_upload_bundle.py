@@ -1,4 +1,3 @@
-import csv
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -80,20 +79,19 @@ def test_prepare_adobe_upload_bundle_creates_official_csv_and_manifest(tmp_path:
         destination_root=tmp_path / "Download" / "AdobeStock" / "READY_TO_UPLOAD",
     )
 
-    with bundle.csv_path.open(encoding="utf-8", newline="") as handle:
-        rows = list(csv.reader(handle))
     manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
 
-    assert rows[0] == ["Filename", "Title", "Keywords", "Category", "Releases"]
-    assert rows[1][0] == f"sf-{artifact.id[:8]}.jpg"
-    assert rows[1][1] == _metadata()["title"]
-    assert rows[1][3] == "8"
+    filename = f"sf-{artifact.id[:8]}.jpg"
     asset_dir = bundle.asset_dirs[0]
-    assert (asset_dir / rows[1][0]).is_file()
+    upload_jpeg = asset_dir / filename
+    assert upload_jpeg.is_file()
+    upload_bytes = upload_jpeg.read_bytes()
+    assert _metadata()["title"].encode("utf-8") in upload_bytes
+    assert b"recycled paper" in upload_bytes
     assert bundle.path.parents[1].name == "AdobeStock"
-    assert bundle.csv_path == asset_dir / "adobe_metadata.csv"
+    assert bundle.metadata_path == asset_dir / "UPLOAD_METADATA.txt"
     assert sorted(item.name for item in asset_dir.iterdir()) == [
-        "UPLOAD_METADATA.txt", "adobe_metadata.csv", f"sf-{artifact.id[:8]}.jpg"
+        "UPLOAD_METADATA.txt", filename
     ]
     assert sorted(item.name for item in bundle.path.iterdir()) == [
         "BATCH_MANIFEST.json", "README.txt", f"asset-{artifact.id[:8]}"

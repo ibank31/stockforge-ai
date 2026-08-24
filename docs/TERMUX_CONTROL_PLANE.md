@@ -263,18 +263,15 @@ Ulangi `--execution 'MASTER_EXECUTION_ID'` untuk memasukkan master review-pass t
 ```text
 READY_TO_UPLOAD/<batch>/
   asset-sf-xxxxxxxx/
-    sf-xxxxxxxx.jpg              # Foto final yang dipilih di Adobe Browse
-    adobe_metadata.csv           # Metadata otomatis untuk tombol Upload CSV
+    sf-xxxxxxxx.jpg              # Foto final dengan XMP title dan keyword tertanam
     UPLOAD_METADATA.txt          # File klik-buka: title, keyword, category, dan deklarasi
 
   BATCH_MANIFEST.json            # Audit internal; jangan diunggah
   README.txt
 ```
 
-Setiap folder `asset-*` hanya berisi satu JPEG master yang sudah lolos lineage, audit teknis JPEG/sRGB, metadata review, dan persetujuan pengguna, bersama CSV dan file metadata klik-buka untuk aset yang sama. Preview, benchmark, dan ZIP delivery tidak masuk ke folder tersebut.
+Setiap folder `asset-*` hanya berisi satu JPEG master yang sudah lolos lineage, audit teknis JPEG/sRGB, metadata review, dan persetujuan pengguna. StockForge menanam title serta keyword yang sudah direview sebagai metadata XMP pada **salinan JPEG upload**; master terdaftar dan lineage asli tidak diubah. Preview, benchmark, ZIP delivery, dan CSV tidak masuk ke folder aset.
 
-Di Adobe Contributor Portal, pilih **Browse** lalu buka satu folder `asset-*` dan pilih file JPEG-nya. Kemudian tekan **Upload CSV** dan pilih `adobe_metadata.csv` dari folder aset yang sama. `UPLOAD_METADATA.txt` dapat disentuh untuk dibuka di Android dan memuat title, keywords, category, serta deklarasi yang harus dibandingkan dengan tampilan portal.
-
-Jika Android tetap menampilkan CSV tetapi membuatnya tidak dapat dipilih, gunakan `termux-share -a send -c text/csv <path-ke-adobe_metadata.csv>`, pilih penyedia dokumen yang menyimpan MIME `text/csv` (misalnya Google Drive), lalu pilih file tersebut dari penyedia itu pada dialog **Upload CSV** Adobe. Ini harus diuji sekali pada perangkat; sistem file Android dapat melaporkan MIME berbeda untuk file yang sama.
+Di Adobe Contributor Portal, pilih **Browse** lalu buka satu folder `asset-*` dan pilih file JPEG-nya. Jangan gunakan **Upload CSV** pada Android. Setelah upload, periksa bahwa Adobe membaca title serta keyword XMP yang tertanam; pilih category yang ditampilkan dalam `UPLOAD_METADATA.txt` bila portal belum mengisinya. File `UPLOAD_METADATA.txt` dapat disentuh untuk dibuka di Android sebagai bukti metadata serta checklist visual.
 
 Tandai **Created using generative AI tools** secara jujur, lengkapi deklarasi orang/properti sesuai aset, dan selesaikan Terms and Conditions serta CAPTCHA sendiri. Tekan **Submit** hanya setelah Anda setuju. StockForge tidak menyediakan command untuk submit otomatis.

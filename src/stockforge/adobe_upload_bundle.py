@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import csv
+import html
 import json
 import shutil
 from dataclasses import dataclass
@@ -37,7 +37,7 @@ class AdobeUploadBundle:
 
     path: Path
     asset_dirs: tuple[Path, ...]
-    csv_path: Path
+    metadata_path: Path
     manifest_path: Path
     artifact_ids: tuple[str, ...]
 
@@ -45,7 +45,7 @@ class AdobeUploadBundle:
         return {
             "path": str(self.path),
             "asset_dirs": [str(item) for item in self.asset_dirs],
-            "csv_path": str(self.csv_path),
+            "metadata_path": str(self.metadata_path),
             "manifest_path": str(self.manifest_path),
             "artifact_ids": list(self.artifact_ids),
             "status": "manual_portal_upload_prepared_not_submitted",
@@ -121,42 +121,67 @@ def latest_finalized_master_execution_id(*, database: Database, project_id: str)
     raise AdobeUploadBundleError("No finalized master is available for this project.")
 
 
-def _write_asset_metadata_folder(asset_dir: Path, record: dict[str, Any]) -> Path:
-    """Write Adobe CSV and click-open text instructions beside one upload JPEG."""
-    csv_path = asset_dir / "adobe_metadata.csv"
-    with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(CSV_HEADER)
-        writer.writerow([
-            record["filename"],
-            record["title"],
-            ", ".join(record["keywords"]),
-            record["category"],
-            "",
-        ])
+def _xmp_packet(title: str, keywords: list[str]) -> bytes:
+    """Build a compact standards-based XMP packet that Adobe apps can read."""
+    subject = "".join(f"<rdf:li>{html.escape(keyword)}</rdf:li>" for keyword in keywords)
+    safe_title = html.escape(title)
+    payload = (
+        '<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
+        '<x:xmpmeta xmlns:x="adobe:ns:meta/">\n'
+        '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">\n'
+        '<rdf:Description rdf:about="" '
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+        'xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" '
+        'xmlns:xmp="http://ns.adobe.com/xap/1.0/">\n'
+        f'<dc:title><rdf:Alt><rdf:li xml:lang="x-default">{safe_title}</rdf:li></rdf:Alt></dc:title>\n'
+        f'<dc:description><rdf:Alt><rdf:li xml:lang="x-default">{safe_title}</rdf:li></rdf:Alt></dc:description>\n'
+        f'<dc:subject><rdf:Bag>{subject}</rdf:Bag></dc:subject>\n'
+        '<photoshop:Credit>StockForge AI</photoshop:Credit>\n'
+        '<xmp:CreatorTool>StockForge AI</xmp:CreatorTool>\n'
+        '</rdf:Description>\n</rdf:RDF>\n</x:xmpmeta>\n'
+        '<?xpacket end="w"?>'
+    )
+    return payload.encode("utf-8")
 
+
+def _embed_xmp_metadata(jpeg_path: Path, *, title: str, keywords: list[str]) -> None:
+    """Insert XMP in an APP1 JPEG segment without re-encoding image pixels."""
+    original = jpeg_path.read_bytes()
+    if not original.startswith(b"\xff\xd8"):
+        raise AdobeUploadBundleError("Cannot embed metadata: upload copy is not a JPEG.")
+    xmp = b"http://ns.adobe.com/xap/1.0/\x00" + _xmp_packet(title, keywords)
+    segment_length = len(xmp) + 2
+    if segment_length > 0xFFFF:
+        raise AdobeUploadBundleError("Embedded upload metadata exceeds JPEG APP1 capacity.")
+    app1 = b"\xff\xe1" + segment_length.to_bytes(2, "big") + xmp
+    jpeg_path.write_bytes(original[:2] + app1 + original[2:])
+
+
+def _write_asset_metadata_folder(asset_dir: Path, record: dict[str, Any]) -> Path:
+    """Write a click-open metadata summary beside a JPEG with embedded XMP."""
     metadata_path = asset_dir / "UPLOAD_METADATA.txt"
     metadata_path.write_text(
         "STOCKFORGE — ADOBE STOCK UPLOAD METADATA\n"
         "==========================================\n\n"
         f"JPEG TO UPLOAD: {record['filename']}\n\n"
+        "GOOD NEWS\n"
+        "Title and keywords are embedded in this JPEG as XMP metadata.\n"
+        "Upload the JPEG only; do not use a CSV on Android.\n\n"
         f"TITLE\n{record['title']}\n\n"
         f"CATEGORY\n{record['category']} — Graphic Resources\n\n"
-        "KEYWORDS\n"
+        "KEYWORDS EMBEDDED IN JPEG\n"
         f"{', '.join(record['keywords'])}\n\n"
-        "REQUIRED DECLARATIONS\n"
+        "REQUIRED PORTAL DECLARATIONS\n"
         "- Created using generative AI tools: YES\n"
         "- Confirm people/property declaration truthfully from the visual review.\n\n"
         "ANDROID / ADOBE STEPS\n"
-        "1. In Adobe Browse, choose only the JPEG above from this folder.\n"
-        "2. In Adobe Upload CSV, choose adobe_metadata.csv from this same folder.\n"
-        "3. If Android displays the CSV but disables selection, share this CSV to a\n"
-        "   documents provider that preserves text/csv (for example Google Drive),\n"
-        "   then select it from that provider in Adobe's picker.\n"
+        "1. In Adobe Browse, choose the JPEG above from this folder.\n"
+        "2. Verify Adobe has read the embedded title and keywords.\n"
+        "3. Select the reviewed category if Adobe leaves it blank.\n"
         "4. Review declarations, Terms and Conditions, and CAPTCHA yourself before submit.\n",
         encoding="utf-8",
     )
-    return csv_path
+    return metadata_path
 
 
 def prepare_adobe_upload_bundle(
@@ -213,7 +238,8 @@ def prepare_adobe_upload_bundle(
         filename = _safe_filename(artifact.id)
         asset_dir = bundle_root / _asset_dir_name(artifact.id)
         asset_dir.mkdir()
-        shutil.copy2(source, asset_dir / filename)
+        upload_copy = asset_dir / filename
+        shutil.copy2(source, upload_copy)
         record = {
             "artifact_id": artifact.id,
             "execution_id": execution.id,
@@ -228,6 +254,11 @@ def prepare_adobe_upload_bundle(
             "fictional_people_or_property_declaration_required": False,
             "reviewer_checklist": metadata.get("reviewer_checklist", []),
         }
+        _embed_xmp_metadata(upload_copy, title=record["title"], keywords=record["keywords"])
+        embedded_technical = inspect_image(upload_copy).to_dict()
+        if not embedded_technical.get("ready"):
+            raise AdobeUploadBundleError("JPEG with embedded upload metadata did not pass the Adobe technical gate.")
+        record["technical_gate"] = embedded_technical
         _write_asset_metadata_folder(asset_dir, record)
         records.append(record)
         asset_dirs.append(asset_dir)
@@ -241,11 +272,10 @@ def prepare_adobe_upload_bundle(
         "approved_by_user": True,
         "submission_requires_explicit_portal_confirmation": True,
         "files": records,
-        "folder_contract": "Each asset folder contains one JPEG upload master, adobe_metadata.csv, and UPLOAD_METADATA.txt.",
+        "folder_contract": "Each asset folder contains one JPEG upload master with embedded XMP metadata and UPLOAD_METADATA.txt.",
         "portal_steps": [
             "In Adobe Browse, open an asset folder and select its JPEG only.",
-            "In Adobe Upload CSV, select adobe_metadata.csv from the same asset folder.",
-            "If Android disables the CSV, share that exact file to a documents provider preserving text/csv and select it there.",
+            "Verify Adobe reads the embedded title and keywords; set the reviewed category if Adobe leaves it blank.",
             "Review the final portal metadata and complete declarations, Terms and Conditions, and CAPTCHA personally.",
         ],
     }
@@ -253,16 +283,16 @@ def prepare_adobe_upload_bundle(
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (bundle_root / "README.txt").write_text(
         "STOCKFORGE ADOBE ANDROID UPLOAD BATCH\n\n"
-        "Open one asset-* folder at a time. Each contains exactly one final JPEG,\n"
-        "its Adobe CSV, and a click-open UPLOAD_METADATA.txt guide.\n"
-        "Choose the JPEG in Adobe Browse. Use the CSV in Adobe Upload CSV.\n"
+        "Open one asset-* folder at a time. Each contains exactly one final JPEG\n"
+        "with embedded XMP metadata and a click-open UPLOAD_METADATA.txt guide.\n"
+        "Choose the JPEG in Adobe Browse; no CSV is required on Android.\n"
         "Do not submit until you have completed Adobe declarations, Terms, and CAPTCHA.\n",
         encoding="utf-8",
     )
     return AdobeUploadBundle(
         path=bundle_root,
         asset_dirs=tuple(asset_dirs),
-        csv_path=asset_dirs[0] / "adobe_metadata.csv",
+        metadata_path=asset_dirs[0] / "UPLOAD_METADATA.txt",
         manifest_path=manifest_path,
         artifact_ids=tuple(record["artifact_id"] for record in records),
     )
