@@ -48,6 +48,16 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         "required": "text is a deliberate part of the approved asset specification",
     }[spec.text_policy]
 
+    layout_instruction = {
+        "hero_landscape": "Preserve deliberate directional copy-safe space because this product is a hero or background asset.",
+        "square": "Use tight square product framing; do not reserve empty copy space unless it is explicitly part of the subject.",
+        "portrait": "Use a complete vertical composition without decorative empty side fields.",
+    }[spec.layout_mode]
+    format_instruction = {
+        "jpeg": "Deliverable intent: high-quality raster JPEG composition.",
+        "png": "Deliverable intent: true transparent PNG cutout with clean alpha-ready edges and no white backdrop.",
+        "svg": "Deliverable intent: editable native SVG geometry, not a raster image trace.",
+    }[spec.delivery_format]
     palette = ", ".join(spec.palette) if spec.palette else "restrained commercially coherent color palette"
     levers = ", ".join(spec.originality_levers)
     mechanism = next(
@@ -67,6 +77,7 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         f"Visual mechanism: {mechanism}. "
         f"Material behavior: {spec.medium}; surfaces must be physically believable and cleanly resolved. "
         f"Composition contract: {spec.composition}. Negative-space contract: {spec.negative_space}. "
+        f"{layout_instruction} {format_instruction} "
         f"{isolation}. {background}. Palette: {palette}. {text}. "
         f"Distinctness levers: {levers}. Visual language: {spec.visual_language}. "
         "Prioritize a complete readable silhouette, clean geometry, credible material behavior, "
@@ -81,7 +92,7 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
         "physically or visually coherent object geometry",
         "believable material and medium characteristics",
         "clean extraction-friendly silhouette where isolation is required",
-        "commercially useful negative space",
+        "format-appropriate framing and canvas use",
         "restrained professional color treatment",
         "no accidental text, branding, or watermark",
         *spec.quality_gates,

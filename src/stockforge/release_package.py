@@ -10,12 +10,42 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .adobe_gate import inspect_image
+from .adobe_png_gate import inspect_transparent_png
 from .database import Database
+from .native_vector import inspect_native_svg
 from .portfolio_review import evaluate_portfolio_candidate
 
 
 class ReleasePackageError(RuntimeError):
     """Raised when an execution cannot safely be released for download."""
+
+
+def _technical_report_for(source: Path) -> dict[str, object]:
+    """Choose a local technical gate from the delivered format, not its origin."""
+    suffix = source.suffix.casefold()
+    if suffix in {".jpg", ".jpeg"}:
+        return inspect_image(source).to_dict()
+    if suffix == ".png":
+        return inspect_transparent_png(source).to_dict()
+    if suffix == ".svg":
+        return inspect_native_svg(source).to_dict()
+    raise ReleasePackageError(f"No technical gate is registered for delivery format: {source.suffix or 'unknown'}")
+
+
+def _portfolio_review_for(*, source: Path, project_root: Path, current_artifact_id: str, project_artifacts: list[object]) -> dict[str, object]:
+    """Avoid running raster perceptual QA against an editable SVG document."""
+    if source.suffix.casefold() == ".svg":
+        return {
+            "decision": "REVIEW",
+            "reason": "Native SVG passed structural vector checks; human review must still assess visual utility, distinctness, and marketplace metadata.",
+            "raster_quality_check": "not_applicable",
+        }
+    return evaluate_portfolio_candidate(
+        source,
+        project_root=project_root,
+        current_artifact_id=current_artifact_id,
+        project_artifacts=project_artifacts,
+    ).to_dict()
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,8 +91,8 @@ def build_release_package(
         artifact = database.get_artifact(artifact_id)
         if artifact is None:
             raise ReleasePackageError(f"Execution artifact is missing: {artifact_id}")
-        if artifact.project_id != project_id or artifact.kind not in {"generated-image", "finalized-master"}:
-            raise ReleasePackageError(f"Execution artifact is not an eligible image artifact: {artifact_id}")
+        if artifact.project_id != project_id or artifact.kind not in {"generated-image", "finalized-master", "native-vector"}:
+            raise ReleasePackageError(f"Execution artifact is not an eligible delivery artifact: {artifact_id}")
         source = (root / artifact.relative_path).resolve()
         try:
             source.relative_to(root)
@@ -73,7 +103,7 @@ def build_release_package(
         artifacts.append((artifact, source))
 
     def package_file(artifact, source: Path) -> str:
-        directory = "masters" if artifact.kind == "finalized-master" else "images"
+        directory = "masters" if artifact.kind == "finalized-master" else ("vectors" if artifact.kind == "native-vector" else "images")
         return f"{directory}/{artifact.id}{source.suffix.lower()}"
 
     target_dir = Path(destination_dir or root / "deliveries").resolve()
@@ -87,21 +117,21 @@ def build_release_package(
     if portfolio is not None:
         project_artifacts = database.list_artifacts(project_id)
         for artifact, source in artifacts:
-            report = inspect_image(source)
+            report = _technical_report_for(source)
             technical_reports.append({
                 "artifact_id": artifact.id,
                 "file": package_file(artifact, source),
-                "report": report.to_dict(),
+                "report": report,
             })
             portfolio_reviews.append({
                 "artifact_id": artifact.id,
                 "file": package_file(artifact, source),
-                "review": evaluate_portfolio_candidate(
-                    source,
+                "review": _portfolio_review_for(
+                    source=source,
                     project_root=root,
                     current_artifact_id=artifact.id,
                     project_artifacts=project_artifacts,
-                ).to_dict(),
+                ),
             })
     manifest = {
         "schema_version": 4,

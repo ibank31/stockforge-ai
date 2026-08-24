@@ -114,8 +114,9 @@ def test_retro_tech_cloud_module_has_visual_metadata_and_a_measurable_layout_con
     assert brief.metadata.title == "Translucent Modular Tower With Cloud-Shaped Opening"
     assert "developer relations" not in brief.metadata.keywords
     assert "cloud-shaped opening" in brief.metadata.keywords
-    assert "left third" in brief.asset_spec.composition
-    assert "one third of the right side" in brief.asset_spec.negative_space
+    assert brief.asset_spec.layout_mode == "square"
+    assert "tight square product framing" in brief.asset_spec.composition
+    assert "no reserved copy space" in brief.asset_spec.negative_space
     assert "cassette" not in brief.prompt_package.prompt.casefold()
 
 

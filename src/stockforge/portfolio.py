@@ -36,6 +36,10 @@ class LaneConcept:
     negative_space: str
     palette: tuple[str, ...]
     originality_levers: tuple[str, ...]
+    product_kind: str = "raster_illustration"
+    delivery_format: str = "jpeg"
+    layout_mode: str = "square"
+    background_policy: str = "white"
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,7 +211,15 @@ def _concept(
     negative_space: str,
     palette: tuple[str, ...],
     levers: tuple[str, ...],
+    *,
+    product_kind: str = "raster_illustration",
+    delivery_format: str = "jpeg",
+    layout_mode: str = "square",
+    background_policy: str = "white",
 ) -> LaneConcept:
+    if layout_mode == "square":
+        composition = "single centered object with tight square product framing"
+        negative_space = "minimal clean surrounding margin; no reserved copy space"
     return LaneConcept(
         key=key,
         subject=subject,
@@ -216,6 +228,10 @@ def _concept(
         negative_space=negative_space,
         palette=palette,
         originality_levers=levers,
+        product_kind=product_kind,
+        delivery_format=delivery_format,
+        layout_mode=layout_mode,
+        background_policy=background_policy,
     )
 
 
@@ -304,7 +320,7 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         keywords=("tactile design", "material texture", "soft neutral background", "abstract material study", "frosted glass", "recycled paper", "ceramic surface", "organic foam", "tactile web hero", "copy space", "minimal product background", "translucent layers", "website background", "presentation cover", "brand system"),
         test_cap=20,
         concepts=(
-            _concept("fiber-arch", "a thick recycled-fiber paper arch with one controlled fold", "tactile focal form and usable copy field", "wide horizontal composition", "large clean copy space on the right", PALETTES["tactile"], ("fiber specificity", "hero composition", "restrained accent")),
+            _concept("fiber-arch", "a thick recycled-fiber paper arch with one controlled fold", "tactile focal form and usable copy field", "wide horizontal composition", "large clean copy space on the right", PALETTES["tactile"], ("fiber specificity", "hero composition", "restrained accent"), layout_mode="hero_landscape"),
             _concept("frosted-stack", "three frosted glass panels with generous separation", "transparent layering without UI", "wide, lightly isometric composition", "large clean copy space on the left", PALETTES["tactile"], ("translucent material", "controlled depth", "clean typography field")),
             _concept("porcelain-pebbles", "a small set of matte porcelain pebbles with one paper base", "soft tactile balance", "centered low-profile composition", "clean copy space above", PALETTES["tactile"], ("ceramic material", "low visual noise", "thumbnail readability")),
             _concept("foam-horizon", "a single soft organic foam horizon with shallow relief", "calm dimensional background", "wide frontal material study", "large clean copy space in the upper half", PALETTES["tactile"], ("soft material", "copy-safe field", "controlled relief")),
@@ -434,7 +450,7 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         keywords=("collage element", "cut paper illustration", "handmade graphic", "editorial texture", "torn paper", "imperfect craft", "scrapbook style", "zine aesthetic", "isolated cut paper", "editorial asset", "tactile collage shape", "social media element", "editorial design", "small business social", "brand toolkit"),
         test_cap=10,
         concepts=(
-            _concept("woven-loop", "a woven fibre loop with a single paper tab", "connection element for layouts", "object positioned on the left third with a full silhouette", "at least one third of the right side is clean white copy space", PALETTES["collage"], ("woven material", "reusable component", "clean silhouette")),
+            _concept("woven-loop", "a woven fibre loop with a single paper tab", "connection element for layouts", "single isolated craft element with a complete silhouette", "tight transparent framing with minimal clear margin", PALETTES["collage"], ("woven material", "reusable component", "clean silhouette"), product_kind="transparent_cutout", delivery_format="png", background_policy="transparent"),
             _concept("torn-arch", "one torn uncoated-paper arch with clear fibrous edge", "friendly editorial frame without border", "centered isolated component", "clean white surrounding space", PALETTES["collage"], ("edge specificity", "component utility", "no handwriting")),
             _concept("paper-burst", "one irregular paper burst with no lettering or symbol", "visual emphasis element", "centered isolated component", "clean white surrounding space", PALETTES["collage"], ("torn edge", "controlled irregularity", "no logo-like form")),
             _concept("folded-ribbon", "a folded paper ribbon bridge without text", "directional layout connector", "horizontal isolated component", "clean white surrounding space", PALETTES["collage"], ("paper fold", "directional composition", "non-verbal accent")),
@@ -611,10 +627,13 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         subject=concept.subject,
         visual_language=lane.visual_language,
         medium=lane.medium,
+        product_kind=concept.product_kind,
+        delivery_format=concept.delivery_format,
+        layout_mode=concept.layout_mode,
         palette=concept.palette,
         composition=concept.composition,
         negative_space=concept.negative_space,
-        background_policy="white",
+        background_policy=concept.background_policy,
         isolation_policy="isolated",
         text_policy="none",
         branding_policy="no_branding",
@@ -634,7 +653,7 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         extra_constraints=(
             f"Visual mechanism: {concept.visual_mechanism}.",
             "Do not add a scene, frame, border, interface, packaging label, dashboard, infographic, or decorative text.",
-            "Keep the complete object isolated on a pure clean white studio background with deliberate copy-safe space.",
+            "Honor the explicit product format and layout contract; do not add copy space unless the asset is sold as a hero or background product.",
         ),
         tags=(lane.key, concept.key, lane.tier),
     )

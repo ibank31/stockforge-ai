@@ -14,6 +14,14 @@ ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "tex
 BACKGROUND_POLICIES = frozenset({"white", "transparent", "neutral", "scene"})
 ISOLATION_POLICIES = frozenset({"isolated", "cluster", "scene"})
 TEXT_POLICIES = frozenset({"none", "abstract", "controlled", "required"})
+PRODUCT_KINDS = frozenset({"raster_illustration", "transparent_cutout", "native_vector"})
+DELIVERY_FORMATS = frozenset({"jpeg", "png", "svg"})
+LAYOUT_MODES = frozenset({"square", "hero_landscape", "portrait"})
+_FORMATS_BY_PRODUCT = {
+    "raster_illustration": frozenset({"jpeg"}),
+    "transparent_cutout": frozenset({"png"}),
+    "native_vector": frozenset({"svg"}),
+}
 _CAPABILITY_PREFERENCE = re.compile(r"^[a-z][a-z0-9_]*\s*(?:=|>=|<=)\s*[a-z0-9_.]+$")
 
 
@@ -36,6 +44,9 @@ class AssetSpec:
     subject: str
     visual_language: str
     medium: str
+    product_kind: str = "raster_illustration"
+    delivery_format: str = "jpeg"
+    layout_mode: str = "square"
     palette: tuple[str, ...] = ()
     composition: str = ""
     negative_space: str = ""
@@ -79,6 +90,25 @@ class AssetSpec:
             raise AssetSpecError(f"Unsupported isolation policy: {self.isolation_policy}")
         if self.text_policy not in TEXT_POLICIES:
             raise AssetSpecError(f"Unsupported text policy: {self.text_policy}")
+        if self.product_kind not in PRODUCT_KINDS:
+            raise AssetSpecError(f"Unsupported product kind: {self.product_kind}")
+        if self.delivery_format not in DELIVERY_FORMATS:
+            raise AssetSpecError(f"Unsupported delivery format: {self.delivery_format}")
+        if self.delivery_format not in _FORMATS_BY_PRODUCT[self.product_kind]:
+            allowed = ", ".join(sorted(_FORMATS_BY_PRODUCT[self.product_kind]))
+            raise AssetSpecError(
+                f"Product kind {self.product_kind!r} requires one of: {allowed}; "
+                f"received {self.delivery_format!r}."
+            )
+        if self.layout_mode not in LAYOUT_MODES:
+            raise AssetSpecError(f"Unsupported layout mode: {self.layout_mode}")
+        if self.product_kind == "transparent_cutout":
+            if self.background_policy != "transparent" or self.isolation_policy != "isolated":
+                raise AssetSpecError("Transparent cutouts require isolated placement on a transparent background.")
+            if self.layout_mode != "square":
+                raise AssetSpecError("Transparent cutouts require tight square framing; do not sell copy space as part of the file.")
+        if self.product_kind == "native_vector" and self.isolation_policy == "scene":
+            raise AssetSpecError("Native vectors must be an editable object, pattern, icon set, or controlled cluster; scenes are not supported.")
         if not self.originality_levers:
             raise AssetSpecError("At least one originality lever is required.")
         if any(not _CAPABILITY_PREFERENCE.fullmatch(preference) for preference in self.model_preferences):
@@ -108,6 +138,9 @@ def standalone_asset_spec(
     medium: str,
     originality_levers: tuple[str, ...],
     commercial_use_cases: tuple[str, ...] = (),
+    product_kind: str = "raster_illustration",
+    delivery_format: str = "jpeg",
+    layout_mode: str = "square",
     background_policy: str = "white",
     isolation_policy: str = "isolated",
     text_policy: str = "none",
@@ -130,6 +163,9 @@ def standalone_asset_spec(
         subject=subject,
         visual_language=visual_language,
         medium=medium,
+        product_kind=product_kind,
+        delivery_format=delivery_format,
+        layout_mode=layout_mode,
         palette=palette,
         composition="single standalone object, fully visible, extraction-friendly silhouette",
         negative_space="substantial clean negative space around the asset",

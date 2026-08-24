@@ -20,8 +20,9 @@ def test_all_priority_lanes_build_a_safe_seed_brief():
         brief = build_brief(lane.key, lane.concepts[0].key)
 
         assert brief.asset_spec.market_opportunity_id == lane.opportunity_id
-        assert brief.asset_spec.background_policy == "white"
+        assert brief.asset_spec.background_policy in {"white", "transparent"}
         assert brief.asset_spec.isolation_policy == "isolated"
+        assert brief.asset_spec.delivery_format in {"jpeg", "png", "svg"}
         assert brief.asset_spec.text_policy == "none"
         assert brief.metadata.created_using_generative_ai is True
         assert brief.metadata.status == "human_review_required"
@@ -31,26 +32,31 @@ def test_all_priority_lanes_build_a_safe_seed_brief():
         assert "human review" in " ".join(brief.asset_spec.quality_gates).lower()
 
 
-def test_directional_copy_space_selects_hero_landscape_while_other_layouts_stay_square():
-    directional = build_brief("retro_tech_developer_metaphors", "cloud-module").to_dict()
+def test_explicit_layout_mode_selects_hero_landscape_while_other_products_stay_square():
+    directional = build_brief("tactile_material_atmospheres", "fiber-arch").to_dict()
     square = build_brief("ai_governance", "review-gate").to_dict()
 
     assert recommended_canvas(directional) == "hero-landscape"
-    assert recommended_canvas(square) == "hero-landscape"
+    assert recommended_canvas(square) == "square"
 
-    square["asset_spec"]["composition"] = "centered isolated object"
-    square["asset_spec"]["negative_space"] = "clean copy space above"
+    # Copy-space words cannot override an explicit square product contract.
+    square["asset_spec"]["composition"] = "object on the left with copy space right"
+    square["asset_spec"]["negative_space"] = "large clean copy space on the right"
     assert recommended_canvas(square) == "square"
 
 
-def test_all_priority_lane_seed_briefs_pass_the_local_pre_gpu_contract():
+def test_priority_lane_seeds_only_send_verified_raster_products_to_gpu():
     for lane in list_lanes():
         brief = build_brief(lane.key, lane.concepts[0].key).to_dict()
         report = preview_preflight({"lane": brief["lane"], "briefs": [brief]}, brief)
 
-        assert report["gpu_eligible"] is True, (lane.key, report["blockers"])
-        assert report["recommended_canvas"] in {"square", "hero-landscape"}
-        assert all(item["status"] == "pass" for item in report["checks"])
+        assert report["recommended_canvas"] in {"square", "hero-landscape", "vector-artboard"}
+        if lane.key == "human_made_collage_elements":
+            assert report["gpu_eligible"] is False
+            assert any("alpha producer" in blocker for blocker in report["blockers"])
+        else:
+            assert report["gpu_eligible"] is True, (lane.key, report["blockers"])
+            assert all(item["status"] == "pass" for item in report["checks"])
 
 
 def test_plan_rejects_count_larger_than_registered_distinct_concepts():

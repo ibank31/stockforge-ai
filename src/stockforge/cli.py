@@ -14,6 +14,7 @@ from . import __version__
 from .adobe_finalize import AdobeFinalizationError, finalize_image
 from .adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
 from .adobe_gate import inspect_image
+from .adobe_png_gate import inspect_transparent_png
 from .asset import ASSET_TYPES, AssetError
 from .asset_manager import AssetManager
 from .config import ConfigManager
@@ -30,6 +31,8 @@ from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
 from .portfolio import PortfolioError, lane_for, list_lanes, metadata_from_dict, plan_manifest
 from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
+from .format_router import FormatRoutingError, route_from_dict
+from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .artifact import sha256_file
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
@@ -670,6 +673,51 @@ def portfolio_import_kaggle_master(
     }, indent=2))
 
 
+@portfolio_app.command("build-vector")
+def portfolio_build_vector(
+    project: str = typer.Option(..., "--project", "-p"),
+    plan: str = typer.Option(..., "--plan"),
+    brief: str = typer.Option(..., "--brief"),
+) -> None:
+    """Build one native SVG asset locally; this never calls a GPU provider."""
+    try:
+        record, project_root = _portfolio_project(project)
+        plan_path, data = load_project_plan(project_root, plan)
+        selected = select_brief(data, brief)
+        asset_spec = selected.get("asset_spec")
+        if not isinstance(asset_spec, dict):
+            raise PortfolioError("Portfolio brief has no valid asset specification.")
+        route = route_from_dict(asset_spec)
+        if route.execution_mode != "local_native_vector_build":
+            raise PortfolioError("This brief is not a native-vector product; do not use build-vector.")
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        context = portfolio_snapshot(data, selected, plan_path)
+        context["format_route"] = route.to_dict()
+        from .asset_spec import AssetSpec
+        spec = AssetSpec(**asset_spec)
+        result = build_local_native_vector(
+            database=database,
+            project_id=record["id"],
+            project_root=project_root,
+            spec=spec,
+            portfolio_context=context,
+        )
+        package = build_release_package(
+            database=database,
+            project_id=record["id"],
+            project_root=project_root,
+            execution_id=result.execution_id,
+        )
+    except (PortfolioError, PortfolioPlanError, FormatRoutingError, LocalVectorBuildError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({
+        **result.to_dict(),
+        "release_package": package.to_dict(),
+        "notice": "Native SVG was built locally. No remote provider, GPU, Kaggle, XMP, Adobe upload, or submission was called.",
+    }, indent=2))
+
+
 @portfolio_app.command("generate")
 def portfolio_generate(
     project: str = typer.Option(..., "--project", "-p"),
@@ -758,6 +806,20 @@ def adobe_check(path: str = typer.Argument(...), json_output: bool = typer.Optio
             typer.echo(f"[{check.status}] {check.name}: {check.detail}")
         typer.echo("")
         typer.echo(f"SUBMISSION TECHNICAL GATE: {'PASS' if report.ready else 'NOT READY'}")
+    raise typer.Exit(code=0 if report.ready else 1)
+
+
+@adobe_app.command("check-png")
+def adobe_check_png(path: str = typer.Argument(...), json_output: bool = typer.Option(False, "--json")) -> None:
+    """Check a transparent PNG against deterministic alpha and Adobe technical requirements."""
+    try:
+        report = inspect_transparent_png(path)
+    except Exception as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if json_output:
+        typer.echo(json.dumps(report.to_dict(), indent=2))
+    else:
+        typer.echo(json.dumps(report.to_dict(), indent=2))
     raise typer.Exit(code=0 if report.ready else 1)
 
 

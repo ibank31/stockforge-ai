@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .format_router import FormatRoutingError, route_from_dict
+
 
 class PortfolioPlanError(ValueError):
     """Raised when a persisted portfolio plan cannot safely drive generation."""
@@ -125,21 +127,14 @@ def select_brief(plan: dict[str, Any], brief_id: str) -> dict[str, Any]:
 
 
 def recommended_canvas(brief: dict[str, Any]) -> str:
-    """Select a bounded canvas from the saved visual contract, not preference.
-
-    Horizontal copy-space briefs need a landscape canvas for the direction to be
-    useful.  Other standalone assets retain the cheaper square default.
-    """
+    """Select canvas from the explicit product route, never copy-space keywords."""
     asset_spec = brief.get("asset_spec") if isinstance(brief, dict) else None
     if not isinstance(asset_spec, dict):
         return "square"
-    layout = " ".join(
-        str(asset_spec.get(field, ""))
-        for field in ("composition", "negative_space")
-    ).casefold()
-    if "copy space" in layout and re.search(r"\b(left|right)\b", layout):
-        return "hero-landscape"
-    return "square"
+    try:
+        return route_from_dict(asset_spec).canvas
+    except FormatRoutingError:
+        return "square"
 
 
 def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, Any]:
@@ -163,12 +158,16 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
     blockers: list[str] = []
     checks: list[dict[str, str]] = []
 
+    product_kind = str(asset_spec.get("product_kind", "raster_illustration"))
     required_policies = {
-        "background_policy": "white",
         "isolation_policy": "isolated",
         "text_policy": "none",
         "branding_policy": "no_branding",
     }
+    if product_kind == "raster_illustration":
+        required_policies["background_policy"] = "white"
+    elif product_kind == "transparent_cutout":
+        required_policies["background_policy"] = "transparent"
     wrong_policies = [
         f"{field} must be {expected!r}"
         for field, expected in required_policies.items()
@@ -203,14 +202,25 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
     })
 
     lower_composition = f"{composition} {negative_space}".casefold()
-    has_copy_space = "copy space" in lower_composition
+    layout_mode = str(asset_spec.get("layout_mode", "square"))
+    declares_no_copy_space = "no reserved copy space" in lower_composition
+    has_copy_space = "copy space" in lower_composition and not declares_no_copy_space
     has_position = bool(re.search(r"\b(left|right|above|upper|lower)\b", lower_composition))
-    if not has_copy_space or not has_position:
-        blockers.append("composition must specify copy space and a directional placement")
+    if layout_mode == "hero_landscape":
+        composition_ok = has_copy_space and has_position
+        composition_detail = "Hero copy space and placement are explicit." if composition_ok else "Hero layout requires directional copy space and subject placement."
+    elif layout_mode == "square":
+        composition_ok = not has_copy_space
+        composition_detail = "Square product framing has no reserved copy space." if composition_ok else "Square products must not reserve copy space; choose hero_landscape if copy space is the product."
+    else:
+        composition_ok = not has_copy_space
+        composition_detail = "Vertical product framing has no reserved copy space." if composition_ok else "Portrait products must not reserve copy space."
+    if not composition_ok:
+        blockers.append(composition_detail)
     checks.append({
         "name": "composition-contract",
-        "status": "pass" if has_copy_space and has_position else "fail",
-        "detail": "Copy space and placement are explicit." if has_copy_space and has_position else "Missing directional copy-space contract.",
+        "status": "pass" if composition_ok else "fail",
+        "detail": composition_detail,
     })
 
     # "Holding" causes the model to stack a second subject on top unless the
@@ -249,12 +259,34 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
         "detail": "Title is independently reviewed and visual-first." if reviewed_metadata else "Fallback metadata cannot reach GPU.",
     })
 
+    try:
+        route = route_from_dict(asset_spec)
+        route_error = None
+    except FormatRoutingError as exc:
+        route = None
+        route_error = str(exc)
+    if route_error:
+        blockers.append(route_error)
+    elif route is not None and not route.verified_for_production:
+        blockers.append(route.reason)
+    elif route is not None and not route.requires_remote_gpu:
+        blockers.append("This product uses the local native-vector build route; do not call the remote image generator.")
+    checks.append({
+        "name": "format-route",
+        "status": "pass" if route is not None and route.verified_for_production and route.requires_remote_gpu else "fail",
+        "detail": (
+            "Verified remote raster route." if route is not None and route.verified_for_production and route.requires_remote_gpu
+            else route_error or (route.reason if route is not None else "No valid format route.")
+        ),
+    })
+
     return {
-        "version": 1,
+        "version": 2,
         "gpu_eligible": not blockers,
         "lane_key": lane_key,
         "brief_id": brief.get("brief_id"),
         "recommended_canvas": recommended_canvas(brief),
+        "format_route": route.to_dict() if route is not None else None,
         "checks": checks,
         "blockers": blockers,
         "notice": "Local pre-GPU decision only; human visual review remains required after generation.",
