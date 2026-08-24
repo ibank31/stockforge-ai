@@ -33,7 +33,7 @@ from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
 from .portfolio import PortfolioError, build_brief, lane_for, list_lanes, metadata_from_dict, plan_manifest
-from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
+from .portfolio_io import PortfolioPlanError, jpeg_metadata_preflight, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
 from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .artifact import sha256_file
@@ -587,6 +587,28 @@ def portfolio_show(
         "brief": selected,
         "notice": "No remote GPU call was made. This brief requires human review before marketplace submission.",
     }, indent=2))
+
+
+@portfolio_app.command("metadata-preflight")
+def portfolio_metadata_preflight(
+    project: str = typer.Option(..., "--project", "-p"),
+    plan: str = typer.Option(..., "--plan"),
+    brief: str = typer.Option(..., "--brief"),
+    category: str | None = typer.Option(None, "--category", help="Optional human-reviewed category label for validation only; never selected or uploaded automatically."),
+) -> None:
+    """Validate reviewed JPEG metadata across marketplaces without uploading."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        plan_path, data = load_project_plan(project_root, plan)
+        selected = select_brief(data, brief)
+        asset_spec = selected.get("asset_spec")
+        if not isinstance(asset_spec, dict) or asset_spec.get("delivery_format") != "jpeg":
+            raise PortfolioError("Metadata preflight is currently limited to JPEG briefs.")
+        report = jpeg_metadata_preflight(data, selected, category=category)
+        report.update({"project": project, "plan": plan_path.name, "brief": brief})
+        typer.echo(json.dumps(report, indent=2))
+    except (PortfolioPlanError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @portfolio_app.command("prepare-master")

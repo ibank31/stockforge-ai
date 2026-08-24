@@ -26,6 +26,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 - [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) — workflow Android/Termux.
 - [`PORTFOLIO_PRODUCTION_ENGINE.md`](PORTFOLIO_PRODUCTION_ENGINE.md) — perencanaan portfolio dan brief.
 - [`PORTFOLIO_DELIVERY_PIPELINE.md`](PORTFOLIO_DELIVERY_PIPELINE.md) — review package dan delivery.
+- `portfolio metadata-preflight --project ... --plan ... --brief ...` — laporan metadata JPEG lintas platform; hanya validasi dan reorder keyword existing, tanpa provider call, upload, atau submit.
 - [`GPU_QUOTA_RUNBOOK.md`](GPU_QUOTA_RUNBOOK.md) — aturan penggunaan quota.
 - [`GPU_WASTE_PREVENTION_2026-08-24.md`](GPU_WASTE_PREVENTION_2026-08-24.md) — pre-GPU guard.
 - [`FINALIZER_AND_INFRASTRUCTURE_ROADMAP.md`](FINALIZER_AND_INFRASTRUCTURE_ROADMAP.md) — finalizer dan infrastructure follow-up.

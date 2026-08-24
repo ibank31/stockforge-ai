@@ -30,6 +30,7 @@ CSV_HEADER = ("Filename", "Title", "Keywords", "Category", "Releases")
 MAX_FILENAME_CHARS = 30
 MAX_TITLE_CHARS = 70
 MAX_KEYWORDS = 50
+MANUAL_FILE_TYPE = "MANUAL_REVIEW_REQUIRED"
 
 # These phrases describe workflow, buyer use, or the generation method rather
 # than visible subject matter.  They must never be embedded in an Adobe upload
@@ -183,19 +184,19 @@ def _write_asset_metadata_folder(asset_dir: Path, record: dict[str, Any]) -> Pat
         "Title and keywords are embedded in this JPEG as XMP metadata.\n"
         "Upload the JPEG only; do not use a CSV on Android.\n\n"
         f"TITLE\n{record['title']}\n\n"
-        f"CATEGORY\n{record['category']} — Graphic Resources\n\n"
+        f"CATEGORY\n{record['category']} — verify the closest accurate Adobe category\n\n"
         "KEYWORDS EMBEDDED IN JPEG\n"
         f"{', '.join(record['keywords'])}\n\n"
-        "PORTAL SETTINGS\n"
-        "- File type: Illustrations\n"
-        "- Category: Graphic Resources\n\n"
+        "PORTAL SETTINGS (MANUAL — VERIFY IN ADOBE)\n"
+        f"- File type: {record['adobe_file_type']}\n"
+        f"- Category: {record['category']} — verify against the visual\n\n"
         "REQUIRED PORTAL DECLARATIONS\n"
         "- Created using generative AI tools: YES\n"
         "- Confirm people/property declaration truthfully from the visual review.\n\n"
         "ANDROID / ADOBE STEPS\n"
         "1. In Adobe Browse, choose the JPEG above from this folder.\n"
         "2. Verify Adobe has read the embedded title and keywords.\n"
-        "3. Set File type to Illustrations and select the reviewed category if Adobe leaves it blank.\n"
+        "3. Select the accurate Adobe file type and category for the visual; do not assume either value.\n"
         "4. Review declarations, Terms and Conditions, and CAPTCHA yourself before submit.\n",
         encoding="utf-8",
     )
@@ -267,7 +268,7 @@ def prepare_adobe_upload_bundle(
             "title": metadata["title"],
             "keywords": metadata["keywords"],
             "category": adobe_category,
-            "adobe_file_type": "Illustrations",
+            "adobe_file_type": MANUAL_FILE_TYPE,
             "technical_gate": technical,
             "generative_ai_declaration_required": True,
             "removed_nonvisual_keywords": metadata["removed_nonvisual_keywords"],

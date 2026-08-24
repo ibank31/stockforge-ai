@@ -4,7 +4,7 @@ StockForge AI adalah asset factory berbasis **Android/Termux** yang mengubah mar
 
 ## Status saat ini
 
-Branch aktif adalah `main`. Jalur yang sudah terbukti adalah JPEG raster melalui remote worker dan native SVG deterministic secara lokal. PNG transparan masih diblokir sampai true alpha producer, edge-quality gate, dan validasi portal tersedia. Lihat [`docs/STATUS.md`](docs/STATUS.md) untuk snapshot terbaru.
+Branch aktif adalah `main`. Jalur yang sudah terbukti adalah JPEG raster melalui remote worker dan native SVG deterministic secara lokal; JPEG sekarang menjadi track pematangan aktif. SVG value-upgrade dibekukan sebagai roadmap, sedangkan PNG transparan masih diblokir sampai true alpha producer, edge-quality gate, dan validasi portal tersedia. Lihat [`docs/STATUS.md`](docs/STATUS.md) untuk snapshot terbaru.
 
 ## Quick start
 
@@ -27,7 +27,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 → QA → deduplication → metadata/compliance → human review
 ```
 
-Sistem tidak menganggap generation success sebagai marketplace acceptance. Upload, disclosure, release decision, CAPTCHA, dan final submit tetap memerlukan tindakan manusia.
+Sistem tidak menganggap generation success sebagai marketplace acceptance. Sebelum upload JPEG, gunakan `portfolio metadata-preflight --project ... --plan ... --brief ...` untuk laporan lintas platform; perintah ini hanya memvalidasi dan mengurutkan keyword yang sudah ada, tanpa provider call, upload, atau submit. Upload, disclosure, release decision, CAPTCHA, dan final submit tetap memerlukan tindakan manusia.
 
 ## Dokumentasi
 

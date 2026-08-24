@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .format_router import FormatRoutingError, route_from_dict
+from .market_discoverability import project_metadata, rank_canonical_keywords
 
 
 class PortfolioPlanError(ValueError):
@@ -294,6 +295,67 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
         "checks": checks,
         "blockers": blockers,
         "notice": "Local pre-GPU decision only; human visual review remains required after generation.",
+    }
+
+
+def jpeg_metadata_preflight(
+    plan: dict[str, Any],
+    brief: dict[str, Any],
+    *,
+    category: str | None = None,
+) -> dict[str, Any]:
+    """Project reviewed JPEG metadata to supported platforms without uploading.
+
+    The function only reorders and validates terms already present in the reviewed
+    brief.  It never invents keywords, predicts search placement, or selects a
+    marketplace category on the user's behalf.
+    """
+    lane = plan.get("lane")
+    concept = brief.get("concept")
+    metadata = brief.get("metadata")
+    if not isinstance(lane, dict) or not isinstance(concept, dict) or not isinstance(metadata, dict):
+        raise PortfolioPlanError("JPEG metadata preflight requires lane, concept, and reviewed metadata.")
+    title = metadata.get("title")
+    keywords = metadata.get("keywords")
+    if not isinstance(title, str) or not isinstance(keywords, (list, tuple)):
+        raise PortfolioPlanError("JPEG metadata preflight requires a reviewed title and keyword list.")
+    visible_terms: list[str] = []
+    for field in ("subject", "visual_mechanism", "palette", "originality_levers"):
+        value = concept.get(field)
+        if isinstance(value, str):
+            visible_terms.append(value)
+        elif isinstance(value, (list, tuple)):
+            visible_terms.extend(item for item in value if isinstance(item, str))
+    buyer_terms: list[str] = []
+    for field in ("buyer_job", "commercial_use_cases"):
+        value = lane.get(field)
+        if isinstance(value, str):
+            buyer_terms.append(value)
+        elif isinstance(value, (list, tuple)):
+            buyer_terms.extend(item for item in value if isinstance(item, str))
+    ranked_keywords = rank_canonical_keywords(
+        keywords,
+        visible_terms=tuple(visible_terms),
+        buyer_job_terms=tuple(buyer_terms),
+    )
+    reports = {
+        platform: project_metadata(
+            platform,
+            title=title,
+            keywords=ranked_keywords,
+            category=category,
+        ).to_dict()
+        for platform in ("adobe_stock", "shutterstock", "freepik", "creative_market", "etsy")
+    }
+    return {
+        "version": 1,
+        "delivery_format": "jpeg",
+        "title": title,
+        "canonical_keywords": list(ranked_keywords),
+        "category_input": category,
+        "platform_reports": reports,
+        "upload_performed": False,
+        "notice": "Metadata preflight only; no marketplace upload, submission, or ranking prediction was performed.",
     }
 
 

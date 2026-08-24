@@ -23,6 +23,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Core | Persistent job queue and execution records | DONE | Queue/orchestration tests |
 | Core | Plugin and pipeline contracts | DONE | Contract tests |
 | Intelligence | Market evidence and buyer taxonomy | DONE | Deterministic module tests; evidence remains human/public-source bounded |
+| Intelligence | JPEG metadata preflight across marketplaces | DONE | Non-upload report validates Adobe/Shutterstock/Freepik/Creative Market/Etsy limits, reorders existing visual terms only, and leaves category selection/manual upload to the user |
 | Intelligence | Concept planner and prompt compiler | DONE | Concept/prompt tests |
 | Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types`, `portfolio readiness`, and `portfolio plan-type` dry-run; includes recommended research lanes and never calls a provider |
 | Intelligence | Native vector utility lane | DONE | Research-backed `folder-upload` single icon remains baseline; separate `file-flow-micro-set` hypothesis targets higher buyer value; legacy modular ribbon and technical badge remain history briefs |
@@ -56,7 +57,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 1. Mature JPEG before routine generation: use global buyer-job research, distinct scene hypotheses, prompt/layout gates, and one-candidate evidence rules.
 2. Benchmark the prepared Kaggle Real-ESRGAN finalizer at runtime and inspect source/master at 100% before treating it as production-ready.
 3. Strengthen provider-backed semantic/commercial QA for JPEG while preserving fail-closed behavior when no provider is configured.
-4. Expand reviewed JPEG lane/category mappings and platform-specific metadata without keyword stuffing or ranking guarantees.
+4. Use the new non-upload JPEG metadata preflight before any future upload; expand reviewed lane/category mappings only where the visual category is unambiguous, without keyword stuffing or ranking guarantees.
 5. Keep SVG value-upgrade and PNG alpha work frozen until the JPEG maturation checkpoint is complete.
 6. Strengthen provider health, quota, retry, and failover without duplicating logical jobs.
 

@@ -2,6 +2,16 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — JPEG metadata preflight and portal category safety
+
+### DONE — report-only marketplace metadata gate
+
+- Added `portfolio metadata-preflight` for reviewed JPEG briefs across Adobe Stock, Shutterstock, Freepik, Creative Market, and Etsy.
+- The preflight reorders only existing canonical terms using visible-subject and buyer-job context; it never invents keywords, predicts ranking, guesses categories, uploads, or submits.
+- Adobe upload instructions no longer hard-code `Illustrations`; file type and category are explicitly manual and must be verified against the actual visual and current portal taxonomy.
+- Added regression coverage for reorder-only behavior, platform limits, and report-only status.
+- Full verification: **283 passed, 1 skipped, 45 non-blocking Pillow deprecation warnings**. No generation, provider call, Kaggle run, upload, or submission was performed.
+
 ## 2026-08-24 — JPEG scene prompt safety tuned
 
 ### DONE — conditional human-centered scene guard

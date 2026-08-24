@@ -5,7 +5,7 @@ from typer.testing import CliRunner
 
 from stockforge.cli import app
 from stockforge.portfolio import PortfolioError, build_brief, lane_for, list_lanes, plan_batch
-from stockforge.portfolio_io import preview_preflight, recommended_canvas
+from stockforge.portfolio_io import jpeg_metadata_preflight, preview_preflight, recommended_canvas
 
 
 runner = CliRunner()
@@ -46,6 +46,24 @@ def test_explicit_layout_mode_selects_hero_landscape_while_other_products_stay_s
     square["asset_spec"]["composition"] = "object on the left with copy space right"
     square["asset_spec"]["negative_space"] = "large clean copy space on the right"
     assert recommended_canvas(square) == "square"
+
+
+def test_jpeg_metadata_preflight_projects_existing_terms_without_upload_or_category_guess():
+    brief = build_brief("tactile_material_atmospheres", "fiber-arch").to_dict()
+    plan = {"lane": brief["lane"], "briefs": [brief]}
+
+    report = jpeg_metadata_preflight(plan, brief, category="Graphic Resources")
+
+    assert report["delivery_format"] == "jpeg"
+    assert report["upload_performed"] is False
+    assert set(report["canonical_keywords"]) == set(brief["metadata"]["keywords"])
+    assert len(report["canonical_keywords"]) == len(brief["metadata"]["keywords"])
+    assert report["platform_reports"]["adobe_stock"]["valid"] is True
+    assert report["platform_reports"]["shutterstock"]["valid"] is True
+    assert report["platform_reports"]["creative_market"]["valid"] is False
+    assert any("at most 10" in error for error in report["platform_reports"]["creative_market"]["errors"])
+    assert report["platform_reports"]["etsy"]["valid"] is False
+    assert any("at least 13" in error for error in report["platform_reports"]["etsy"]["errors"])
 
 
 def test_priority_lane_seeds_only_send_verified_raster_products_to_gpu():
@@ -92,6 +110,34 @@ def test_portfolio_plan_cli_outputs_ai_disclosure_and_no_remote_call():
     assert len(output["briefs"]) == 2
     assert output["briefs"][0]["metadata"]["created_using_generative_ai"] is True
     assert "remote" not in output
+
+
+def test_portfolio_metadata_preflight_cli_is_report_only(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("STOCKFORGE_HOME", str(tmp_path / "home"))
+
+    assert runner.invoke(app, ["init"]).exit_code == 0
+    assert runner.invoke(app, ["project", "create", "demo"]).exit_code == 0
+    created = runner.invoke(
+        app,
+        ["portfolio", "create-batch", "--project", "demo", "--lane", "tactile_material_atmospheres", "--count", "1"],
+    )
+    assert created.exit_code == 0, created.output
+    batch = json.loads(created.output)
+
+    result = runner.invoke(
+        app,
+        [
+            "portfolio", "metadata-preflight", "--project", "demo",
+            "--plan", batch["path"], "--brief", batch["brief_ids"][0],
+            "--category", "Graphic Resources",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    report = json.loads(result.output)
+    assert report["upload_performed"] is False
+    assert report["platform_reports"]["adobe_stock"]["valid"] is True
+    assert "provider" not in result.output.lower()
 
 
 def test_portfolio_create_and_list_batch_in_project(tmp_path, monkeypatch: pytest.MonkeyPatch):
