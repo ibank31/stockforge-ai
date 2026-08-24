@@ -12,6 +12,7 @@ import typer
 
 from . import __version__
 from .adobe_finalize import AdobeFinalizationError, finalize_image
+from .android_export import AndroidExportError, default_downloads_root, export_preview, export_ready_upload
 from .adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
 from .adobe_gate import inspect_image
 from .adobe_png_gate import inspect_transparent_png
@@ -21,6 +22,7 @@ from .config import ConfigManager
 from .database import Database
 from .doctor import run_doctor
 from .generation import GenerationRequest
+from .generation_evaluation import EvaluationError, append_evaluation, new_evaluation, summarize_evaluations
 from .job import JobError
 from .job_database import JobDatabase
 from .job_manager import JobManager
@@ -419,6 +421,12 @@ def _run_one_generation(
             project_root=project_root,
             execution_id=result.execution.id,
         )
+        android_preview_export = _export_preview_to_android(
+            database=database,
+            project_root=project_root,
+            artifact_ids=result.execution.artifact_ids,
+            asset_name=str((portfolio_context or {}).get("brief_id", result.execution.id[:12])),
+        )
         jobs.complete(
             claimed.id,
             {
@@ -426,6 +434,7 @@ def _run_one_generation(
                 "artifact_ids": list(result.execution.artifact_ids),
                 "provider": candidate.capabilities.provider_id,
                 "release_package": package.to_dict(),
+                "android_preview_export": android_preview_export,
             },
         )
     except Exception as exc:
@@ -440,8 +449,51 @@ def _run_one_generation(
         "execution_id": result.execution.id,
         "artifact_ids": list(result.execution.artifact_ids),
         "release_package": package.to_dict(),
+        "android_preview_export": android_preview_export,
         "status": "review_ready",
     }
+
+
+def _export_ready_uploads_to_android(bundle: object) -> dict[str, object]:
+    """Copy only approved JPEG upload masters into the Android upload folder."""
+    downloads_root = default_downloads_root()
+    if downloads_root is None:
+        return {"status": "not_available", "notice": "No Android Download mount was detected; upload bundle remains in the project workspace."}
+    asset_dirs = getattr(bundle, "asset_dirs", ())
+    exports: list[dict[str, object]] = []
+    try:
+        for asset_dir in asset_dirs:
+            candidates = sorted(Path(asset_dir).glob("*.jpg")) + sorted(Path(asset_dir).glob("*.jpeg"))
+            if len(candidates) != 1:
+                raise AndroidExportError("Each approved upload folder must contain exactly one JPEG master.")
+            exported = export_ready_upload(
+                source=candidates[0],
+                downloads_root=downloads_root,
+                asset_name=Path(asset_dir).name,
+            )
+            exports.append(exported.to_dict())
+    except (AndroidExportError, OSError, ValueError) as exc:
+        return {"status": "failed", "error": str(exc), "exports": exports}
+    return {"status": "exported", "exports": exports}
+
+
+def _export_preview_to_android(*, database: JobDatabase, project_root: Path, artifact_ids: tuple[str, ...], asset_name: str) -> dict[str, object]:
+    """Export only the first generated visual when an Android Download mount exists."""
+    downloads_root = default_downloads_root()
+    if downloads_root is None:
+        return {"status": "not_available", "notice": "No Android Download mount was detected; project package remains available."}
+    if not artifact_ids:
+        return {"status": "failed", "error": "Generation returned no artifact IDs."}
+    artifact = database.get_artifact(artifact_ids[0])
+    if artifact is None:
+        return {"status": "failed", "error": "Generated artifact was not found for Android export."}
+    source = (project_root / artifact.relative_path).resolve()
+    try:
+        source.relative_to(project_root.resolve())
+        exported = export_preview(source=source, downloads_root=downloads_root, asset_name=asset_name)
+    except (AndroidExportError, OSError, ValueError) as exc:
+        return {"status": "failed", "error": str(exc)}
+    return {"status": "exported", **exported.to_dict()}
 
 
 @portfolio_app.command("show")
@@ -587,7 +639,10 @@ def portfolio_prepare_adobe_upload(
             category=category,
             destination_root=destination_root,
         )
-        typer.echo(json.dumps(bundle.to_dict(), indent=2))
+        android_ready_upload_exports = _export_ready_uploads_to_android(bundle)
+        output = bundle.to_dict()
+        output["android_ready_upload_exports"] = android_ready_upload_exports
+        typer.echo(json.dumps(output, indent=2))
     except (AdobeUploadBundleError, PortfolioError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -671,6 +726,82 @@ def portfolio_import_kaggle_master(
         "release_package": package.to_dict(),
         "notice": "GPU was not called by import. Review the master JPEG at 100% before any marketplace submission.",
     }, indent=2))
+
+
+@portfolio_app.command("evaluate")
+def portfolio_evaluate(
+    project: str = typer.Option(..., "--project", "-p"),
+    execution: str = typer.Option(..., "--execution"),
+    artifact: str | None = typer.Option(None, "--artifact"),
+    decision: str = typer.Option(..., "--decision", help="Human decision: accept, reject, or review."),
+    visual_quality: int = typer.Option(..., "--visual-quality", min=0, max=5),
+    technical_quality: int = typer.Option(..., "--technical-quality", min=0, max=5),
+    buyer_fit: int = typer.Option(..., "--buyer-fit", min=0, max=5),
+    metadata_accuracy: int = typer.Option(..., "--metadata-accuracy", min=0, max=5),
+    rejection_reason: list[str] = typer.Option([], "--rejection-reason"),
+    marketplace: str = typer.Option("adobe_stock", "--marketplace"),
+    marketplace_outcome: str = typer.Option("not_submitted", "--marketplace-outcome"),
+    notes: str = typer.Option("", "--notes"),
+) -> None:
+    """Record a human review; this never generates, uploads, or changes an asset."""
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        execution_record = database.get_execution(execution)
+        if execution_record is None or execution_record.project_id != record["id"]:
+            raise PortfolioError("Execution does not belong to the requested project.")
+        if execution_record.state != "succeeded" or not execution_record.artifact_ids:
+            raise PortfolioError("Only a succeeded execution with an artifact can be evaluated.")
+        artifact_id = artifact or execution_record.artifact_ids[0]
+        if artifact_id not in execution_record.artifact_ids:
+            raise PortfolioError("Selected artifact is not an output of the supplied execution.")
+        portfolio = execution_record.parameters.get("portfolio")
+        if not isinstance(portfolio, dict):
+            raise PortfolioError("Evaluation requires a portfolio context with buyer job and format data.")
+        asset_spec = portfolio.get("asset_spec")
+        if not isinstance(asset_spec, dict):
+            raise PortfolioError("Portfolio context has no immutable asset specification.")
+        route = portfolio.get("format_route")
+        if not isinstance(route, dict):
+            route = {}
+        evaluation = new_evaluation(
+            execution_id=execution_record.id,
+            artifact_id=artifact_id,
+            lane_key=str(portfolio.get("lane_key", "")),
+            buyer_job=str(portfolio.get("buyer_job", asset_spec.get("buyer_job", ""))),
+            product_kind=str(asset_spec.get("product_kind", "")),
+            delivery_format=str(asset_spec.get("delivery_format", route.get("delivery_format", ""))),
+            provider_id=str(execution_record.provider_id or "local"),
+            model_id=str(execution_record.model_id or "deterministic"),
+            workflow_hash=str(execution_record.workflow_hash or "unknown"),
+            decision=decision,
+            visual_quality=visual_quality,
+            technical_quality=technical_quality,
+            buyer_fit=buyer_fit,
+            metadata_accuracy=metadata_accuracy,
+            rejection_reasons=tuple(rejection_reason),
+            marketplace=marketplace,
+            marketplace_outcome=marketplace_outcome,
+            notes=notes,
+        )
+        ledger = append_evaluation(project_root, evaluation)
+    except (EvaluationError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({"path": str(ledger), "evaluation": evaluation.to_dict()}, indent=2))
+
+
+@portfolio_app.command("evaluation-summary")
+def portfolio_evaluation_summary(
+    project: str = typer.Option(..., "--project", "-p"),
+) -> None:
+    """Summarize reviewed outcomes without predicting sales or triggering work."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        summary = summarize_evaluations(project_root)
+    except (EvaluationError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(summary, indent=2))
 
 
 @portfolio_app.command("build-vector")

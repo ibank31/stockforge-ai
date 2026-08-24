@@ -59,6 +59,14 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 
 Direktori [`research/`](research/) berisi catatan sumber dan audit. Dokumen riset tidak otomatis menjadi keputusan produksi; keputusan aktif harus diringkas di `STATUS.md` atau `FORMAT_AND_NICHE_DECISION_2026-08-24.md`.
 
+## Output dan evaluasi
+
+- `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` — satu visual untuk review manusia setelah generation masa depan.
+- `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/` — satu salinan JPEG yang sudah disetujui dan diberi XMP title/keywords bila formatnya mendukung.
+- `evaluations/generation_evaluations.jsonl` — ledger append-only untuk skor, keputusan, rejection reason, format, provider, model, dan buyer job.
+
+Perintah `portfolio evaluate` hanya mencatat review; perintah `portfolio evaluation-summary` hanya merangkum data yang sudah direview. Keduanya tidak menjalankan GPU, upload, submit, atau perubahan prompt otomatis.
+
 ## Aturan pemeliharaan
 
 Setiap perubahan status harus memperbarui `STATUS.md` dan menambahkan entry ke `CHANGELOG.md`. Dokumen dengan tanggal lama boleh tetap dipertahankan bila merupakan bukti yang tidak tergantikan; dokumen yang hanya mengulang status atau handoff harus dihapus atau digabungkan, bukan dibuatkan salinan baru.

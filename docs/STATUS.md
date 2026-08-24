@@ -60,7 +60,13 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 The current main branch has passed **253 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
 
-The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
+The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
+
+## Output and learning contract
+
+A future successful generation may export one visual preview to `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` when an Android Download mount is available. An approved final JPEG may be copied as a separate upload copy to `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/`; the original master and project records remain unchanged. Project packages, JSON, CSV, logs, and review records stay inside the project workspace.
+
+Every reviewed generation can be recorded in the project-local append-only ledger at `evaluations/generation_evaluations.jsonl`. The ledger ties human scores and rejection reasons to execution, artifact, buyer job, format, provider, model, and workflow hash. Its summary is descriptive only: it does not predict sales or trigger a new generation. No generation is required to create or test the ledger.
 
 ## Source of truth
 

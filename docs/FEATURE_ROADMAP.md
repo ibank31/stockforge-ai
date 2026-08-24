@@ -38,6 +38,10 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | QA | Semantic/anatomy/OCR/logo/watermark ensemble | IN PROGRESS | Provider boundary exists; production benchmark and policy gates remain |
 | Delivery | Review-ready package and Android export separation | LIVE | Package/export tests and handoff workflow |
 | Delivery | Adobe metadata XMP upload copy | LIVE | Portal field auto-population observed; final submit remains manual |
+| Delivery | Android preview export | DONE | Future successful generation exports one visual to `PREVIEW_TO_MANUS` when the mount exists |
+| Delivery | Android ready-upload export | DONE | Approved JPEG upload copy exports to `READY_UPLOAD_ADOBE`; no internal files are copied |
+| Learning | Append-only generation evaluation ledger | DONE | `portfolio evaluate` records human scores/reasons without generation |
+| Learning | Evaluation summary for future decisions | DONE | `portfolio evaluation-summary` reports reviewed records only; no automatic generation |
 | Architecture | Model registry and provider cache abstraction | IN PROGRESS | Contract exists in parts; unify model identity, cache, and delivery evidence |
 | Architecture | Provider health, failover, and recovery | IN PROGRESS | Durable identity exists; live failover and worker persistence remain |
 | Intelligence | Acceptance/sales feedback loop | PLANNED | Requires trustworthy marketplace outcome data |

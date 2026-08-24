@@ -36,6 +36,12 @@ Setiap GPU job harus memiliki buyer hypothesis dan tujuan yang jelas. Jangan mel
 
 Branch remote dan lokal hanya `main`. Commit aktif terakhir adalah `7f2f730`. Test suite terakhir: **253 passed, 1 skipped**. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
 
+## Output and learning contract
+
+Future generation output may place one review visual in `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/`. Only an explicitly approved final JPEG may be copied into `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/`; the upload copy carries embedded title/keywords where supported, while category, GenAI declaration, release, CAPTCHA, Terms, and final submit remain manual portal steps. Internal JSON, CSV, logs, and review records stay inside the project workspace.
+
+After a human review, record the result with `portfolio evaluate`. The append-only ledger at `evaluations/generation_evaluations.jsonl` is the learning source for later prompt, format, provider, and lane comparisons. Use `portfolio evaluation-summary` only as a descriptive summary; never convert it into an automatic sales or generation decision.
+
 ## Next safe work
 
-Lanjutkan dengan memperluas deterministic native SVG builders dan menambah test format-specific. Jangan mengaktifkan PNG production route sebelum alpha pipeline selesai dan diuji. Untuk eksperimen market baru, buat satu hypothesis, satu brief, satu preview terkontrol, lalu review sebelum finalizer atau upload.
+Continue with deterministic contract hardening, evaluation workflows, and format-specific tests. Do not generate now. Do not activate the PNG production route before alpha pipeline and portal validation are complete. A future generation requires a documented hypothesis, one controlled candidate, full review, and an evaluation record before it can inform any future engine change.

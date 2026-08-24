@@ -33,6 +33,21 @@ class AndroidExport:
         return {"source": str(self.source), "destination": str(self.destination), "branch": self.branch}
 
 
+def default_downloads_root() -> Path | None:
+    """Return an existing Android Download mount, or None outside Termux."""
+    candidates = (
+        Path("/storage/emulated/0/Download"),
+        Path.home() / "storage" / "downloads",
+    )
+    for candidate in candidates:
+        try:
+            if candidate.is_dir():
+                return candidate.resolve()
+        except OSError:
+            continue
+    return None
+
+
 def machine_root(downloads_root: str | Path) -> Path:
     return Path(downloads_root).expanduser().resolve() / "MACHINE STOCKFORGE"
 

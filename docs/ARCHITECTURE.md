@@ -37,6 +37,8 @@ Metadata + marketplace compliance
     ↓
 Human review
     ↓
+Review evaluation ledger
+    ↓
 Export / manual submission package
     ↓
 Evidence and feedback loop
@@ -74,6 +76,12 @@ The remote Gradio contract uses `generate_remote` with seven positional inputs, 
 
 Technical checks cover dimensions, file integrity, RGB/sRGB, alpha, decodability, and format-specific structure. Semantic and commercial checks cover subject presence, object count, composition, text/brand risk, thumbnail readability, unique value, buyer-job fit, and duplicate/spam risk. Human review remains mandatory for visual quality, rights, releases, declarations, and final marketplace submission.
 
+## Evaluation and learning loop
+
+A successful generation is not automatically treated as a good result. After human review, `portfolio evaluate` records the execution/artifact identity, buyer job, product kind, delivery format, provider, model, workflow hash, four bounded quality scores, decision, rejection reasons, and marketplace outcome. Records are append-only in `evaluations/generation_evaluations.jsonl` so later engine changes can be compared with the exact production context that created the evidence.
+
+`portfolio evaluation-summary` produces descriptive aggregates for reviewed records. It never changes prompts, selects a new provider, predicts sales, or launches generation. Any future learning rule must be proposed and tested against this ledger before it can influence routing.
+
 ## Current compute policy
 
 GPU quota is opportunistic capacity. A GPU call requires a specific buyer hypothesis and must produce a selected master, a meaningful concept experiment, or isolated diagnostic evidence. The system must not spend GPU on blind seed retries, large unreviewed batches, or weak previews.
@@ -86,6 +94,8 @@ GPU quota is opportunistic capacity. A GPU call requires a specific buyer hypoth
 - `src/stockforge/seamless_pattern.py` — deterministic raster edge-continuity gate.
 - `src/stockforge/remote_gradio.py` — remote worker adapter.
 - `src/stockforge/recovery_orchestrator.py` — durable execution and artifact ingestion.
+- `src/stockforge/generation_evaluation.py` — append-only human evaluation ledger and summary.
+- `src/stockforge/android_export.py` — minimal review/upload visual export to Android.
 - `deploy/zerogpu/remote_api.py` — machine generation endpoint.
 
 ## References
