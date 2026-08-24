@@ -1,6 +1,8 @@
 import json
 import subprocess
 import py_compile
+import runpy
+import shutil
 from pathlib import Path
 
 from PIL import Image
@@ -25,7 +27,8 @@ def _bundle(tmp_path: Path, monkeypatch) -> Path:
         }),
         encoding="utf-8",
     )
-    (bundle / "worker.py").write_text("print('worker')\n", encoding="utf-8")
+    worker_source = Path(__file__).resolve().parents[1] / "deploy" / "kaggle-finalizer" / "worker.py"
+    shutil.copy2(worker_source, bundle / "worker.py")
     (bundle / "requirements.txt").write_text("pillow\n", encoding="utf-8")
     monkeypatch.setenv("STOCKFORGE_KAGGLE_FINALIZER_DIR", str(bundle))
     return bundle
@@ -69,7 +72,13 @@ def test_submit_stages_verified_request_and_preview(tmp_path: Path, monkeypatch)
         staged_worker = (staged / "worker.py").read_text(encoding="utf-8")
         assert "REQUEST_B64" in staged_worker and "SOURCE_B64" in staged_worker
         assert "preview.webp" in staged_worker
+        assert staged_worker.index("REQUEST_B64") < staged_worker.index('if __name__ == "__main__":')
         py_compile.compile(str(staged / "worker.py"), doraise=True)
+        monkeypatch.chdir(staged)
+        namespace = runpy.run_path(str(staged / "worker.py"), run_name="stockforge_kaggle_test")
+        namespace["materialize_staged_input"]()
+        assert json.loads((staged / "request.json").read_text())["status"] == "prepared_no_gpu"
+        assert (staged / "input" / "preview.webp").is_file()
         return subprocess.CompletedProcess(args, 0, "submitted\n")
 
     monkeypatch.setattr("stockforge.kaggle_finalizer._run", fake_run)
