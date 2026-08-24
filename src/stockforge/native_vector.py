@@ -277,7 +277,22 @@ def inspect_native_svg(path: str | Path) -> NativeVectorReport:
         checks.append(("native_elements", "Only editable SVG geometry and definitions are present."))
     transparent = not any(_tag_name(item) == "rect" and item.attrib.get("x") == "0" and item.attrib.get("y") == "0" and item.attrib.get("width") == str(width) and item.attrib.get("height") == str(height) for item in root.iter())
     checks.append(("background", "Transparent canvas." if transparent else "Flat background rectangle is explicit."))
-    ready = width >= 1 and height >= 1 and not unknown and not forbidden
+    patterns = [item for item in root.iter() if _tag_name(item) == "pattern"]
+    pattern_ok = True
+    if patterns:
+        try:
+            pattern_ok = all(
+                item.attrib.get("patternUnits") == "userSpaceOnUse"
+                and float(item.attrib.get("width", "0")) > 0
+                and float(item.attrib.get("height", "0")) > 0
+                for item in patterns
+            )
+        except (TypeError, ValueError):
+            pattern_ok = False
+        checks.append(("pattern_repeatability", "Pattern definitions use positive user-space tiles." if pattern_ok else "Pattern definitions require positive user-space tile dimensions."))
+    else:
+        checks.append(("pattern_repeatability", "Not applicable; SVG contains no pattern definition."))
+    ready = width >= 1 and height >= 1 and not unknown and not forbidden and pattern_ok
     return NativeVectorReport(
         path=str(file_path),
         width=width,

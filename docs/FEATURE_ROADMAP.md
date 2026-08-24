@@ -26,14 +26,14 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Intelligence | Concept planner and prompt compiler | DONE | Concept/prompt tests |
 | Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types`, `portfolio readiness`, and `portfolio plan-type` dry-run; includes recommended research lanes and never calls a provider |
 | Intelligence | Native vector utility lane | DONE | Two controlled briefs: modular ribbon and technical badge; local SVG route only |
-| Intelligence | Native vector pattern lane | DONE | One controlled repeatable geometric tile brief; local SVG route with structural gate |
+| Intelligence | Native vector pattern lane | DONE | One controlled repeatable geometric tile brief; local SVG route with structural repeatability gate |
 | Generation | Provider-neutral GenerationRequest/Result | DONE | Generation contract tests |
 | Generation | Provider capability/quota router | DONE | Router tests, including exhausted quota |
 | Generation | Remote Gradio durable adapter | DONE | `generate_remote` contract tests; live endpoint remains runtime-dependent |
 | Generation | Hugging Face ZeroGPU preview route | LIVE | Recorded Z-Image Turbo benchmark and selected preview workflow |
 | Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
 | Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow |
-| Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon, technical badge, and geometric pattern presets plus native-vector lanes pass local structure tests; broader object/icon family and Adobe portal remain pending |
+| Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon, technical badge, and geometric pattern presets pass local structure/repeatability tests; broader object/icon family and Adobe portal remain pending |
 | Format | PNG true-alpha route | BLOCKED | Conservative alpha normalizer exists; production route still needs anti-fringe, trim policy, and one portal validation |
 | Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
 | QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |

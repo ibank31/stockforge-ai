@@ -2,6 +2,14 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Engine maturation: selector, SVG presets, pattern gate, metadata policy, and delivery tests
+
+### Additional implementation
+
+- Added structural repeatability checks for SVG `<pattern>` definitions, including positive user-space tile dimensions.
+- Kept pattern visual attractiveness and marketplace utility as human-review concerns; the gate only proves structural repeatability.
+- Full verification after this milestone: **271 passed, 1 skipped**; no generation, provider call, or upload was performed.
+
 ## 2026-08-24 — Engine maturation: selector, SVG presets, pattern lane, metadata policy, and delivery tests
 
 ### Additional implementation
