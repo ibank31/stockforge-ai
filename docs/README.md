@@ -8,6 +8,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 |---|---|
 | Memahami kondisi terbaru dan batasan proyek | [`STATUS.md`](STATUS.md) |
 | Melanjutkan sesi berikutnya | [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) |
+| Melihat rencana pematangan mesin | [`ENGINE_MATURATION_PLAN.md`](ENGINE_MATURATION_PLAN.md) |
 | Memahami arsitektur dan alur asset factory | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | Melihat pekerjaan selesai dan berikutnya | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
 | Membaca sejarah keputusan dan verifikasi | [`CHANGELOG.md`](CHANGELOG.md) |

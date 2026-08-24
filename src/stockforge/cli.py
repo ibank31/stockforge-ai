@@ -14,6 +14,7 @@ from . import __version__
 from .adobe_finalize import AdobeFinalizationError, finalize_image
 from .android_export import AndroidExportError, default_downloads_root, export_preview, export_ready_upload
 from .adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
+from .asset_selector import AssetSelectionError, list_asset_type_policies, select_asset_type
 from .adobe_gate import inspect_image
 from .adobe_png_gate import inspect_transparent_png
 from .asset import ASSET_TYPES, AssetError
@@ -205,6 +206,34 @@ def portfolio_lanes(json_output: bool = typer.Option(False, "--json")) -> None:
             f"{lane.key}\t{lane.tier}\tcap={lane.test_cap}\t"
             f"seed_concepts={len(lane.concepts)}\t{lane.name}"
         )
+
+
+@portfolio_app.command("asset-types")
+def portfolio_asset_types(
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    """List supported asset types and their conservative format routes without generation."""
+    policies = [item.to_dict() for item in list_asset_type_policies()]
+    if json_output:
+        typer.echo(json.dumps(policies, indent=2))
+        return
+    for item in policies:
+        typer.echo(f"{item['key']}\t{item['delivery_format']}\t{item['readiness']}\t{item['label']}")
+
+
+@portfolio_app.command("readiness")
+def portfolio_readiness(
+    asset_type: str = typer.Option("all", "--asset-type", "-t"),
+) -> None:
+    """Explain whether an asset type is ready for a trial; never calls a provider."""
+    try:
+        if asset_type.strip().casefold() == "all":
+            output = [item.to_dict() for item in list_asset_type_policies()]
+        else:
+            output = select_asset_type(asset_type).to_dict()
+    except AssetSelectionError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(output, indent=2))
 
 
 @portfolio_app.command("plan")

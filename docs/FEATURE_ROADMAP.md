@@ -24,6 +24,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Core | Plugin and pipeline contracts | DONE | Contract tests |
 | Intelligence | Market evidence and buyer taxonomy | DONE | Deterministic module tests; evidence remains human/public-source bounded |
 | Intelligence | Concept planner and prompt compiler | DONE | Concept/prompt tests |
+| Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types` and `portfolio readiness` dry-run; never calls a provider |
 | Generation | Provider-neutral GenerationRequest/Result | DONE | Generation contract tests |
 | Generation | Provider capability/quota router | DONE | Router tests, including exhausted quota |
 | Generation | Remote Gradio durable adapter | DONE | `generate_remote` contract tests; live endpoint remains runtime-dependent |
