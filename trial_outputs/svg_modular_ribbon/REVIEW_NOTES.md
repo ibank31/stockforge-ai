@@ -28,3 +28,9 @@ Commercial status: REVIEW_REQUIRED. The asset should not be marked upload-ready 
 
 - SVG SHA-256: `a7d37cf8b07d6677a6d353da312e98abc92aca2bf3683077f090f858656cfec8`
 - Preview SHA-256: `b30508d1db0447dca415f458c9234a761894048b1f752dc2442ea0a9521f7763`
+
+## User feedback — 2026-08-24
+
+The user rated the result **2/10** on a ten-point scale and rejected it for further use. The user reported that the buyer would be confused about what the image represents and what it should be used for. The user requested that this result be retained for evaluation and discussion before any new change or trial.
+
+This feedback is recorded as an exact overall human rating. The structured four-field `portfolio evaluate` record is intentionally not written yet because the user did not provide separate visual, technical, buyer-fit, and metadata scores. The result must not be marked upload-ready.
