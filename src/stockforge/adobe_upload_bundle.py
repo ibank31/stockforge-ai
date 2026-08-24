@@ -33,8 +33,11 @@ MAX_KEYWORDS = 50
 
 @dataclass(frozen=True, slots=True)
 class AdobeUploadBundle:
+    """Manual-upload publication folder plus a separate metadata reference folder."""
+
     path: Path
     image_dir: Path
+    reference_dir: Path
     csv_path: Path
     manifest_path: Path
     artifact_ids: tuple[str, ...]
@@ -43,10 +46,11 @@ class AdobeUploadBundle:
         return {
             "path": str(self.path),
             "image_dir": str(self.image_dir),
+            "reference_dir": str(self.reference_dir),
             "csv_path": str(self.csv_path),
             "manifest_path": str(self.manifest_path),
             "artifact_ids": list(self.artifact_ids),
-            "status": "portal_upload_prepared_not_submitted",
+            "status": "manual_portal_upload_prepared_not_submitted",
         }
 
 
@@ -134,10 +138,16 @@ def prepare_adobe_upload_bundle(
     if not approved_by_user:
         raise AdobeUploadBundleError("Pass explicit user approval after visual review before preparing upload files.")
 
+    # The Android-ready folder is intentionally JPEG-only.  Metadata, CSV, and
+    # audit records are written next to it in METADATA_REFERENCE so a mobile
+    # file picker cannot accidentally select a non-upload document.
     output_root = Path(destination_root).resolve() if destination_root is not None else root / "adobe-upload-bundles"
-    bundle_root = output_root / _bundle_name(execution_ids)
-    image_dir = bundle_root / "images"
+    bundle_name = _bundle_name(execution_ids)
+    bundle_root = output_root / bundle_name
+    image_dir = bundle_root
+    reference_dir = output_root.parent / "METADATA_REFERENCE" / bundle_name
     image_dir.mkdir(parents=True, exist_ok=False)
+    reference_dir.mkdir(parents=True, exist_ok=False)
     records: list[dict[str, Any]] = []
 
     for execution_id in execution_ids:
@@ -183,7 +193,7 @@ def prepare_adobe_upload_bundle(
             "reviewer_checklist": metadata.get("reviewer_checklist", []),
         })
 
-    csv_path = bundle_root / "adobe_metadata.csv"
+    csv_path = reference_dir / "adobe_metadata.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(CSV_HEADER)
@@ -197,38 +207,58 @@ def prepare_adobe_upload_bundle(
             ])
 
     manifest = {
-        "schema_version": 1,
-        "kind": "stockforge.adobe_upload_bundle",
-        "status": "portal_upload_prepared_not_submitted",
+        "schema_version": 2,
+        "kind": "stockforge.adobe_manual_upload_bundle",
+        "status": "manual_portal_upload_prepared_not_submitted",
         "created_at": datetime.now(UTC).isoformat(),
         "marketplace": "adobe_stock_contributor",
         "approved_by_user": True,
         "submission_requires_explicit_portal_confirmation": True,
+        "ready_to_upload_dir": str(bundle_root),
+        "metadata_reference_dir": str(reference_dir),
         "files": records,
         "portal_steps": [
             "Open Adobe Contributor Portal > Uploaded Files.",
-            "Use Browse to select every JPEG in images/.",
-            "Use Upload CSV and select adobe_metadata.csv after JPEG upload completes.",
-            "Confirm the matching rows, title, keywords, and category in New.",
-            "For every selected row, confirm Created using generative AI tools.",
-            "Keep People and Property are fictional unchecked unless an asset visibly contains fictional people or property.",
-            "Review the final batch and explicitly confirm Submit in the portal.",
+            "Use Browse to select only JPEG files from READY_TO_UPLOAD.",
+            "For each uploaded JPEG, copy the reviewed title, keywords, and category from UPLOAD_REFERENCE.md.",
+            "Truthfully mark Created using generative AI tools and the fictional people/property declaration where applicable.",
+            "Review the final batch, complete Adobe Terms and Conditions yourself, and explicitly submit only after approval.",
         ],
     }
-    manifest_path = bundle_root / "UPLOAD_MANIFEST.json"
+    manifest_path = reference_dir / "UPLOAD_MANIFEST.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    checklist_path = bundle_root / "PORTAL_STEPS.md"
+    reference_path = reference_dir / "UPLOAD_REFERENCE.md"
+    reference_lines = [
+        "# Adobe Stock — Metadata Reference (Do Not Upload)",
+        "",
+        "This folder is deliberately separate from `READY_TO_UPLOAD`. Select JPEGs only from the ready folder in Adobe's Browse dialog.",
+        "",
+    ]
+    for index, record in enumerate(records, start=1):
+        reference_lines.extend([
+            f"## {index}. {record['filename']}",
+            "",
+            f"- **Title:** {record['title']}",
+            f"- **Category:** {record['category']} (Graphic Resources)",
+            f"- **Keywords:** {', '.join(record['keywords'])}",
+            "- **Required declaration:** Created using generative AI tools.",
+            "- **Required review:** Confirm no visible IP, people, or real recognizable property before submission.",
+            "",
+        ])
+    reference_path.write_text("\n".join(reference_lines), encoding="utf-8")
+    checklist_path = reference_dir / "PORTAL_STEPS.md"
     checklist_path.write_text(
-        "# Adobe Contributor Upload — Short Portal Steps\n\n"
-        "1. In **Uploaded Files**, select **Browse** and choose every JPEG in `images/`.\n"
-        "2. Wait for uploads to finish, then select **Upload CSV** and choose `adobe_metadata.csv`.\n"
-        "3. In **New**, verify the rows and mark **Created using generative AI tools**.\n"
-        "4. Read the final metadata once, then press **Submit** only if you approve the batch.\n",
+        "# Adobe Contributor — Manual Android Steps\n\n"
+        "1. In **Uploaded Files**, select **Browse** and choose JPEG files only from `READY_TO_UPLOAD`.\n"
+        "2. Use `UPLOAD_REFERENCE.md` in this metadata folder to enter each reviewed title, keyword list, and category.\n"
+        "3. Mark **Created using generative AI tools** truthfully and complete any applicable people/property declaration.\n"
+        "4. Complete Adobe's Terms and Conditions yourself, then press **Submit** only if you approve the batch.\n",
         encoding="utf-8",
     )
     return AdobeUploadBundle(
         path=bundle_root,
         image_dir=image_dir,
+        reference_dir=reference_dir,
         csv_path=csv_path,
         manifest_path=manifest_path,
         artifact_ids=tuple(record["artifact_id"] for record in records),

@@ -90,8 +90,15 @@ def test_prepare_adobe_upload_bundle_creates_official_csv_and_manifest(tmp_path:
     assert rows[1][3] == "8"
     assert (bundle.image_dir / rows[1][0]).is_file()
     assert bundle.path.parents[1].name == "AdobeStock"
-    assert sorted(item.name for item in bundle.path.iterdir()) == ["PORTAL_STEPS.md", "UPLOAD_MANIFEST.json", "adobe_metadata.csv", "images"]
-    assert manifest["status"] == "portal_upload_prepared_not_submitted"
+    assert sorted(item.name for item in bundle.path.iterdir()) == [f"sf-{artifact.id[:8]}.jpg"]
+    assert bundle.reference_dir.parent.name == "METADATA_REFERENCE"
+    assert bundle.csv_path.parent == bundle.reference_dir
+    assert sorted(item.name for item in bundle.reference_dir.iterdir()) == [
+        "PORTAL_STEPS.md", "UPLOAD_MANIFEST.json", "UPLOAD_REFERENCE.md", "adobe_metadata.csv"
+    ]
+    assert manifest["status"] == "manual_portal_upload_prepared_not_submitted"
+    assert manifest["ready_to_upload_dir"] == str(bundle.path)
+    assert manifest["metadata_reference_dir"] == str(bundle.reference_dir)
     assert manifest["submission_requires_explicit_portal_confirmation"] is True
     assert manifest["files"][0]["generative_ai_declaration_required"] is True
 
