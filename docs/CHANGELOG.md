@@ -2,6 +2,13 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Engine maturation: selector, SVG presets, conservative PNG alpha, and delivery tests
+
+### Additional verification
+
+- Locked CLI delivery coverage so only the approved JPEG is copied to `READY_UPLOAD_ADOBE`; manifests and technical files remain outside the user-facing folder.
+- Full verification after this milestone: **266 passed, 1 skipped**; no generation, provider call, or upload was performed.
+
 ## 2026-08-24 — Engine maturation: selector, SVG presets, and conservative PNG alpha
 
 ### DONE — deterministic pre-generation controls

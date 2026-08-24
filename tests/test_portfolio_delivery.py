@@ -357,3 +357,23 @@ def test_portfolio_prepare_master_creates_lineage_bound_no_gpu_request(tmp_path:
     assert request["source"]["artifact_id"] == source.id
     assert request["target"]["expected_megapixels"] > 6
     assert request["human_review_required"] is True
+
+
+def test_cli_ready_upload_export_copies_only_approved_jpeg_to_android_folder(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+    import stockforge.cli as cli_module
+
+    bundle_root = tmp_path / "bundle" / "asset-1234"
+    bundle_root.mkdir(parents=True)
+    source = bundle_root / "sf-12345678.jpg"
+    source.write_bytes(b"approved-jpeg")
+    (bundle_root / "UPLOAD_METADATA.txt").write_text("manual portal steps", encoding="utf-8")
+    downloads = tmp_path / "Download"
+    monkeypatch.setattr(cli_module, "default_downloads_root", lambda: downloads)
+
+    result = cli_module._export_ready_uploads_to_android(SimpleNamespace(asset_dirs=(bundle_root,)))
+
+    assert result["status"] == "exported"
+    destination = downloads / "MACHINE STOCKFORGE" / "READY_UPLOAD_ADOBE" / "asset-1234__adobe.jpg"
+    assert destination.read_bytes() == b"approved-jpeg"
+    assert sorted(item.name for item in destination.parent.iterdir()) == [destination.name]

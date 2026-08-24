@@ -92,6 +92,7 @@ GPU quota is opportunistic capacity. A GPU call requires a specific buyer hypoth
 - `src/stockforge/format_router.py` — product-to-format routing and production blocks.
 - `src/stockforge/native_vector.py` — deterministic editable SVG builder and inspector.
 - `src/stockforge/seamless_pattern.py` — deterministic raster edge-continuity gate.
+- `src/stockforge/png_alpha_finalize.py` — conservative true-alpha normalization; opaque RGB sources are rejected and production routing remains blocked.
 - `src/stockforge/remote_gradio.py` — remote worker adapter.
 - `src/stockforge/recovery_orchestrator.py` — durable execution and artifact ingestion.
 - `src/stockforge/generation_evaluation.py` — append-only human evaluation ledger and summary.

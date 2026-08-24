@@ -60,9 +60,9 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **265 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
+The current main branch has passed **266 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
 
-The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
+The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
 ## Output and learning contract
 
