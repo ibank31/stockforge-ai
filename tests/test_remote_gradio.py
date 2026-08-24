@@ -30,3 +30,16 @@ def test_remote_provider_parses_last_complete_sse_event(tmp_path: Path):
     )
     assert event == "complete"
     assert '"url":"https://example/result.png"' in data
+
+
+def test_remote_provider_creates_missing_output_directory(tmp_path: Path):
+    output_dir = tmp_path / "missing" / "provider-output"
+
+    provider = RemoteGradioProvider(
+        provider_id="huggingface-zerogpu",
+        base_url="https://example.invalid",
+        output_dir=output_dir,
+    )
+
+    assert provider.output_dir == output_dir.resolve()
+    assert output_dir.is_dir()

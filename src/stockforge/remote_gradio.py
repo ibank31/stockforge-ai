@@ -25,6 +25,7 @@ class RemoteGradioProvider(GenerationProvider):
         self.provider_id = provider_id
         self.base_url = base_url.rstrip("/")
         self.output_dir = Path(output_dir).resolve()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         self.token = token
         self.api_name = api_name.strip("/")
         self.timeout_seconds = timeout_seconds
