@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-24
 **Branch:** `main`
-**Latest verified commit:** `28e1c85`
+**Latest verified commit:** `ace69e7`
 
 ## Current milestone
 
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **273 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The folder-upload trial evidence is durable; the working tree must be rechecked after the evidence/documentation commit.
+The current main branch has passed **273 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The folder-upload trial evidence is durable at commit `ace69e7`; the working tree must be rechecked after this status synchronization.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
