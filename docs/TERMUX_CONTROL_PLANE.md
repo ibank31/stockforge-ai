@@ -8,18 +8,25 @@ Paket unduhan memiliki status `review_ready`. Status ini berarti generation berh
 
 ## Instalasi Android
 
-Jalankan sekali dari Termux:
+Jalankan sekali dari Termux. Control plane tidak membutuhkan Real-ESRGAN, BasicSR, atau checkpoint lokal; jangan memasang extra `upscale` pada Android. Paket `python-pillow` Termux dipakai sebagai dependency sistem untuk pemeriksaan gambar ringan.
 
 ```bash
 pkg update
-pkg install git python
+pkg install git python python-pillow
 pip install uv
-uv tool install stockforge-ai
 termux-setup-storage
-stockforge init
+
+cd ~/stockforge-ai
+rm -rf .venv
+uv venv --system-site-packages
+uv pip install --python .venv/bin/python 'typer>=0.16,<1.0'
+uv pip install --python .venv/bin/python --no-deps -e .
+
+source .venv/bin/activate
+python -m stockforge.cli init
 ```
 
-Jika StockForge dijalankan dari checkout repository, gunakan `uv run stockforge` sebagai pengganti `stockforge` pada seluruh contoh berikut.
+Setelah environment aktif, gunakan `python -m stockforge.cli` pada seluruh contoh berikut. Jangan menggunakan `uv run` atau `uv sync --extra dev` pada Termux ini, karena resolver dapat mencoba memasang extra native `upscale` yang tidak dipakai oleh control plane remote.
 
 ## Konfigurasi worker GPU remote
 
