@@ -109,6 +109,30 @@ class PortfolioBrief:
         }
 
 
+REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
+    ("tactile_material_atmospheres", "fiber-arch"): {
+        "title": "Recycled Fiber Paper Arch with Sage Green Inner Layer",
+        "keywords": (
+            "recycled paper",
+            "paper arch",
+            "fiber texture",
+            "sage green",
+            "tactile material",
+            "abstract paper sculpture",
+            "copy space",
+            "website hero background",
+            "presentation cover",
+            "brand system",
+            "minimal design",
+            "isolated object",
+            "white background",
+            "neutral palette",
+            "generative AI",
+        ),
+    },
+}
+
+
 _BANNED_METADATA_PHRASES = (
     "artist style",
     "in the style of",
@@ -461,9 +485,44 @@ def validate_metadata_draft(metadata: PortfolioMetadataDraft) -> None:
         raise PortfolioError("Metadata keywords must not contain duplicate terms.")
 
 
+def metadata_from_dict(value: object) -> PortfolioMetadataDraft:
+    """Validate a reviewed metadata object before it can enter a master package."""
+    if not isinstance(value, dict):
+        raise PortfolioError("Reviewed metadata must be a JSON object.")
+    keywords = value.get("keywords")
+    checklist = value.get("reviewer_checklist")
+    if not isinstance(keywords, (list, tuple)) or not all(isinstance(item, str) and item.strip() for item in keywords):
+        raise PortfolioError("Reviewed metadata keywords must be non-empty strings.")
+    if not isinstance(checklist, (list, tuple)) or not all(isinstance(item, str) and item.strip() for item in checklist):
+        raise PortfolioError("Reviewed metadata checklist must contain non-empty strings.")
+    required_strings = ("title", "people_or_property", "status", "marketplace_transaction_data")
+    if any(not isinstance(value.get(key), str) or not value[key].strip() for key in required_strings):
+        raise PortfolioError("Reviewed metadata has incomplete required text fields.")
+    if not isinstance(value.get("created_using_generative_ai"), bool) or not isinstance(value.get("human_review_required"), bool):
+        raise PortfolioError("Reviewed metadata requires explicit GenAI and human-review booleans.")
+    draft = PortfolioMetadataDraft(
+        title=value["title"].strip(),
+        keywords=tuple(item.strip() for item in keywords),
+        created_using_generative_ai=value["created_using_generative_ai"],
+        people_or_property=value["people_or_property"].strip(),
+        status=value["status"].strip(),
+        human_review_required=value["human_review_required"],
+        marketplace_transaction_data=value["marketplace_transaction_data"].strip(),
+        reviewer_checklist=tuple(item.strip() for item in checklist),
+    )
+    validate_metadata_draft(draft)
+    return draft
+
+
 def _metadata_for(lane: PortfolioLane, concept: LaneConcept) -> PortfolioMetadataDraft:
-    title = f"{lane.name}: {concept.subject}"
-    keywords = tuple(dict.fromkeys((*lane.keywords, *concept.originality_levers, lane.asset_type)))
+    reviewed = REVIEWED_CONCEPT_METADATA.get((lane.key, concept.key), {})
+    title = str(reviewed.get("title") or f"{lane.name}: {concept.subject}")
+    raw_keywords = reviewed.get("keywords")
+    keywords = (
+        tuple(raw_keywords)
+        if isinstance(raw_keywords, tuple)
+        else tuple(dict.fromkeys((*lane.keywords, *concept.originality_levers, lane.asset_type)))
+    )
     metadata = PortfolioMetadataDraft(
         title=title,
         keywords=keywords,

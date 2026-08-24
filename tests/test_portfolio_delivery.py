@@ -10,6 +10,7 @@ from stockforge.artifact import Artifact
 from stockforge.cli import app
 from stockforge.database import Database
 from stockforge.execution_record import GenerationExecutionRecord
+from stockforge.portfolio import build_brief, metadata_from_dict
 from stockforge.portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, select_brief
 from stockforge.release_package import build_release_package
 
@@ -91,6 +92,16 @@ def test_portfolio_release_package_includes_metadata_worksheet_and_review_checkl
     assert "submission" in checklist
     assert technical[0]["artifact_id"] == artifact.id
     assert technical[0]["report"]["ready"] is False
+
+
+def test_fiber_arch_uses_reviewed_concept_metadata_without_unseen_materials():
+    brief = build_brief("tactile_material_atmospheres", "fiber-arch")
+
+    assert brief.metadata.title == "Recycled Fiber Paper Arch with Sage Green Inner Layer"
+    assert "recycled paper" in brief.metadata.keywords
+    assert "frosted glass" not in brief.metadata.keywords
+    assert "ceramic surface" not in brief.metadata.keywords
+    assert "organic foam" not in brief.metadata.keywords
 
 
 def test_saved_plan_cannot_be_loaded_from_another_project(tmp_path: Path):
@@ -222,6 +233,16 @@ def test_master_candidate_is_registered_with_lineage_and_packaged(tmp_path: Path
         destination=project_root / "masters" / "candidate.jpg",
         upscaler=_FourXUpscaler(),
     )
+    reviewed_metadata = metadata_from_dict({
+        "title": "Recycled Fiber Paper Arch with Sage Green Inner Layer",
+        "keywords": ["recycled paper", "paper arch", "fiber texture", "sage green", "tactile material", "copy space", "website hero background", "presentation cover"],
+        "created_using_generative_ai": True,
+        "people_or_property": "none depicted; human review required to confirm",
+        "status": "human_review_required",
+        "human_review_required": True,
+        "marketplace_transaction_data": "DATA NOT PUBLICLY AVAILABLE",
+        "reviewer_checklist": ["Confirm metadata matches visible paper arch."],
+    }).to_dict()
     master, execution = register_master_candidate(
         database=database,
         project_id=project_id,
@@ -229,6 +250,7 @@ def test_master_candidate_is_registered_with_lineage_and_packaged(tmp_path: Path
         source_artifact=source_artifact,
         source_execution=source_execution,
         report=report,
+        reviewed_metadata=reviewed_metadata,
     )
     package = build_release_package(
         database=database,
@@ -244,6 +266,7 @@ def test_master_candidate_is_registered_with_lineage_and_packaged(tmp_path: Path
         manifest = json.loads(archive.read("manifest.json"))
         technical = json.loads(archive.read("TECHNICAL_READINESS.json"))
         master_finalization = json.loads(archive.read("MASTER_FINALIZATION.json"))
+        metadata = json.loads(archive.read("portfolio_metadata_draft.json"))
 
     assert master.kind == "finalized-master"
     assert lineage[0].parent_artifact_id == source_artifact.id
@@ -254,6 +277,8 @@ def test_master_candidate_is_registered_with_lineage_and_packaged(tmp_path: Path
     assert manifest["status"] == "review_ready"
     assert technical[0]["report"]["ready"] is True
     assert master_finalization["quality_state"] == "visual_review_required"
+    assert metadata["title"] == "Recycled Fiber Paper Arch with Sage Green Inner Layer"
+    assert "frosted glass" not in metadata["keywords"]
 
 
 def test_portfolio_prepare_master_creates_lineage_bound_no_gpu_request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

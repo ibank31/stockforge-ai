@@ -27,7 +27,7 @@ from .kaggle_finalizer import doctor as kaggle_finalizer_doctor, remote as kaggl
 from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
-from .portfolio import PortfolioError, lane_for, list_lanes, plan_manifest
+from .portfolio import PortfolioError, lane_for, list_lanes, metadata_from_dict, plan_manifest
 from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, select_brief
 from .artifact import sha256_file
 from .master_finalizer import MasterFinalizationError, MasterTarget
@@ -533,6 +533,7 @@ def portfolio_import_kaggle_master(
     project: str = typer.Option(..., "--project", "-p"),
     request: str = typer.Option(..., "--request"),
     result_dir: str = typer.Option(..., "--result-dir"),
+    metadata_review: str | None = typer.Option(None, "--metadata-review", help="Reviewed metadata JSON stored inside the project workspace."),
 ) -> None:
     """Verify/import one Kaggle finalizer output and build a review package; never calls GPU."""
     try:
@@ -558,6 +559,17 @@ def portfolio_import_kaggle_master(
         source_execution = database.get_execution(source_execution_id)
         if source_artifact is None or source_execution is None:
             raise PortfolioError("Original preview artifact or execution is no longer available.")
+        reviewed_metadata = None
+        if metadata_review is not None:
+            metadata_path = Path(metadata_review).expanduser().resolve()
+            try:
+                metadata_path.relative_to(project_root)
+            except ValueError as exc:
+                raise PortfolioError("Reviewed metadata file must remain inside the requested project workspace.") from exc
+            try:
+                reviewed_metadata = metadata_from_dict(json.loads(metadata_path.read_text(encoding="utf-8"))).to_dict()
+            except (OSError, json.JSONDecodeError, PortfolioError) as exc:
+                raise PortfolioError(f"Reviewed metadata is invalid: {exc}") from exc
         report = import_kaggle_master(
             request_path=request_path,
             result_dir=result_dir,
@@ -570,6 +582,7 @@ def portfolio_import_kaggle_master(
             source_artifact=source_artifact,
             source_execution=source_execution,
             report=report,
+            reviewed_metadata=reviewed_metadata,
         )
         package = build_release_package(
             database=database,

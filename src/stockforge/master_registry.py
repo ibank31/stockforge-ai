@@ -25,6 +25,7 @@ def register_master_candidate(
     source_artifact: Artifact,
     source_execution: GenerationExecutionRecord,
     report: MasterFinalizationReport,
+    reviewed_metadata: dict[str, Any] | None = None,
 ) -> tuple[Artifact, GenerationExecutionRecord]:
     """Register an upscaled/finalized master and immutable preview-to-master lineage.
 
@@ -47,6 +48,12 @@ def register_master_candidate(
     portfolio = source_execution.parameters.get("portfolio")
     if portfolio is not None and not isinstance(portfolio, dict):
         raise MasterRegistryError("Source execution portfolio context is invalid.")
+    if reviewed_metadata is not None:
+        if portfolio is None:
+            raise MasterRegistryError("Reviewed metadata requires portfolio lineage.")
+        if not isinstance(reviewed_metadata, dict):
+            raise MasterRegistryError("Reviewed metadata must be an object.")
+        portfolio = {**portfolio, "metadata": reviewed_metadata, "reviewer_checklist": reviewed_metadata["reviewer_checklist"]}
 
     master = replace(
         Artifact.from_file(project_id, master_relative, root, kind="finalized-master"),

@@ -234,6 +234,15 @@ python -m stockforge.cli portfolio import-kaggle-master \
   --project stock-assets \
   --request "$REQUEST" \
   --result-dir "$RESULT_DIR"
+
+# Bila audit visual menemukan keyword lane yang tidak tampak di gambar, simpan
+# metadata yang telah direview di dalam project lalu terapkan saat import.
+# Override ini tetap menghasilkan status review_ready, bukan submission_ready.
+python -m stockforge.cli portfolio import-kaggle-master \
+  --project stock-assets \
+  --request "$REQUEST" \
+  --result-dir "$RESULT_DIR" \
+  --metadata-review '/storage/emulated/0/StockForge/projects/stock-assets/reviews/metadata-review.json'
 ```
 
-Worker hanya menerima request `prepared_no_gpu` dengan SHA-256 preview yang cocok. Ia mengunduh bobot RealESRGAN x4plus bila belum tersedia, menghasilkan master JPEG RGB/sRGB, lalu membuat `result.json`; hasil tanpa manifest, checksum, dimensi target, atau gate teknis yang sesuai akan ditolak saat import. Meski sukses, status akhir tetap `review_ready`: periksa master pada ukuran 100%, bandingkan dengan preview, dan jangan upload jika ada detail rekaan, halo, blur, kerusakan tekstur, perubahan objek, pseudo-teks, atau risiko hak/IP.
+Worker hanya menerima request `prepared_no_gpu` dengan SHA-256 preview yang cocok. Ia mengunduh bobot RealESRGAN x4plus bila belum tersedia, menghasilkan master JPEG RGB/sRGB, lalu membuat `result.json`; hasil tanpa manifest, checksum, dimensi target, atau gate teknis yang sesuai akan ditolak saat import. Meski sukses, status akhir tetap `review_ready`: periksa master pada ukuran 100%, bandingkan dengan preview, dan jangan upload jika ada detail rekaan, halo, blur, kerusakan tekstur, perubahan objek, pseudo-teks, atau risiko hak/IP. Hapus keyword yang hanya menggambarkan material lane umum tetapi tidak benar-benar terlihat pada master; gunakan `--metadata-review` untuk merekam draft hasil audit tersebut pada paket final.
