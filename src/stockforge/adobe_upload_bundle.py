@@ -123,6 +123,7 @@ def prepare_adobe_upload_bundle(
     execution_ids: tuple[str, ...],
     approved_by_user: bool,
     category: int | None = None,
+    destination_root: Path | None = None,
 ) -> AdobeUploadBundle:
     """Build a portal-ready Adobe upload folder; this function never uploads or submits."""
     root = Path(project_root).resolve()
@@ -133,7 +134,8 @@ def prepare_adobe_upload_bundle(
     if not approved_by_user:
         raise AdobeUploadBundleError("Pass explicit user approval after visual review before preparing upload files.")
 
-    bundle_root = root / "adobe-upload-bundles" / _bundle_name(execution_ids)
+    output_root = Path(destination_root).resolve() if destination_root is not None else root / "adobe-upload-bundles"
+    bundle_root = output_root / _bundle_name(execution_ids)
     image_dir = bundle_root / "images"
     image_dir.mkdir(parents=True, exist_ok=False)
     records: list[dict[str, Any]] = []

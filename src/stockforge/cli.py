@@ -536,6 +536,7 @@ def portfolio_prepare_adobe_upload(
     latest_master: bool = typer.Option(False, "--latest-master", help="Use the newest finalized master in this project."),
     approved: bool = typer.Option(False, "--approved", help="Explicitly attest that each selected master passed human visual review."),
     category: int | None = typer.Option(None, "--category", help="Reviewed Adobe category number (1-21) when no safe lane mapping exists."),
+    destination: str | None = typer.Option(None, "--destination", "-d", help="Final Adobe batch folder; defaults to Android Download/AdobeStock/READY_TO_UPLOAD when available."),
 ) -> None:
     """Create an Adobe portal batch with JPEGs, official-schema CSV, and no submit action."""
     try:
@@ -548,6 +549,12 @@ def portfolio_prepare_adobe_upload(
             execution_ids = (latest_finalized_master_execution_id(database=database, project_id=record["id"]),)
         else:
             execution_ids = tuple(execution)
+        if destination is not None:
+            destination_root = Path(destination).expanduser().resolve()
+        elif str(project_root).startswith("/storage/emulated/0/"):
+            destination_root = Path("/storage/emulated/0/Download/AdobeStock/READY_TO_UPLOAD")
+        else:
+            destination_root = project_root / "adobe-upload-bundles"
         bundle = prepare_adobe_upload_bundle(
             database=database,
             project_id=record["id"],
@@ -555,6 +562,7 @@ def portfolio_prepare_adobe_upload(
             execution_ids=execution_ids,
             approved_by_user=approved,
             category=category,
+            destination_root=destination_root,
         )
         typer.echo(json.dumps(bundle.to_dict(), indent=2))
     except (AdobeUploadBundleError, PortfolioError, OSError, ValueError) as exc:
