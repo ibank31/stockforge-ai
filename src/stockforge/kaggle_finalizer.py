@@ -116,10 +116,10 @@ def submit(*, request: str | Path, project_root: str | Path, accelerator: str = 
         request_b64 = base64.b64encode(request_path.read_bytes()).decode("ascii")
         source_b64 = base64.b64encode(source_path.read_bytes()).decode("ascii")
         with worker_path.open("a", encoding="utf-8") as handle:
-            handle.write("\\n# StockForge transient staged input; do not commit.\\n")
-            handle.write(f"REQUEST_B64 = {request_b64!r}\\n")
-            handle.write(f"SOURCE_NAME = {source_path.name!r}\\n")
-            handle.write(f"SOURCE_B64 = {source_b64!r}\\n")
+            handle.write("\n# StockForge transient staged input; do not commit.\n")
+            handle.write(f"REQUEST_B64 = {request_b64!r}\n")
+            handle.write(f"SOURCE_NAME = {source_path.name!r}\n")
+            handle.write(f"SOURCE_B64 = {source_b64!r}\n")
         result = _run(
             ["kaggle", "kernels", "push", "-p", str(staged), "--accelerator", accelerator]
         )

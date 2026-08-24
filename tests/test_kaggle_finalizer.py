@@ -1,5 +1,6 @@
 import json
 import subprocess
+import py_compile
 from pathlib import Path
 
 from PIL import Image
@@ -68,6 +69,7 @@ def test_submit_stages_verified_request_and_preview(tmp_path: Path, monkeypatch)
         staged_worker = (staged / "worker.py").read_text(encoding="utf-8")
         assert "REQUEST_B64" in staged_worker and "SOURCE_B64" in staged_worker
         assert "preview.webp" in staged_worker
+        py_compile.compile(str(staged / "worker.py"), doraise=True)
         return subprocess.CompletedProcess(args, 0, "submitted\n")
 
     monkeypatch.setattr("stockforge.kaggle_finalizer._run", fake_run)
