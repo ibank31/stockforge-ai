@@ -119,3 +119,30 @@ def test_prepare_adobe_upload_bundle_requires_explicit_review_approval(tmp_path:
             execution_ids=(execution.id,),
             approved_by_user=False,
         )
+
+
+def test_validated_upload_metadata_removes_nonvisual_keywords():
+    from stockforge.adobe_upload_bundle import _validated_metadata
+
+    metadata = _metadata()
+    metadata["keywords"] = [
+        *metadata["keywords"],
+        "website hero background",
+        "presentation cover",
+        "brand system",
+        "generative AI",
+    ]
+
+    prepared = _validated_metadata(metadata)
+
+    assert prepared["keywords"] == [
+        "recycled paper", "paper arch", "fiber texture", "sage green",
+        "tactile material", "abstract paper sculpture", "copy space",
+    ]
+    assert prepared["removed_nonvisual_keywords"] == [
+        "website hero background",
+        "website hero background",
+        "presentation cover",
+        "brand system",
+        "generative AI",
+    ]

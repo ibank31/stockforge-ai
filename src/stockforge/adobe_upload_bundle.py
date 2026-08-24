@@ -30,6 +30,22 @@ MAX_FILENAME_CHARS = 30
 MAX_TITLE_CHARS = 70
 MAX_KEYWORDS = 50
 
+# These phrases describe workflow, buyer use, or the generation method rather
+# than visible subject matter.  They must never be embedded in an Adobe upload
+# JPEG, even if they appeared in an earlier portfolio draft.
+NONVISUAL_UPLOAD_KEYWORDS = frozenset({
+    "website hero background",
+    "website background",
+    "presentation cover",
+    "brand system",
+    "generative ai",
+    "marketing landing page",
+    "saas launch",
+    "agency presentation",
+    "social media element",
+    "small business social",
+})
+
 
 @dataclass(frozen=True, slots=True)
 class AdobeUploadBundle:
@@ -79,13 +95,22 @@ def _validated_metadata(metadata: object) -> dict[str, Any]:
     if len(keywords) > MAX_KEYWORDS:
         raise AdobeUploadBundleError("Reviewed metadata exceeds Adobe's 50-keyword limit.")
     normalized = [item.strip() for item in keywords]
-    if len({item.casefold() for item in normalized}) != len(normalized):
-        raise AdobeUploadBundleError("Reviewed metadata contains duplicate Adobe keywords.")
+    removed = [item for item in normalized if item.casefold() in NONVISUAL_UPLOAD_KEYWORDS]
+    upload_keywords = [item for item in normalized if item.casefold() not in NONVISUAL_UPLOAD_KEYWORDS]
+    if len({item.casefold() for item in upload_keywords}) != len(upload_keywords):
+        raise AdobeUploadBundleError("Reviewed visual metadata contains duplicate Adobe keywords.")
+    if len(upload_keywords) < 5:
+        raise AdobeUploadBundleError("Visual upload metadata needs at least five retained keywords.")
     if not metadata.get("created_using_generative_ai"):
         raise AdobeUploadBundleError("This workflow accepts only masters truthfully marked as Generative AI.")
     if not metadata.get("human_review_required"):
         raise AdobeUploadBundleError("A human-review marker is required before preparing an upload folder.")
-    return {**metadata, "title": title.strip(), "keywords": normalized}
+    return {
+        **metadata,
+        "title": title.strip(),
+        "keywords": upload_keywords,
+        "removed_nonvisual_keywords": removed,
+    }
 
 
 def _category_for(portfolio: dict[str, Any], explicit_category: int | None) -> int:
@@ -171,13 +196,16 @@ def _write_asset_metadata_folder(asset_dir: Path, record: dict[str, Any]) -> Pat
         f"CATEGORY\n{record['category']} — Graphic Resources\n\n"
         "KEYWORDS EMBEDDED IN JPEG\n"
         f"{', '.join(record['keywords'])}\n\n"
+        "PORTAL SETTINGS\n"
+        "- File type: Illustrations\n"
+        "- Category: Graphic Resources\n\n"
         "REQUIRED PORTAL DECLARATIONS\n"
         "- Created using generative AI tools: YES\n"
         "- Confirm people/property declaration truthfully from the visual review.\n\n"
         "ANDROID / ADOBE STEPS\n"
         "1. In Adobe Browse, choose the JPEG above from this folder.\n"
         "2. Verify Adobe has read the embedded title and keywords.\n"
-        "3. Select the reviewed category if Adobe leaves it blank.\n"
+        "3. Set File type to Illustrations and select the reviewed category if Adobe leaves it blank.\n"
         "4. Review declarations, Terms and Conditions, and CAPTCHA yourself before submit.\n",
         encoding="utf-8",
     )
@@ -249,8 +277,10 @@ def prepare_adobe_upload_bundle(
             "title": metadata["title"],
             "keywords": metadata["keywords"],
             "category": adobe_category,
+            "adobe_file_type": "Illustrations",
             "technical_gate": technical,
             "generative_ai_declaration_required": True,
+            "removed_nonvisual_keywords": metadata["removed_nonvisual_keywords"],
             "fictional_people_or_property_declaration_required": False,
             "reviewer_checklist": metadata.get("reviewer_checklist", []),
         }
