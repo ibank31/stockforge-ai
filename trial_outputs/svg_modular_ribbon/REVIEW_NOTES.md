@@ -34,3 +34,7 @@ Commercial status: REVIEW_REQUIRED. The asset should not be marked upload-ready 
 The user rated the result **2/10** on a ten-point scale and rejected it for further use. The user reported that the buyer would be confused about what the image represents and what it should be used for. The user requested that this result be retained for evaluation and discussion before any new change or trial.
 
 This feedback is recorded as an exact overall human rating. The structured four-field `portfolio evaluate` record is intentionally not written yet because the user did not provide separate visual, technical, buyer-fit, and metadata scores. The result must not be marked upload-ready.
+
+## Internal visual audit after user rejection — 2026-08-24
+
+The preview reads as an abstract bent loop or strap with two orange square modules and a pale central module. It does not communicate a specific buyer job, category, use case, or action without an accompanying explanation. The centered subject is absent: the artwork occupies only the upper-left portion of the large square artboard, leaving excessive unused white space. The pale module has weak separation from the white background. These are commercial/communication failures, not structural SVG failures. No remediation has been applied because the user requested discussion before changes.
