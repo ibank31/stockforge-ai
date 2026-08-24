@@ -57,6 +57,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 - [`FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md`](FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md)
 - [`SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) — deep research SVG market, buyer jobs, competition proxies, trends, and first folder-upload hypothesis.
 - [`svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) — raw source notes and caveats for the SVG research.
+- [`FOLDER_UPLOAD_PRETRIAL_SPEC_2026-08-24.md`](research/FOLDER_UPLOAD_PRETRIAL_SPEC_2026-08-24.md) — approved single-object hypothesis, metadata boundary, deterministic gates, and human review questions before the next SVG trial.
 
 ## Riset terarsip tetapi masih menjadi bukti
 
