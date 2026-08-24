@@ -101,6 +101,20 @@ def _bundle_name(execution_ids: tuple[str, ...]) -> str:
     return f"adobe-{stamp}-{seed}"
 
 
+def latest_finalized_master_execution_id(*, database: Database, project_id: str) -> str:
+    """Return the newest registered finalized-master execution for a project."""
+    for artifact in database.list_artifacts(project_id):
+        if artifact.kind != "finalized-master":
+            continue
+        for provenance in database.list_provenance(artifact_id=artifact.id):
+            if provenance.operation != "image.upscale_and_finalize" or not provenance.execution_id:
+                continue
+            execution = database.get_execution(provenance.execution_id)
+            if execution and execution.project_id == project_id and execution.operation == "image.finalize_master" and execution.state == "succeeded":
+                return execution.id
+    raise AdobeUploadBundleError("No finalized master is available for this project.")
+
+
 def prepare_adobe_upload_bundle(
     *,
     database: Database,

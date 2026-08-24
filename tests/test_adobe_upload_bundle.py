@@ -6,10 +6,11 @@ from uuid import uuid4
 import pytest
 from PIL import Image, ImageCms
 
-from stockforge.adobe_upload_bundle import AdobeUploadBundleError, prepare_adobe_upload_bundle
+from stockforge.adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
 from stockforge.artifact import Artifact
 from stockforge.database import Database
 from stockforge.execution_record import GenerationExecutionRecord
+from stockforge.provenance import ProvenanceRecord
 
 
 def _srgb() -> bytes:
@@ -58,6 +59,12 @@ def _registered_master(tmp_path: Path):
         },
     )
     database.create_execution(execution)
+    database.create_provenance(ProvenanceRecord.create(
+        artifact.id,
+        project_id,
+        "image.upscale_and_finalize",
+        execution_id=execution.id,
+    ))
     return database, project_id, project_root, execution, artifact
 
 
@@ -84,6 +91,12 @@ def test_prepare_adobe_upload_bundle_creates_official_csv_and_manifest(tmp_path:
     assert manifest["status"] == "portal_upload_prepared_not_submitted"
     assert manifest["submission_requires_explicit_portal_confirmation"] is True
     assert manifest["files"][0]["generative_ai_declaration_required"] is True
+
+
+def test_latest_finalized_master_execution_uses_registered_provenance(tmp_path: Path):
+    database, project_id, _project_root, execution, _artifact = _registered_master(tmp_path)
+
+    assert latest_finalized_master_execution_id(database=database, project_id=project_id) == execution.id
 
 
 def test_prepare_adobe_upload_bundle_requires_explicit_review_approval(tmp_path: Path):

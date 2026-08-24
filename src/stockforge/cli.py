@@ -12,7 +12,7 @@ import typer
 
 from . import __version__
 from .adobe_finalize import AdobeFinalizationError, finalize_image
-from .adobe_upload_bundle import AdobeUploadBundleError, prepare_adobe_upload_bundle
+from .adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
 from .adobe_gate import inspect_image
 from .asset import ASSET_TYPES, AssetError
 from .asset_manager import AssetManager
@@ -532,7 +532,8 @@ def portfolio_prepare_master(
 @portfolio_app.command("prepare-adobe-upload")
 def portfolio_prepare_adobe_upload(
     project: str = typer.Option(..., "--project", "-p"),
-    execution: list[str] = typer.Option(..., "--execution", "-e", help="Finalized-master execution ID; repeat for a batch."),
+    execution: list[str] = typer.Option([], "--execution", "-e", help="Finalized-master execution ID; repeat for a batch."),
+    latest_master: bool = typer.Option(False, "--latest-master", help="Use the newest finalized master in this project."),
     approved: bool = typer.Option(False, "--approved", help="Explicitly attest that each selected master passed human visual review."),
     category: int | None = typer.Option(None, "--category", help="Reviewed Adobe category number (1-21) when no safe lane mapping exists."),
 ) -> None:
@@ -541,11 +542,17 @@ def portfolio_prepare_adobe_upload(
         record, project_root = _portfolio_project(project)
         database = JobDatabase(ConfigManager().initialize().database)
         database.initialize()
+        if latest_master:
+            if execution:
+                raise PortfolioError("Use either --latest-master or one or more --execution values, not both.")
+            execution_ids = (latest_finalized_master_execution_id(database=database, project_id=record["id"]),)
+        else:
+            execution_ids = tuple(execution)
         bundle = prepare_adobe_upload_bundle(
             database=database,
             project_id=record["id"],
             project_root=project_root,
-            execution_ids=tuple(execution),
+            execution_ids=execution_ids,
             approved_by_user=approved,
             category=category,
         )
