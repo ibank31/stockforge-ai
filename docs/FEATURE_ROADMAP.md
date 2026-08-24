@@ -31,7 +31,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Generation | Hugging Face ZeroGPU preview route | LIVE | Recorded Z-Image Turbo benchmark and selected preview workflow |
 | Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
 | Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow |
-| Format | Native SVG deterministic route | DONE | Local editable SVG and provenance tests; Adobe portal still pending |
+| Format | Native SVG deterministic route | IN PROGRESS | Modular ribbon and technical badge presets pass local structure tests; broader object/icon family and Adobe portal remain pending |
 | Format | PNG true-alpha route | BLOCKED | Needs alpha producer, anti-fringe, trim, sRGB, and one portal validation |
 | Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
 | QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |
@@ -51,7 +51,7 @@ market evidence → buyer job → AssetSpec → concept/prompt
 
 ## Active priorities
 
-1. Complete native SVG builders for object, technical, food/produce, badge, simple-character, and geometric-pattern families.
+1. Complete native SVG builders for object, technical, food/produce, badge, simple-character, and geometric-pattern families; modular ribbon and technical badge are the first controlled presets.
 2. Keep PNG alpha blocked until its producer and portal path are independently verified.
 3. Strengthen provider health, quota, retry, and failover without duplicating logical jobs.
 4. Add semantic/commercial QA benchmarks using labeled internal outputs, not generic leaderboards alone.

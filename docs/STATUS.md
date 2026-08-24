@@ -23,7 +23,7 @@ The JPEG path is the only generative route with a recorded live preview and comp
 
 ## Completed foundation
 
-The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, and Adobe metadata upload-copy workflow.
+The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, Adobe metadata upload-copy workflow, and deterministic native SVG presets for modular ribbons and technical badges.
 
 `portfolio asset-types` lists the supported asset categories. `portfolio readiness --asset-type <type>` explains the chosen format, readiness state, blockers, candidate niches, and next step without calling a provider. The selector fails closed rather than silently converting an unsupported type into JPEG.
 
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **262 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
+The current main branch has passed **263 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The repository contains no merge conflict markers and the working tree is clean.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 

@@ -175,3 +175,29 @@ def test_android_export_copies_only_one_visual_file_to_minimal_branch(tmp_path: 
     assert upload_export.destination.name == "woven-loop__adobe.jpg"
     assert list(review_export.destination.parent.iterdir()) == [review_export.destination]
     assert list(upload_export.destination.parent.iterdir()) == [upload_export.destination]
+
+
+def test_technical_badge_preset_builds_native_svg_without_text_or_raster(tmp_path: Path) -> None:
+    from stockforge.native_vector import build_svg_for_preset
+
+    spec = _spec(
+        asset_id="technical-badge",
+        asset_type="icon",
+        product_kind="native_vector",
+        delivery_format="svg",
+        layout_mode="square",
+        background_policy="white",
+        medium="flat editable SVG geometry",
+        palette=("#164E63", "#F8FAFC", "#F59E0B"),
+        tags=("technical_icon", "badge"),
+    )
+
+    report = build_svg_for_preset(spec, tmp_path / "technical-badge.svg", preset="technical_badge")
+
+    assert report.ready is True
+    assert report.native_paths_only is True
+    assert report.transparent_background is False
+    svg = (tmp_path / "technical-badge.svg").read_text(encoding="utf-8")
+    assert "<text" not in svg
+    assert "<image" not in svg
+    assert "native-vector-technical-badge-v1" in svg

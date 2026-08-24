@@ -136,6 +136,62 @@ def build_modular_ribbon_svg(spec: AssetSpec, destination: str | Path) -> Native
     return report
 
 
+def build_technical_badge_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
+    """Build one editable technical badge without text, logos, or raster embeds."""
+    route = require_production_route(spec)
+    if route.product_kind != "native_vector":
+        raise NativeVectorError("Native SVG construction requires product_kind='native_vector'.")
+    if spec.background_policy not in {"transparent", "white"}:
+        raise NativeVectorError("Native SVG products require a transparent or white background policy.")
+    if spec.text_policy != "none":
+        raise NativeVectorError("Native SVG preset does not support text-bearing products.")
+
+    width = height = 2048
+    primary, secondary, accent = _palette(spec)
+    seed = _seed(spec)
+    root = ET.Element(f"{{{SVG_NS}}}svg", {
+        "width": str(width),
+        "height": str(height),
+        "viewBox": f"0 0 {width} {height}",
+        "version": "1.1",
+        "data-stockforge": "native-vector-technical-badge-v1",
+        "aria-label": "abstract technical badge",
+    })
+    if spec.background_policy == "white":
+        _append(root, "rect", x="0", y="0", width=str(width), height=str(height), fill="#FFFFFF")
+    group = _append(root, "g", stroke_linecap="round", stroke_linejoin="round")
+    radius = 420 + (seed % 80)
+    _append(group, "rect", x=str(1024 - radius), y=str(1024 - radius), width=str(radius * 2), height=str(radius * 2), rx="180", fill=secondary, stroke=primary, stroke_width="72")
+    _append(group, "circle", cx="1024", cy="1024", r="170", fill=accent, stroke="#FFFFFF", stroke_width="36")
+    _append(group, "line", x1="1024", y1="530", x2="1024", y2="854", stroke=primary, stroke_width="64")
+    _append(group, "line", x1="1024", y1="1194", x2="1024", y2="1518", stroke=primary, stroke_width="64")
+    _append(group, "line", x1="530", y1="1024", x2="854", y2="1024", stroke=primary, stroke_width="64")
+    _append(group, "line", x1="1194", y1="1024", x2="1518", y2="1024", stroke=primary, stroke_width="64")
+
+    raw = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    path = Path(destination).expanduser().resolve()
+    if path.suffix.lower() != ".svg":
+        raise NativeVectorError("Native vector destination must use the .svg extension.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    report = inspect_native_svg(path)
+    if not report.ready:
+        path.unlink(missing_ok=True)
+        details = "; ".join(f"{name}: {detail}" for name, detail in report.checks)
+        raise NativeVectorError(f"Generated SVG failed its own native-vector gate: {details}")
+    return report
+
+
+def build_svg_for_preset(spec: AssetSpec, destination: str | Path, preset: str = "modular_ribbon") -> NativeVectorReport:
+    """Dispatch only to explicitly registered native-vector presets."""
+    normalized = preset.strip().casefold()
+    if normalized == "modular_ribbon":
+        return build_modular_ribbon_svg(spec, destination)
+    if normalized == "technical_badge":
+        return build_technical_badge_svg(spec, destination)
+    raise NativeVectorError(f"Unsupported native-vector preset: {preset!r}.")
+
+
 def inspect_native_svg(path: str | Path) -> NativeVectorReport:
     """Verify that an SVG contains only locally editable vector geometry."""
     file_path = Path(path).expanduser().resolve()

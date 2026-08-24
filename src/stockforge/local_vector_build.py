@@ -10,7 +10,7 @@ from .asset_spec import AssetSpec
 from .database import Database
 from .execution_record import GenerationExecutionRecord
 from .format_router import require_production_route
-from .native_vector import NativeVectorReport, build_modular_ribbon_svg
+from .native_vector import NativeVectorReport, build_svg_for_preset
 from .provenance import ProvenanceRecord
 
 
@@ -50,7 +50,9 @@ def build_local_native_vector(
         raise LocalVectorBuildError("Asset specification is not routed to the local native-vector builder.")
     root = Path(project_root).resolve()
     destination = root / "vectors" / f"{spec.asset_id}.svg"
-    report = build_modular_ribbon_svg(spec, destination)
+    tags = tuple(str(item).casefold() for item in spec.tags)
+    preset = "technical_badge" if any("technical" in item or "badge" in item or "icon" in item for item in tags) else "modular_ribbon"
+    report = build_svg_for_preset(spec, destination, preset=preset)
     if not report.ready:
         raise LocalVectorBuildError("Native vector did not pass its technical gate.")
     artifact = Artifact.from_file(
