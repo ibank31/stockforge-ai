@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-24
 **Branch:** `main`
-**Latest verified commit:** `3b7d7c3` (JPEG metadata preflight committed and pushed)
+**Latest verified commit:** `a59536b` (JPEG metadata preflight and handover committed and pushed)
 
 ## Current milestone
 
