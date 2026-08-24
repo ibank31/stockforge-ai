@@ -1,4 +1,4 @@
-"""Prepare official-schema Adobe Stock Contributor upload batches without submitting them."""
+"""Prepare manual Adobe Stock Contributor upload folders without submitting them."""
 
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ from .database import Database
 
 
 class AdobeUploadBundleError(RuntimeError):
-    """Raised when a selected master cannot safely enter an Adobe upload batch."""
+    """Raised when a selected master cannot safely enter an Adobe upload folder."""
 
 
-# Values follow Adobe's published category numbering.  A lane without a clear
+# Values follow Adobe's published category numbering. A lane without a clear
 # category must require an explicit user-reviewed category rather than guess.
 ADOBE_CATEGORY_BY_LANE = {
     "tactile_material_atmospheres": 8,  # Graphic resources
@@ -33,11 +33,10 @@ MAX_KEYWORDS = 50
 
 @dataclass(frozen=True, slots=True)
 class AdobeUploadBundle:
-    """Manual-upload publication folder plus a separate metadata reference folder."""
+    """A batch root containing one Android-friendly folder per final asset."""
 
     path: Path
-    image_dir: Path
-    reference_dir: Path
+    asset_dirs: tuple[Path, ...]
     csv_path: Path
     manifest_path: Path
     artifact_ids: tuple[str, ...]
@@ -45,8 +44,7 @@ class AdobeUploadBundle:
     def to_dict(self) -> dict[str, object]:
         return {
             "path": str(self.path),
-            "image_dir": str(self.image_dir),
-            "reference_dir": str(self.reference_dir),
+            "asset_dirs": [str(item) for item in self.asset_dirs],
             "csv_path": str(self.csv_path),
             "manifest_path": str(self.manifest_path),
             "artifact_ids": list(self.artifact_ids),
@@ -59,6 +57,10 @@ def _safe_filename(artifact_id: str) -> str:
     if len(name) > MAX_FILENAME_CHARS:
         raise AdobeUploadBundleError("Generated Adobe filename exceeds the portal limit.")
     return name
+
+
+def _asset_dir_name(artifact_id: str) -> str:
+    return f"asset-{artifact_id[:8]}"
 
 
 def _validated_metadata(metadata: object) -> dict[str, Any]:
@@ -82,7 +84,7 @@ def _validated_metadata(metadata: object) -> dict[str, Any]:
     if not metadata.get("created_using_generative_ai"):
         raise AdobeUploadBundleError("This workflow accepts only masters truthfully marked as Generative AI.")
     if not metadata.get("human_review_required"):
-        raise AdobeUploadBundleError("A human-review marker is required before preparing an upload batch.")
+        raise AdobeUploadBundleError("A human-review marker is required before preparing an upload folder.")
     return {**metadata, "title": title.strip(), "keywords": normalized}
 
 
@@ -119,6 +121,44 @@ def latest_finalized_master_execution_id(*, database: Database, project_id: str)
     raise AdobeUploadBundleError("No finalized master is available for this project.")
 
 
+def _write_asset_metadata_folder(asset_dir: Path, record: dict[str, Any]) -> Path:
+    """Write Adobe CSV and click-open text instructions beside one upload JPEG."""
+    csv_path = asset_dir / "adobe_metadata.csv"
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(CSV_HEADER)
+        writer.writerow([
+            record["filename"],
+            record["title"],
+            ", ".join(record["keywords"]),
+            record["category"],
+            "",
+        ])
+
+    metadata_path = asset_dir / "UPLOAD_METADATA.txt"
+    metadata_path.write_text(
+        "STOCKFORGE — ADOBE STOCK UPLOAD METADATA\n"
+        "==========================================\n\n"
+        f"JPEG TO UPLOAD: {record['filename']}\n\n"
+        f"TITLE\n{record['title']}\n\n"
+        f"CATEGORY\n{record['category']} — Graphic Resources\n\n"
+        "KEYWORDS\n"
+        f"{', '.join(record['keywords'])}\n\n"
+        "REQUIRED DECLARATIONS\n"
+        "- Created using generative AI tools: YES\n"
+        "- Confirm people/property declaration truthfully from the visual review.\n\n"
+        "ANDROID / ADOBE STEPS\n"
+        "1. In Adobe Browse, choose only the JPEG above from this folder.\n"
+        "2. In Adobe Upload CSV, choose adobe_metadata.csv from this same folder.\n"
+        "3. If Android displays the CSV but disables selection, share this CSV to a\n"
+        "   documents provider that preserves text/csv (for example Google Drive),\n"
+        "   then select it from that provider in Adobe's picker.\n"
+        "4. Review declarations, Terms and Conditions, and CAPTCHA yourself before submit.\n",
+        encoding="utf-8",
+    )
+    return csv_path
+
+
 def prepare_adobe_upload_bundle(
     *,
     database: Database,
@@ -129,7 +169,7 @@ def prepare_adobe_upload_bundle(
     category: int | None = None,
     destination_root: Path | None = None,
 ) -> AdobeUploadBundle:
-    """Build a portal-ready Adobe upload folder; this function never uploads or submits."""
+    """Build manual per-asset upload folders; this function never uploads or submits."""
     root = Path(project_root).resolve()
     if not execution_ids:
         raise AdobeUploadBundleError("Select at least one finalized-master execution.")
@@ -138,17 +178,11 @@ def prepare_adobe_upload_bundle(
     if not approved_by_user:
         raise AdobeUploadBundleError("Pass explicit user approval after visual review before preparing upload files.")
 
-    # The Android-ready folder is intentionally JPEG-only.  Metadata, CSV, and
-    # audit records are written next to it in METADATA_REFERENCE so a mobile
-    # file picker cannot accidentally select a non-upload document.
     output_root = Path(destination_root).resolve() if destination_root is not None else root / "adobe-upload-bundles"
-    bundle_name = _bundle_name(execution_ids)
-    bundle_root = output_root / bundle_name
-    image_dir = bundle_root
-    reference_dir = output_root.parent / "METADATA_REFERENCE" / bundle_name
-    image_dir.mkdir(parents=True, exist_ok=False)
-    reference_dir.mkdir(parents=True, exist_ok=False)
+    bundle_root = output_root / _bundle_name(execution_ids)
+    bundle_root.mkdir(parents=True, exist_ok=False)
     records: list[dict[str, Any]] = []
+    asset_dirs: list[Path] = []
 
     for execution_id in execution_ids:
         execution = database.get_execution(execution_id)
@@ -167,7 +201,7 @@ def prepare_adobe_upload_bundle(
         except ValueError as exc:
             raise AdobeUploadBundleError("Master path escapes the project workspace.") from exc
         if not source.is_file() or source.suffix.lower() not in {".jpg", ".jpeg"}:
-            raise AdobeUploadBundleError("Adobe upload bundle requires a local JPEG master.")
+            raise AdobeUploadBundleError("Adobe upload folder requires a local JPEG master.")
         technical = inspect_image(source).to_dict()
         if not technical.get("ready"):
             raise AdobeUploadBundleError("Master did not pass the local Adobe technical gate.")
@@ -177,12 +211,14 @@ def prepare_adobe_upload_bundle(
         metadata = _validated_metadata(portfolio.get("metadata"))
         adobe_category = _category_for(portfolio, category)
         filename = _safe_filename(artifact.id)
-        destination = image_dir / filename
-        shutil.copy2(source, destination)
-        records.append({
+        asset_dir = bundle_root / _asset_dir_name(artifact.id)
+        asset_dir.mkdir()
+        shutil.copy2(source, asset_dir / filename)
+        record = {
             "artifact_id": artifact.id,
             "execution_id": execution.id,
             "source_file": artifact.relative_path,
+            "folder": asset_dir.name,
             "filename": filename,
             "title": metadata["title"],
             "keywords": metadata["keywords"],
@@ -191,75 +227,42 @@ def prepare_adobe_upload_bundle(
             "generative_ai_declaration_required": True,
             "fictional_people_or_property_declaration_required": False,
             "reviewer_checklist": metadata.get("reviewer_checklist", []),
-        })
-
-    csv_path = reference_dir / "adobe_metadata.csv"
-    with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(CSV_HEADER)
-        for record in records:
-            writer.writerow([
-                record["filename"],
-                record["title"],
-                ", ".join(record["keywords"]),
-                record["category"],
-                "",
-            ])
+        }
+        _write_asset_metadata_folder(asset_dir, record)
+        records.append(record)
+        asset_dirs.append(asset_dir)
 
     manifest = {
-        "schema_version": 2,
-        "kind": "stockforge.adobe_manual_upload_bundle",
+        "schema_version": 3,
+        "kind": "stockforge.adobe_android_manual_upload_bundle",
         "status": "manual_portal_upload_prepared_not_submitted",
         "created_at": datetime.now(UTC).isoformat(),
         "marketplace": "adobe_stock_contributor",
         "approved_by_user": True,
         "submission_requires_explicit_portal_confirmation": True,
-        "ready_to_upload_dir": str(bundle_root),
-        "metadata_reference_dir": str(reference_dir),
         "files": records,
+        "folder_contract": "Each asset folder contains one JPEG upload master, adobe_metadata.csv, and UPLOAD_METADATA.txt.",
         "portal_steps": [
-            "Open Adobe Contributor Portal > Uploaded Files.",
-            "Use Browse to select only JPEG files from READY_TO_UPLOAD.",
-            "For each uploaded JPEG, copy the reviewed title, keywords, and category from UPLOAD_REFERENCE.md.",
-            "Truthfully mark Created using generative AI tools and the fictional people/property declaration where applicable.",
-            "Review the final batch, complete Adobe Terms and Conditions yourself, and explicitly submit only after approval.",
+            "In Adobe Browse, open an asset folder and select its JPEG only.",
+            "In Adobe Upload CSV, select adobe_metadata.csv from the same asset folder.",
+            "If Android disables the CSV, share that exact file to a documents provider preserving text/csv and select it there.",
+            "Review the final portal metadata and complete declarations, Terms and Conditions, and CAPTCHA personally.",
         ],
     }
-    manifest_path = reference_dir / "UPLOAD_MANIFEST.json"
+    manifest_path = bundle_root / "BATCH_MANIFEST.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    reference_path = reference_dir / "UPLOAD_REFERENCE.md"
-    reference_lines = [
-        "# Adobe Stock — Metadata Reference (Do Not Upload)",
-        "",
-        "This folder is deliberately separate from `READY_TO_UPLOAD`. Select JPEGs only from the ready folder in Adobe's Browse dialog.",
-        "",
-    ]
-    for index, record in enumerate(records, start=1):
-        reference_lines.extend([
-            f"## {index}. {record['filename']}",
-            "",
-            f"- **Title:** {record['title']}",
-            f"- **Category:** {record['category']} (Graphic Resources)",
-            f"- **Keywords:** {', '.join(record['keywords'])}",
-            "- **Required declaration:** Created using generative AI tools.",
-            "- **Required review:** Confirm no visible IP, people, or real recognizable property before submission.",
-            "",
-        ])
-    reference_path.write_text("\n".join(reference_lines), encoding="utf-8")
-    checklist_path = reference_dir / "PORTAL_STEPS.md"
-    checklist_path.write_text(
-        "# Adobe Contributor — Manual Android Steps\n\n"
-        "1. In **Uploaded Files**, select **Browse** and choose JPEG files only from `READY_TO_UPLOAD`.\n"
-        "2. Use `UPLOAD_REFERENCE.md` in this metadata folder to enter each reviewed title, keyword list, and category.\n"
-        "3. Mark **Created using generative AI tools** truthfully and complete any applicable people/property declaration.\n"
-        "4. Complete Adobe's Terms and Conditions yourself, then press **Submit** only if you approve the batch.\n",
+    (bundle_root / "README.txt").write_text(
+        "STOCKFORGE ADOBE ANDROID UPLOAD BATCH\n\n"
+        "Open one asset-* folder at a time. Each contains exactly one final JPEG,\n"
+        "its Adobe CSV, and a click-open UPLOAD_METADATA.txt guide.\n"
+        "Choose the JPEG in Adobe Browse. Use the CSV in Adobe Upload CSV.\n"
+        "Do not submit until you have completed Adobe declarations, Terms, and CAPTCHA.\n",
         encoding="utf-8",
     )
     return AdobeUploadBundle(
         path=bundle_root,
-        image_dir=image_dir,
-        reference_dir=reference_dir,
-        csv_path=csv_path,
+        asset_dirs=tuple(asset_dirs),
+        csv_path=asset_dirs[0] / "adobe_metadata.csv",
         manifest_path=manifest_path,
         artifact_ids=tuple(record["artifact_id"] for record in records),
     )

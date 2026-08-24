@@ -38,3 +38,12 @@ For GenAI content, Adobe requires the `Created using generative AI tools` checkb
 ## Automation boundary
 
 The shortest safe workflow is: one Termux command creates a batch directory with renamed masters and official-schema CSV; the user opens the already-authenticated Adobe Uploaded Files page, chooses all JPEGs at once, chooses the CSV once, checks the GenAI declaration on the selected batch, and confirms the submit button. This avoids per-file metadata typing but does not falsely claim portal upload or final submission is API-automated.
+
+
+## Android CSV selection compatibility investigation
+
+Adobe's live portal input requested the strict MIME type `text/csv`. RFC 4180 formally registers `text/csv` for CSV files. Android's Storage Access Framework filters the system picker using the MIME type advertised by the calling app and the selected documents provider; a file can therefore be visible but unavailable when a provider reports an alias or generic MIME type rather than exactly `text/csv`.
+
+The direct shared-storage CSV created by Termux was unavailable in the user's Android picker despite valid content and extension. The practical candidate workaround is to place the same exact CSV in a documents provider that advertises it as `text/csv`, such as a cloud-storage provider. This must be tested in the user's Android/Chrome picker. Changing CSV byte content alone cannot reliably override the MIME type reported by an Android documents provider.
+
+Sources: Android Storage Access Framework documentation and RFC 4180.

@@ -258,21 +258,23 @@ python -m stockforge.cli portfolio prepare-adobe-upload \
   --approved
 ```
 
-Ulangi `--execution 'MASTER_EXECUTION_ID'` untuk memasukkan master review-pass tertentu ke satu batch. Jika Android storage tersedia, command memisahkan output menjadi dua folder di `Download/AdobeStock/`:
+Ulangi `--execution 'MASTER_EXECUTION_ID'` untuk memasukkan master review-pass tertentu ke satu batch. Jika Android storage tersedia, command membuat **satu folder per aset** di `Download/AdobeStock/READY_TO_UPLOAD/`:
 
 ```text
 READY_TO_UPLOAD/<batch>/
-  sf-xxxxxxxx.jpg                # JPEG final saja — pilih hanya file ini di Adobe Browse
+  asset-sf-xxxxxxxx/
+    sf-xxxxxxxx.jpg              # Foto final yang dipilih di Adobe Browse
+    adobe_metadata.csv           # Metadata otomatis untuk tombol Upload CSV
+    UPLOAD_METADATA.txt          # File klik-buka: title, keyword, category, dan deklarasi
 
-METADATA_REFERENCE/<batch>/
-  UPLOAD_REFERENCE.md            # Title, keyword, category, dan deklarasi hasil audit
-  adobe_metadata.csv             # Referensi opsional; jangan andalkan picker CSV Android
-  UPLOAD_MANIFEST.json
-  PORTAL_STEPS.md
+  BATCH_MANIFEST.json            # Audit internal; jangan diunggah
+  README.txt
 ```
 
-`READY_TO_UPLOAD` sengaja hanya berisi JPEG master yang sudah lolos lineage, audit teknis JPEG/sRGB, metadata review, dan persetujuan pengguna. Preview, benchmark, ZIP delivery, CSV, manifest, dan catatan dilarang masuk ke folder ini.
+Setiap folder `asset-*` hanya berisi satu JPEG master yang sudah lolos lineage, audit teknis JPEG/sRGB, metadata review, dan persetujuan pengguna, bersama CSV dan file metadata klik-buka untuk aset yang sama. Preview, benchmark, dan ZIP delivery tidak masuk ke folder tersebut.
 
-Di Adobe Contributor Portal, pilih **Browse** lalu pilih JPEG saja dari batch `READY_TO_UPLOAD`. Buka `UPLOAD_REFERENCE.md` dari batch `METADATA_REFERENCE` yang namanya sama, lalu masukkan title, keywords, dan category secara manual. Tandai **Created using generative AI tools** secara jujur, lengkapi deklarasi orang/properti sesuai aset, dan selesaikan Terms and Conditions sendiri. Adobe dapat meminta CAPTCHA; ini harus dikerjakan manual oleh pengguna. Tekan **Submit** hanya setelah Anda setuju.
+Di Adobe Contributor Portal, pilih **Browse** lalu buka satu folder `asset-*` dan pilih file JPEG-nya. Kemudian tekan **Upload CSV** dan pilih `adobe_metadata.csv` dari folder aset yang sama. `UPLOAD_METADATA.txt` dapat disentuh untuk dibuka di Android dan memuat title, keywords, category, serta deklarasi yang harus dibandingkan dengan tampilan portal.
 
-CSV tetap dibuat sebagai referensi yang kompatibel dengan desktop/portal, tetapi tidak lagi menjadi ketergantungan workflow Android karena pemilih file dapat menonaktifkan CSV valid akibat perbedaan MIME `text/csv`. StockForge tidak menyediakan command untuk submit otomatis.
+Jika Android tetap menampilkan CSV tetapi membuatnya tidak dapat dipilih, gunakan `termux-share -a send -c text/csv <path-ke-adobe_metadata.csv>`, pilih penyedia dokumen yang menyimpan MIME `text/csv` (misalnya Google Drive), lalu pilih file tersebut dari penyedia itu pada dialog **Upload CSV** Adobe. Ini harus diuji sekali pada perangkat; sistem file Android dapat melaporkan MIME berbeda untuk file yang sama.
+
+Tandai **Created using generative AI tools** secara jujur, lengkapi deklarasi orang/properti sesuai aset, dan selesaikan Terms and Conditions serta CAPTCHA sendiri. Tekan **Submit** hanya setelah Anda setuju. StockForge tidak menyediakan command untuk submit otomatis.
