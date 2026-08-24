@@ -2,6 +2,18 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-24 — Folder-upload SVG trial executed for human review
+
+### REVIEW_REQUIRED — local controlled trial
+
+- Built exactly one `native_vector_elements--folder-upload` candidate from the research-backed buyer hypothesis.
+- Execution: `f397114e-179e-4992-a1e2-cae0d819d934`; artifact: `282ff154-112b-4203-acf3-92a1098987ba`.
+- Produced a 2048×2048 native SVG with transparent canvas, five generated XML elements, no raster/image embed, no text, no script, and no external reference.
+- Structural native-vector gate passed and `remote_gpu_called=false`; no ZeroGPU, remote provider, Kaggle, XMP, Adobe upload, portal validation, or submission was performed.
+- Internal visual audit found the folder and upload action substantially more recognizable than modular-ribbon, while genericness/distinctiveness and buyer utility remain human review questions.
+- Durable evidence is in `trial_outputs/folder_upload_svg/`; the source SHA256 is recorded in `TRIAL_MANIFEST.json` and `REVIEW_NOTES.md`.
+- No acceptance or evaluation score was fabricated. User review is required before any `portfolio evaluate` record or future lane change.
+
 ## 2026-08-24 — Research-backed folder-upload SVG lane and semantic trial preparation
 
 ### DONE — one-candidate implementation preparation

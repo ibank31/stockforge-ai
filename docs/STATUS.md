@@ -19,7 +19,7 @@ StockForge treats generation as one step inside an asset package containing a bu
 | Transparent cutout / overlay | PNG with real alpha | Alpha producer and PNG finalizer | **Blocked until alpha path is validated** |
 | Seamless raster pattern | PNG/JPEG candidate | Local edge-continuity gate | **Gate implemented; commercial review still required** |
 
-The JPEG path is the only generative route with a recorded live preview and completed master workflow. Native SVG is a genuine local geometry route, not a raster trace. Native geometric pattern now has a local repeatability gate and is eligible for one controlled local trial. PNG now has a conservative offline true-alpha normalizer that refuses opaque RGB sources and preserves the source, but PNG must never use a white or checkerboard background as a substitute for actual transparency and remains blocked from production.
+The JPEG path is the only generative route with a recorded live preview and completed master workflow. Native SVG is a genuine local geometry route, not a raster trace. The research-backed folder-upload SVG trial has now been built locally: structural status PASS, visual status REVIEW_REQUIRED pending user review, and no portal validation. Native geometric pattern retains its local repeatability gate. PNG now has a conservative offline true-alpha normalizer that refuses opaque RGB sources and preserves the source, but PNG must never use a white or checkerboard background as a substitute for actual transparency and remains blocked from production.
 
 ## Completed foundation
 
@@ -43,7 +43,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Current priorities
 
-1. Complete the semantic review and one controlled local trial for the research-backed folder-upload SVG icon, then expand deterministic native SVG builders for technical, food/produce, badge, simple-character, and geometric-pattern families only when each has a clear buyer job.
+1. Complete human visual/commercial review of the folder-upload SVG trial, record the user's decision without inventing category scores, and only then decide whether to improve the lane or validate one manual portal upload.
 2. Keep JPEG scene generation behind the pre-GPU prompt, rights, layout, quota, and visual-quality gates.
 3. Build a local PNG alpha producer with true-alpha assertion, anti-fringe checks, canvas trimming, sRGB validation, and one controlled portal validation.
 4. Connect evidence logs to buyer-job and format routing without turning engagement or earnings screenshots into sales forecasts.
@@ -60,7 +60,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **273 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass after the folder-upload lane changes; the working tree is clean at commit `28e1c85`.
+The current main branch has passed **273 tests with 1 skipped** in the sandbox. Syntax compilation and whitespace checks pass. The folder-upload trial evidence is durable; the working tree must be rechecked after the evidence/documentation commit.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
