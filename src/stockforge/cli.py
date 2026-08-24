@@ -898,6 +898,7 @@ def kaggle_finalizer_output(
     project: str = typer.Option(..., "--project", "-p"),
     kernel: str | None = typer.Option(None, "--kernel", "-k"),
     destination: str | None = typer.Option(None, "--destination", "-d"),
+    force: bool = typer.Option(False, "--force", help="Overwrite local output with the latest completed Kaggle kernel files."),
 ) -> None:
     """Download finalizer output into the project without using GPU."""
     try:
@@ -908,7 +909,7 @@ def kaggle_finalizer_output(
             output_dir.relative_to(project_root)
         except ValueError as exc:
             raise PortfolioError("Finalizer output destination must remain inside the project workspace.") from exc
-        code = kaggle_finalizer_remote("output", kernel, output_dir)
+        code = kaggle_finalizer_remote("output", kernel, output_dir, force=force)
     except (KaggleWorkerError, PortfolioError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     raise typer.Exit(code=code)

@@ -133,7 +133,13 @@ def submit(*, request: str | Path, project_root: str | Path, accelerator: str = 
     return result.returncode
 
 
-def remote(action: str, kernel: str | None = None, output_dir: str | Path | None = None) -> int:
+def remote(
+    action: str,
+    kernel: str | None = None,
+    output_dir: str | Path | None = None,
+    *,
+    force: bool = False,
+) -> int:
     """Read finalizer status/logs or download its latest output through Kaggle CLI."""
     metadata = load_metadata()
     target = kernel or str(metadata.get("id") or FINALIZER_KERNEL_DEFAULT)
@@ -144,6 +150,10 @@ def remote(action: str, kernel: str | None = None, output_dir: str | Path | None
         destination = Path(output_dir).expanduser().resolve()
         destination.mkdir(parents=True, exist_ok=True)
         command.extend(["-p", str(destination)])
+    if force:
+        if action != "output":
+            raise KaggleWorkerError("Force download is supported only for finalizer output.")
+        command.append("--force")
     result = _run(command)
     print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
     if result.returncode != 0:

@@ -6,9 +6,10 @@ import shutil
 from pathlib import Path
 
 from PIL import Image
+import pytest
 
 from stockforge.artifact import sha256_file
-from stockforge.kaggle_finalizer import submit, validate_local
+from stockforge.kaggle_finalizer import KaggleWorkerError, remote, submit, validate_local
 
 
 def _bundle(tmp_path: Path, monkeypatch) -> Path:
@@ -58,6 +59,22 @@ def test_validate_finalizer_bundle(tmp_path: Path, monkeypatch) -> None:
     result = validate_local()
     assert result["worker_dir"] == str(bundle)
     assert result["metadata"]["is_private"] is True
+
+
+def test_remote_output_force_overwrites_stale_result(tmp_path: Path, monkeypatch) -> None:
+    _bundle(tmp_path, monkeypatch)
+    calls = []
+
+    def fake_run(args, *, check=False):
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0, "downloaded\n")
+
+    monkeypatch.setattr("stockforge.kaggle_finalizer._run", fake_run)
+    assert remote("output", output_dir=tmp_path / "output", force=True) == 0
+    assert calls == [["kaggle", "kernels", "output", "ibank31/stockforge-finalizer", "-p", str((tmp_path / "output").resolve()), "--force"]]
+
+    with pytest.raises(KaggleWorkerError, match="only for finalizer output"):
+        remote("status", force=True)
 
 
 def test_submit_stages_verified_request_and_preview(tmp_path: Path, monkeypatch) -> None:
