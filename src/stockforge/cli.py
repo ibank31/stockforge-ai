@@ -29,7 +29,7 @@ from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
 from .portfolio import PortfolioError, lane_for, list_lanes, metadata_from_dict, plan_manifest
-from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, select_brief
+from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
 from .artifact import sha256_file
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
@@ -369,6 +369,7 @@ def _run_one_generation(
             "brief_id": portfolio_context["brief_id"],
             "lane_key": portfolio_context["lane_key"],
             "human_review_required": True,
+            "pre_gpu_gate": portfolio_context.get("pre_gpu_gate"),
         }
     if dry_run:
         return {"dry_run": True, **preview}
@@ -666,7 +667,14 @@ def portfolio_generate(
         _record, project_root = _portfolio_project(project)
         plan_path, data = load_project_plan(project_root, plan)
         selected = select_brief(data, brief)
+        preflight = preview_preflight(data, selected)
+        if not preflight["gpu_eligible"]:
+            raise PortfolioError(
+                "Pre-GPU gate blocked this brief without calling a remote worker: "
+                + "; ".join(preflight["blockers"])
+            )
         context = portfolio_snapshot(data, selected, plan_path)
+        context["pre_gpu_gate"] = preflight
         output = _run_one_generation(
             project=project,
             prompt=selected["prompt_package"]["prompt"],

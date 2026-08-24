@@ -11,7 +11,7 @@ from stockforge.cli import app
 from stockforge.database import Database
 from stockforge.execution_record import GenerationExecutionRecord
 from stockforge.portfolio import build_brief, metadata_from_dict
-from stockforge.portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, select_brief
+from stockforge.portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
 from stockforge.release_package import build_release_package
 
 
@@ -102,6 +102,35 @@ def test_fiber_arch_uses_reviewed_concept_metadata_without_unseen_materials():
     assert "frosted glass" not in brief.metadata.keywords
     assert "ceramic surface" not in brief.metadata.keywords
     assert "organic foam" not in brief.metadata.keywords
+
+
+def test_retro_tech_cloud_module_has_visual_metadata_and_a_measurable_layout_contract():
+    brief = build_brief("retro_tech_developer_metaphors", "cloud-module")
+
+    assert brief.metadata.title == "Translucent Modular Tower With Cloud-Shaped Opening"
+    assert "developer relations" not in brief.metadata.keywords
+    assert "cloud-shaped opening" in brief.metadata.keywords
+    assert "left third" in brief.asset_spec.composition
+    assert "one third of the right side" in brief.asset_spec.negative_space
+    assert "cassette" not in brief.prompt_package.prompt.casefold()
+
+
+def test_pre_gpu_gate_blocks_retro_tech_real_device_and_ambiguous_holding_before_remote_generation():
+    brief = build_brief("retro_tech_developer_metaphors", "cloud-module").to_dict()
+    plan = {"lane": brief["lane"], "briefs": [brief]}
+
+    allowed = preview_preflight(plan, brief)
+    assert allowed["gpu_eligible"] is True
+    assert all(item["status"] == "pass" for item in allowed["checks"])
+
+    blocked = json.loads(json.dumps(brief))
+    blocked["asset_spec"]["subject"] = "a transparent cassette holding one soft cloud form"
+    blocked["concept"]["subject"] = blocked["asset_spec"]["subject"]
+    denied = preview_preflight(plan, blocked)
+
+    assert denied["gpu_eligible"] is False
+    assert any("cassette" in item for item in denied["blockers"])
+    assert any("ambiguous 'holding'" in item for item in denied["blockers"])
 
 
 def test_saved_plan_cannot_be_loaded_from_another_project(tmp_path: Path):

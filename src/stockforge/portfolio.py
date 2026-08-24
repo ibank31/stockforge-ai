@@ -126,6 +126,23 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
             "neutral palette",
         ),
     },
+    ("retro_tech_developer_metaphors", "cloud-module"): {
+        "title": "Translucent Modular Tower With Cloud-Shaped Opening",
+        "keywords": (
+            "translucent module",
+            "modular tower",
+            "cloud-shaped opening",
+            "clear acrylic",
+            "matte plastic",
+            "pastel colors",
+            "soft glow",
+            "isolated object",
+            "white background",
+            "minimal sculpture",
+            "abstract 3d object",
+            "copy space",
+        ),
+    },
 }
 
 
@@ -359,7 +376,7 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         keywords=("retro tech", "lo-fi computing", "developer metaphor", "nostalgic technology", "fictional computer object", "analog digital", "retro future", "creative coding illustration", "retro developer visual", "lo-fi technology hero", "software concept object", "developer relations", "SaaS blog", "coding course", "technology newsletter"),
         test_cap=15,
         concepts=(
-            _concept("cassette-cloud", "a fictional transparent cassette shape holding one soft cloud form", "portable developer ideas", "centered isolated object", "clean copy space right", PALETTES["retro"], ("nostalgic material", "fictional hardware", "no label")),
+            _concept("cloud-module", "a single translucent modular tower with one cloud-shaped cutout opening", "portable developer ideas without a literal device", "object positioned on the left third with a full silhouette and a wide clean copy field on the right", "at least one third of the right side is clean white copy space", PALETTES["retro"], ("cloud-shaped cutout", "modular tower", "no device silhouette")),
             _concept("signal-antenna", "a small abstract antenna sculpture emitting three non-text signal ribbons", "connection and discovery", "vertical standalone object", "clean copy space left", PALETTES["retro"], ("analog signal", "no brand silhouette", "gentle energy")),
             _concept("module-tower", "a stack of blank retro-future modules with one transparent connector", "modular software building", "front-facing object", "clean copy space above", PALETTES["retro"], ("modularity", "blank surfaces", "developer relevance")),
             _concept("disk-garden", "three circular fictional storage forms growing from a minimal ceramic base", "maintained software ecosystem", "isometric isolated object", "clean copy space right", PALETTES["retro"], ("storage metaphor", "organic contrast", "no trademark shape")),
