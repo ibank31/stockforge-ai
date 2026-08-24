@@ -43,6 +43,7 @@ from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
 from .model_catalog import list_image_models
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .release_package import build_release_package
+from .trial_gate import TrialGateError, assess_trial_readiness
 from .termux_control import (
     TermuxControlError,
     configure_remote_provider,
@@ -206,6 +207,20 @@ def portfolio_lanes(json_output: bool = typer.Option(False, "--json")) -> None:
             f"{lane.key}\t{lane.tier}\tcap={lane.test_cap}\t"
             f"seed_concepts={len(lane.concepts)}\t{lane.name}"
         )
+
+
+@portfolio_app.command("trial-readiness")
+def portfolio_trial_readiness(
+    asset_type: str = typer.Option(..., "--asset-type", "-t"),
+    hypothesis: str = typer.Option(..., "--hypothesis"),
+    purpose: str = typer.Option(..., "--purpose"),
+) -> None:
+    """Check whether one controlled trial may be considered; never calls a provider."""
+    try:
+        readiness = assess_trial_readiness(asset_type=asset_type, hypothesis=hypothesis, purpose=purpose)
+    except (TrialGateError, AssetSelectionError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(readiness.to_dict(), indent=2))
 
 
 @portfolio_app.command("asset-types")

@@ -17,7 +17,7 @@ Make StockForge usable as a product-type selector and controlled asset factory. 
 | 2 | Prompt and policy compiler | No | Rights-safe prompt, negative prompt, metadata draft, and pre-GPU blockers are test-covered |
 | 3 | Format builders and technical gates | No | JPEG/SVG/PNG/pattern contracts pass local tests; blocked formats remain blocked until their gates exist |
 | 4 | Output and learning loop | No | HP folders, upload-copy metadata, append-only evaluation ledger, and summary are test-covered |
-| 5 | Trial readiness review | No | A written gap identifies why one trial is necessary and which exact hypothesis it tests |
+| 5 | Trial readiness review | No | `portfolio trial-readiness` requires a concrete hypothesis and purpose, then returns `READY_FOR_TRIAL`, `REVIEW_REQUIRED`, or `BLOCKED` without provider calls |
 | 6 | One controlled trial per approved format | Yes, one at a time | Preview, finalization, human review, metadata review, and evaluation record exist |
 | 7 | Learning and regression update | No | Trial findings are documented; changes are tested before another trial |
 
@@ -55,4 +55,4 @@ Stage 1 is complete. The selector, readiness report, and `portfolio plan-type` e
 
 ## Current next action
 
-Continue the deterministic SVG preset family beyond the two controlled briefs and integrate the true-alpha normalizer into a future PNG production gate only after anti-fringe and portal evidence are available. `portfolio plan-type --asset-type <type>` is now the no-generation entry point for future user selection. A generation trial is not yet needed. It becomes justified only when a remaining provider, visual, or marketplace fact cannot be established locally and the exact hypothesis is documented first.
+Continue the deterministic SVG preset family beyond the two controlled briefs and integrate the true-alpha normalizer into a future PNG production gate only after anti-fringe and portal evidence are available. `portfolio plan-type --asset-type <type>` is now the no-generation entry point for future user selection. `portfolio trial-readiness` is the explicit guard before a provider call and enforces one candidate per hypothesis. A generation trial is not yet needed. It becomes justified only when a remaining provider, visual, or marketplace fact cannot be established locally and the exact hypothesis is documented first.

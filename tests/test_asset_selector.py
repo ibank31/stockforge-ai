@@ -64,3 +64,31 @@ def test_plan_type_cli_builds_no_generation_svg_brief() -> None:
     assert payload["format_route"]["delivery_format"] == "svg"
     assert payload["brief"]["asset_spec"]["product_kind"] == "native_vector"
     assert "No provider or GPU was called" in payload["notice"]
+
+
+def test_trial_readiness_allows_only_explicit_single_candidate_scene() -> None:
+    from stockforge.trial_gate import assess_trial_readiness
+
+    readiness = assess_trial_readiness(
+        asset_type="scene",
+        hypothesis="A tactile surreal scene may serve a commercial web hero buyer job.",
+        purpose="Validate one JPEG preview against the selected buyer job and visual quality gates.",
+    )
+
+    assert readiness.readiness == "READY_FOR_TRIAL"
+    assert readiness.provider_call_allowed is True
+    assert readiness.single_candidate_only is True
+
+
+def test_trial_readiness_keeps_png_blocked() -> None:
+    from stockforge.trial_gate import assess_trial_readiness
+
+    readiness = assess_trial_readiness(
+        asset_type="transparent_cutout",
+        hypothesis="A true-alpha isolated object could serve an overlay buyer job.",
+        purpose="Validate the alpha pipeline only after its technical gates exist.",
+    )
+
+    assert readiness.readiness == "BLOCKED"
+    assert readiness.provider_call_allowed is False
+    assert any("alpha" in item.casefold() for item in readiness.blockers)
