@@ -91,9 +91,9 @@ The current `review_ready` delivery ZIP remains compatible. New portfolio metada
 | Metadata safety | Title/keywords are accurate, no banned terms, AI disclosure present | Block unsafe draft metadata | Verify all terms appear in image |
 | Rights/compliance | No automatic legal conclusion | Record open checklist | Complete accountability declaration |
 
-## Termux Commands: Target Contract
+## Termux Commands
 
-The implementation will add a `portfolio` command group while preserving the existing single-image `generate` command.
+The active implementation preserves the existing single-image `generate` command and adds a `portfolio` command group for saved, lineage-aware production briefs.
 
 ```bash
 # Show supported lane names, tiers, and safe batch caps.
@@ -102,14 +102,13 @@ python -m stockforge.cli portfolio lanes
 # Preview generation-ready brief cards; no remote GPU call.
 python -m stockforge.cli portfolio plan \
   --lane ai_governance \
-  --count 5 \
-  --format json
+  --count 5
 
 # Write a reusable batch plan to the selected project.
 python -m stockforge.cli portfolio create-batch \
   --project stock-assets \
   --lane tactile_material_atmospheres \
-  --count 10
+  --count 5
 
 # View planned assets and their metadata/review state.
 python -m stockforge.cli portfolio list \
@@ -117,22 +116,22 @@ python -m stockforge.cli portfolio list \
   --status planned
 ```
 
-Generation stays intentionally explicit in Phase 1: the user can take one reviewed brief/prompt from the plan and pass it to the already proven `generate` command. A later phase may add a bounded `portfolio generate-batch` command only after the brief-to-artifact linkage and local test coverage are stable.
+Generation remains intentionally explicit and one-at-a-time: use `portfolio show` to inspect a saved brief and `portfolio generate` to submit exactly one selected brief. The command freezes its batch/brief/metadata context into the execution and includes the metadata draft plus review checklist in the download package. A future bounded batch runner may sequence already approved briefs, but it must not submit parallel or unlimited provider calls.
 
 ## Phased Implementation
 
 | Phase | Deliverable | Not included |
 |---|---|---|
-| 1: Portfolio foundation | Lane registry, deterministic concepts, safe metadata manifest, validation tests, CLI preview/create/list. | Remote batch submission. |
-| 2: Artifact linkage | Link generated images to planned briefs; include manifest files in review packages. | Automatic marketplace upload. |
+| 1: Portfolio foundation | Lane registry, deterministic concepts, safe metadata manifest, validation tests, CLI preview/create/list. **Complete.** | Remote batch submission. |
+| 2: Artifact linkage | `portfolio show`/`portfolio generate`, frozen brief snapshot, and richer review package. **Complete.** | Automatic marketplace upload. |
 | 3: Portfolio QA dashboard/CLI | Aggregate technical, dedupe, and metadata status; manual review recording. | Automated legal acceptance claims. |
-| 4: Bounded batch orchestration | One-at-a-time quota-aware remote execution with stop-on-failure behavior. | Background worker or unlimited execution. |
+| 4: Bounded batch orchestration | One-at-a-time quota-aware sequence with stop-on-failure behavior. | Background worker or unlimited execution. |
 | 5: Account-feedback learning | Import contributor acceptance/download evidence supplied by the user; revise allocation transparently. | Publicly invented sales data. |
 
 ## Safety and Operations
 
-Use the existing remote-worker quota policy: one candidate per request, bounded image size/steps, explicit provider selection, and downloadable ZIP output. No persistent server, web-hook, or background scheduler is required for Phase 1; Termux remains the user-controlled trigger. The remote Space cleanup remains outside this scope until expressly re-requested.
+Use the existing remote-worker quota policy: one candidate per request, bounded image size/steps, explicit provider selection, and a downloadable review package. No persistent server, webhook, or background scheduler is required for the active phases; Termux remains the user-controlled trigger. The remote Space cleanup remains outside this scope until expressly re-requested.
 
-## Definition of Done for Phase 1
+## Definition of Done for Active Phases
 
-Phase 1 is complete when: all ten lanes are discoverable; lane plans produce distinct `AssetSpec` and `PromptPackage` objects; batch caps follow the research allocation; metadata has explicit AI disclosure and human-review state; unsafe/banned metadata is rejected; CLI works in dry-run mode; tests pass; and this document plus Termux instructions are committed to the implementation branch.
+The active foundation and delivery linkage are complete when: all ten lanes are discoverable; lane plans produce distinct `AssetSpec` and `PromptPackage` objects; batch caps follow the research allocation; metadata has explicit AI disclosure and human-review state; unsafe/banned metadata is rejected; a saved brief can be previewed and generated one at a time; its execution preserves portfolio lineage; the review ZIP includes its metadata draft and checklist; direct generation remains compatible; and tests pass.

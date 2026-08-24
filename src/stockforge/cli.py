@@ -18,6 +18,7 @@ from .asset_manager import AssetManager
 from .config import ConfigManager
 from .database import Database
 from .doctor import run_doctor
+from .generation import GenerationRequest
 from .job import JobError
 from .job_database import JobDatabase
 from .job_manager import JobManager
@@ -25,7 +26,8 @@ from .kaggle_worker import KaggleWorkerError, doctor as kaggle_doctor, list_kern
 from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
-from .portfolio import PortfolioError, lane_for, list_lanes, plan_batch, plan_manifest
+from .portfolio import PortfolioError, lane_for, list_lanes, plan_manifest
+from .portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, select_brief
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .release_package import build_release_package
 from .termux_control import (
@@ -289,28 +291,46 @@ def portfolio_list(
         )
 
 
-@app.command("generate")
-def generate(
-    project: str = typer.Option(..., "--project", "-p"),
-    prompt: str = typer.Option(..., "--prompt"),
-    provider: str | None = typer.Option(None, "--provider"),
-    profile: str = typer.Option("z-image-turbo", "--profile"),
-    seed: int | None = typer.Option(None, "--seed", min=0),
-    dry_run: bool = typer.Option(False, "--dry-run"),
-) -> None:
-    """Submit exactly one bounded remote generation from the Termux control plane."""
+def _run_one_generation(
+    *,
+    project: str,
+    prompt: str,
+    provider: str | None,
+    profile: str,
+    seed: int | None,
+    dry_run: bool,
+    portfolio_context: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Run the existing bounded Termux path and optionally freeze portfolio context."""
     manager = ConfigManager()
     config = manager.initialize()
     database = JobDatabase(config.database)
     database.initialize()
     projects = [item for item in database.list_projects() if item["name"] == project]
     if not projects:
-        raise typer.BadParameter(f"Project not found: {project}")
+        raise PortfolioError(f"Project not found: {project}")
     project_record = projects[0]
     project_root = Path(project_record["path"]).resolve()
-
     try:
-        request = profile_for(profile).request(prompt, seed=seed)
+        base_request = profile_for(profile).request(prompt, seed=seed)
+        parameters = dict(base_request.parameters)
+        if portfolio_context is not None:
+            parameters["portfolio"] = portfolio_context
+        request = GenerationRequest(
+            prompt=base_request.prompt,
+            negative_prompt=base_request.negative_prompt,
+            width=base_request.width,
+            height=base_request.height,
+            steps=base_request.steps,
+            guidance_scale=base_request.guidance_scale,
+            seed=base_request.seed,
+            batch_size=base_request.batch_size,
+            model_id=base_request.model_id,
+            model_version=base_request.model_version,
+            workflow_hash=base_request.workflow_hash,
+            input_artifact_ids=base_request.input_artifact_ids,
+            parameters=parameters,
+        )
         candidate = route_remote_generation(
             workspace=config.workspace,
             request=request,
@@ -318,9 +338,9 @@ def generate(
             provider_id=provider,
         )
     except (TermuxControlError, ProviderConfigError, ProviderRoutingError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
+        raise PortfolioError(str(exc)) from exc
 
-    preview = {
+    preview: dict[str, object] = {
         "project": project,
         "provider": candidate.capabilities.provider_id,
         "profile": profile,
@@ -333,9 +353,15 @@ def generate(
         "batch_size": request.batch_size,
         "estimated_gpu_seconds": request.parameters["estimated_gpu_seconds"],
     }
+    if portfolio_context is not None:
+        preview["portfolio"] = {
+            "batch_id": portfolio_context["batch_id"],
+            "brief_id": portfolio_context["brief_id"],
+            "lane_key": portfolio_context["lane_key"],
+            "human_review_required": True,
+        }
     if dry_run:
-        typer.echo(json.dumps({"dry_run": True, **preview}, indent=2))
-        raise typer.Exit()
+        return {"dry_run": True, **preview}
 
     jobs = JobManager(database)
     job = jobs.create(
@@ -374,16 +400,90 @@ def generate(
             jobs.fail(claimed.id, str(exc), retry_delay_seconds=0)
         except JobError:
             pass
-        raise typer.BadParameter(str(exc)) from exc
-
-    typer.echo(json.dumps({
+        raise PortfolioError(str(exc)) from exc
+    return {
         **preview,
         "job_id": claimed.id,
         "execution_id": result.execution.id,
         "artifact_ids": list(result.execution.artifact_ids),
         "release_package": package.to_dict(),
         "status": "review_ready",
+    }
+
+
+@portfolio_app.command("show")
+def portfolio_show(
+    project: str = typer.Option(..., "--project", "-p"),
+    plan: str = typer.Option(..., "--plan"),
+    brief: str = typer.Option(..., "--brief"),
+) -> None:
+    """Display one saved brief without calling a remote worker."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        plan_path, data = load_project_plan(project_root, plan)
+        selected = select_brief(data, brief)
+    except (PortfolioError, PortfolioPlanError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({
+        "plan": str(plan_path),
+        "batch_id": data["batch_id"],
+        "brief": selected,
+        "notice": "No remote GPU call was made. This brief requires human review before marketplace submission.",
     }, indent=2))
+
+
+@portfolio_app.command("generate")
+def portfolio_generate(
+    project: str = typer.Option(..., "--project", "-p"),
+    plan: str = typer.Option(..., "--plan"),
+    brief: str = typer.Option(..., "--brief"),
+    provider: str | None = typer.Option(None, "--provider"),
+    profile: str = typer.Option("z-image-turbo", "--profile"),
+    seed: int | None = typer.Option(None, "--seed", min=0),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
+    """Generate exactly one selected saved brief with immutable portfolio lineage."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        plan_path, data = load_project_plan(project_root, plan)
+        selected = select_brief(data, brief)
+        context = portfolio_snapshot(data, selected, plan_path)
+        output = _run_one_generation(
+            project=project,
+            prompt=selected["prompt_package"]["prompt"],
+            provider=provider,
+            profile=profile,
+            seed=seed,
+            dry_run=dry_run,
+            portfolio_context=context,
+        )
+    except (PortfolioError, PortfolioPlanError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(output, indent=2))
+
+
+@app.command("generate")
+def generate(
+    project: str = typer.Option(..., "--project", "-p"),
+    prompt: str = typer.Option(..., "--prompt"),
+    provider: str | None = typer.Option(None, "--provider"),
+    profile: str = typer.Option("z-image-turbo", "--profile"),
+    seed: int | None = typer.Option(None, "--seed", min=0),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
+    """Submit exactly one bounded remote generation from the Termux control plane."""
+    try:
+        output = _run_one_generation(
+            project=project,
+            prompt=prompt,
+            provider=provider,
+            profile=profile,
+            seed=seed,
+            dry_run=dry_run,
+        )
+    except PortfolioError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(output, indent=2))
 
 
 @adobe_app.command("check")

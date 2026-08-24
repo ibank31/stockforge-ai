@@ -54,7 +54,7 @@ The architecture extends existing contracts rather than replacing them.
 - `dedup.py`, `dedupe_candidates.py`, and `dedupe_pipeline.py` remain the similarity controls.
 - `artifact.py`, `asset.py`, `asset_manager.py`, and `provenance.py` remain asset/provenance foundations.
 - `adobe_gate.py` and `adobe_finalize.py` remain Adobe-specific finalization gates.
-- `reality_prompt.py`, `REALITY_RULES.md`, and the reality knowledge layer remain the controlled realism path for scenes that require physical-world knowledge.
+- `portfolio.py`, `portfolio_io.py`, `PORTFOLIO_PRODUCTION_ENGINE.md`, and `PORTFOLIO_DELIVERY_PIPELINE.md` define the active standalone portfolio-planning and brief-to-review-package path.
 
 No provider is allowed to leak credentials, network configuration, or model-specific secrets into the core pipeline definition.
 

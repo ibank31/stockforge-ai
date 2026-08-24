@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from .adobe_gate import inspect_image
 from .database import Database
 
 
@@ -71,11 +74,25 @@ def build_release_package(
     target_dir = Path(destination_dir or root / "deliveries").resolve()
     target_dir.mkdir(parents=True, exist_ok=True)
     package_path = target_dir / f"stockforge-{execution.id}.zip"
+    portfolio = execution.parameters.get("portfolio")
+    if portfolio is not None and not isinstance(portfolio, dict):
+        raise ReleasePackageError("Execution portfolio context is invalid.")
+    technical_reports = []
+    if portfolio is not None:
+        for artifact, source in artifacts:
+            report = inspect_image(source)
+            technical_reports.append({
+                "artifact_id": artifact.id,
+                "file": f"images/{artifact.id}{source.suffix.lower()}",
+                "report": report.to_dict(),
+            })
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "review_ready",
         "notice": "This package contains generated outputs that passed execution persistence. It is not a marketplace acceptance guarantee; human compliance review remains required.",
         "execution": execution.to_dict(),
+        "portfolio": portfolio,
+        "technical_reports": technical_reports,
         "artifacts": [
             {
                 "id": artifact.id,
@@ -89,8 +106,9 @@ def build_release_package(
     }
     readme = (
         "StockForge review-ready download package\n\n"
-        "This archive contains only image outputs from the referenced successful execution and a manifest with reproducibility metadata. "
-        "It does not guarantee marketplace acceptance. Perform human rights, policy, and visual review before submission.\n"
+        "This archive contains generated image outputs, an execution manifest, and where available a portfolio metadata draft. "
+        "It is not a marketplace acceptance, legal-clearance, rights-clearance, or sales guarantee. "
+        "Perform full-size visual, rights, policy, distinctness, metadata, and marketplace-specific review before submission.\n"
     )
     temporary_path = package_path.with_suffix(".zip.tmp")
     try:
@@ -98,6 +116,56 @@ def build_release_package(
             for artifact, source in artifacts:
                 archive.write(source, f"images/{artifact.id}{source.suffix.lower()}")
             archive.writestr("manifest.json", json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+            if portfolio is not None:
+                metadata = portfolio.get("metadata")
+                checklist = portfolio.get("reviewer_checklist")
+                if not isinstance(metadata, dict) or not isinstance(checklist, list):
+                    raise ReleasePackageError("Execution portfolio metadata is invalid.")
+                archive.writestr(
+                    "portfolio_metadata_draft.json",
+                    json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+                )
+                worksheet = io.StringIO(newline="")
+                writer = csv.writer(worksheet)
+                writer.writerow(["filename", "title", "keywords", "created_using_generative_ai", "people_or_property", "review_status"])
+                keyword_text = ", ".join(str(item) for item in metadata.get("keywords", []))
+                for artifact, source in artifacts:
+                    writer.writerow([
+                        f"images/{artifact.id}{source.suffix.lower()}",
+                        str(metadata.get("title", "")),
+                        keyword_text,
+                        str(metadata.get("created_using_generative_ai", True)).lower(),
+                        str(metadata.get("people_or_property", "human review required")),
+                        str(metadata.get("status", "human_review_required")),
+                    ])
+                archive.writestr("portfolio_metadata_draft.csv", worksheet.getvalue())
+                archive.writestr(
+                    "TECHNICAL_READINESS.json",
+                    json.dumps(technical_reports, indent=2, sort_keys=True) + "\n",
+                )
+                checklist_lines = [
+                    "# StockForge Portfolio Review Checklist",
+                    "",
+                    "**Package status:** `review_ready` only. This file does not approve marketplace submission.",
+                    "",
+                    "## Required human checks",
+                    "",
+                ]
+                checklist_lines.extend(f"- [ ] {str(item)}" for item in checklist)
+                checklist_lines.extend([
+                    "- [ ] Review TECHNICAL_READINESS.json; finalize the file if the technical gate is REVIEW or FAIL.",
+                    "- [ ] Verify final file format, dimensions, colour profile, and any marketplace-specific requirements.",
+                    "- [ ] Verify this image is not a seed/crop/color-only duplicate of another selected portfolio asset.",
+                    "- [ ] Record any rejection reason before generating a replacement.",
+                    "",
+                    "## Frozen portfolio lineage",
+                    "",
+                    f"- Batch ID: `{portfolio.get('batch_id', '-')}`",
+                    f"- Brief ID: `{portfolio.get('brief_id', '-')}`",
+                    f"- Lane: `{portfolio.get('lane_key', '-')}`",
+                    f"- Tier: `{portfolio.get('tier', '-')}`",
+                ])
+                archive.writestr("REVIEW_CHECKLIST.md", "\n".join(checklist_lines) + "\n")
             archive.writestr("README.txt", readme)
         temporary_path.replace(package_path)
     finally:

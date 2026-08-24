@@ -136,6 +136,50 @@ python -m stockforge.cli portfolio list \
 | Experimental | `retro_tech_developer_metaphors`, `human_made_collage_elements` | 15 dan 10 |
 | Experimental | `circular_packaging_systems`, `software_supply_chain_integrity` | 10 per lane |
 
-Gunakan `portfolio plan` untuk memilih satu brief yang paling sesuai, lalu salin nilai `prompt_package.prompt` ke perintah generation yang telah diuji. Jalankan **satu kandidat per generation**. Setelah gambar selesai, lakukan technical check, periksa visual pada resolusi penuh, pastikan metadata benar-benar cocok dengan gambar, lalu pertahankan hanya aset yang berbeda secara komersial. Jangan upload beruntun berdasarkan seed, crop, atau perubahan warna saja.
+Gunakan `portfolio plan` untuk memilih satu brief yang paling sesuai, lalu jalankan melalui `portfolio generate` agar identitas brief dan metadata tetap terhubung dengan hasil. Jalankan **satu kandidat per generation**. Setelah gambar selesai, lakukan technical check, periksa visual pada resolusi penuh, pastikan metadata benar-benar cocok dengan gambar, lalu pertahankan hanya aset yang berbeda secara komersial. Jangan upload beruntun berdasarkan seed, crop, atau perubahan warna saja.
 
-Dokumen desain lengkap dan batasan status ada di [`PORTFOLIO_PRODUCTION_ENGINE.md`](PORTFOLIO_PRODUCTION_ENGINE.md). Fase ini membuat plan dan manifest; linkage otomatis dari brief ke image, agregasi QA, dan batch execution terikat kuota dikerjakan sebagai tahap berikutnya.
+Dokumen desain lengkap dan batasan status ada di [`PORTFOLIO_PRODUCTION_ENGINE.md`](PORTFOLIO_PRODUCTION_ENGINE.md) serta [`PORTFOLIO_DELIVERY_PIPELINE.md`](PORTFOLIO_DELIVERY_PIPELINE.md).
+
+## Menjalankan Satu Brief Portfolio
+
+Setelah plan dibuat, jangan salin prompt secara manual kecuali untuk inspeksi. Gunakan `portfolio show` untuk melihat satu brief dan `portfolio generate` untuk membekukan identitas brief, metadata draft, dan checklist review bersama execution. Cara ini tetap memakai **satu request GPU per perintah**.
+
+```bash
+# Ganti dengan path dari output create-batch dan salah satu brief_id dari batch tersebut.
+PLAN='/storage/emulated/0/StockForge/projects/stock-assets/portfolio-plans/ai_governance-YYYYMMDDTHHMMSSZ-XXXXXXXX.json'
+BRIEF='ai_governance--review-gate'
+
+# Inspeksi brief; tidak memakai GPU.
+python -m stockforge.cli portfolio show \
+  --project stock-assets \
+  --plan "$PLAN" \
+  --brief "$BRIEF"
+
+# Preview request remote; tidak memakai GPU.
+python -m stockforge.cli portfolio generate \
+  --project stock-assets \
+  --plan "$PLAN" \
+  --brief "$BRIEF" \
+  --provider zerogpu \
+  --profile z-image-turbo \
+  --seed 42 \
+  --dry-run
+
+# Jalankan tepat satu brief setelah preview benar.
+python -m stockforge.cli portfolio generate \
+  --project stock-assets \
+  --plan "$PLAN" \
+  --brief "$BRIEF" \
+  --provider zerogpu \
+  --profile z-image-turbo \
+  --seed 42
+```
+
+Output sukses memuat `release_package.path`. Paket ZIP untuk portfolio sekarang berisi image, `manifest.json`, `portfolio_metadata_draft.json`, `portfolio_metadata_draft.csv`, dan `REVIEW_CHECKLIST.md`. Statusnya tetap `review_ready`, bukan `submission_ready`. Metadata dan checklist adalah draft yang harus diperiksa terhadap gambar akhir; jangan mengunggah batch berdasarkan status generation saja.
+
+```bash
+unzip -o '<PATH_DARI_release_package.path>' \
+  -d ~/storage/downloads/stockforge-review
+```
+
+Setelah ekstrak, buka gambar pada ukuran penuh. Lengkapi checklist: hapus keyword yang tidak benar-benar tampak, pastikan tidak ada teks/brand/artefak, bandingkan dengan aset lain agar tidak duplikat, lakukan finalization/technical check bila perlu, dan isi pengungkapan GenAI secara jujur di marketplace. Mesin tidak mengubah `review_ready` menjadi `submission_ready` secara otomatis.
