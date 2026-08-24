@@ -1,46 +1,20 @@
-# StockForge AI — Buyer × Market Matrix
+# Buyer–Market Matrix: Standalone Asset Portfolio
 
-**Date:** 2026-08-20  
-**Status:** Initial strategic model
+StockForge menghasilkan aset visual standalone yang dapat digabungkan oleh pengguna ke halaman web, kampanye, deck, email, artikel, atau social creative. Matriks ini adalah kerangka seleksi; ia tidak mengklaim bahwa setiap lane akan memiliki penjualan yang sama.
 
-This matrix converts marketplace demand into buyer-specific visual opportunities. It is a planning model, not a claim that any listed segment will purchase an asset.
+| Buyer segment | Pekerjaan komunikasi | Bentuk aset yang dicari | Format utama | Kriteria nilai |
+|---|---|---|---|---|
+| Web/product teams | landing page, feature explainer, developer documentation | metafora 3D, material atmosphere, object icon | PNG/WebP berisolasi, latar putih atau transparan | siluet jelas, copy space, tanpa UI/text/brand palsu |
+| Brand marketing teams | campaign, advertising, email, hero website | objek konseptual playful, visual sensori, asset bermaterial | square/landscape yang dapat dicrop | dampak thumbnail, metafora mudah dipahami, palette adaptif |
+| Editorial/content teams | artikel, newsletter, explainer, presentation | simbol editorial, craft element, tekstur | visual standalone dengan ruang judul | ide terbaca tanpa teks di gambar, mudah dikomposisikan |
+| Small business commerce | product page, seasonal promotion, packaging insert | prop generik non-merek, material/stiker/elements | objek berisolasi, clean edges | tidak memiliki brand atau label, fleksibel antar industri |
+| Social creator teams | thumbnail, post, story asset, series | icon-like object, playful surreal metaphor, craft element | square/vertical-ready asset | dikenali cepat, unik namun tidak ramai, mudah dibuat seri |
+| Local brand storytelling | campaign, editorial, packaging | natural motif dan craft element yang sumbernya jelas | object/illustration berisolasi | spesifik dan hormat pada konteks, tanpa klaim budaya palsu |
 
-| Industry / topic | Buyer | Typical role | Communication job | Asset opportunity | Differentiation lever |
-|---|---|---|---|---|---|
-| Construction technology | SaaS/product marketing | Product marketer | Website / case study | Digital workflow on real site | physical + digital relationship |
-| Construction safety | Contractor | Safety / project manager | Training / website | Specific inspection behavior | authentic workflow |
-| Construction engineering | Consultant | Engineer / BD | Proposal / report | Technical review context | credible process detail |
-| Property development | Developer | Marketing manager | Brochure / campaign | Development planning | local/regional context |
-| Infrastructure | Engineering / government supplier | Communications | Report / presentation | Infrastructure planning | scale + context |
-| Sustainability | Corporate / ESG | Communications manager | ESG report | Human + environmental consequence | specific action, not abstract green imagery |
-| AI / business | SaaS / enterprise | Demand generation | Landing page / blog | Human interaction with AI workflow | avoid generic robot/laptop clichés |
-| Healthcare technology | Health-tech | Marketing / content | Website / campaign | Clinician + specific digital workflow | authentic clinical context |
-| Education technology | EdTech | Growth / content | Social / website | Teacher/student workflow | age/context specificity |
-| Logistics technology | Logistics SaaS | Product marketing | Website / article | Warehouse + digital coordination | operational specificity |
-| Cybersecurity | B2B SaaS | Marketing / editorial | Article / campaign | Human security workflow | avoid cliché hacker imagery |
-| Local SMB | Owner / marketer | Social / web | Promotion / content | authentic local business scene | regional specificity |
+## Aturan produksi lintas lane
 
-## Buyer-first prompt rule
+Setiap candidate awal memakai `one subject`, `white background`, `isolated`, `no text`, dan `no branding`. Mesin hanya boleh membuka scene, manusia, perangkat, angka, atau konteks industri setelah terdapat AssetSpec yang menjadikannya subjek inti dan bukti market yang mendukungnya. Untuk fokus awal, scene bukan default.
 
-Before prompt generation, the engine should answer:
+## Portfolio balancing
 
-1. Who is likely to use the asset?
-2. What are they trying to communicate?
-3. Where will it appear?
-4. What visual convention is over-supplied?
-5. What specific situation makes this asset more useful than a generic alternative?
-6. What composition lets the buyer actually design with it?
-
-If these questions cannot be answered with evidence or an explicitly marked hypothesis, the opportunity remains `REVIEW`.
-
-## Evidence boundary
-
-Buyer segments are derived from public marketplace documentation and industry use cases. Public sources show categories of customers and common uses, but they do not expose complete individual purchase histories. StockForge must therefore store confidence and evidence URLs with every automated opportunity.
-
-## Strategic principle
-
-**The buyer is the unit of differentiation.**
-
-A niche is too broad. A keyword is too shallow. The useful unit is:
-
-`buyer + communication problem + channel + visual situation + differentiation`
+Produksi harus membagi kandidat di antara material atmospheres, UI-adjacent 3D metaphors, playful conceptual objects, retro-tech metaphors, human-made collage elements, dan natural/craft motifs. Sistem tidak boleh menjadwalkan seluruh batch dari satu lane atau satu keyword hanya karena satu contoh visual berhasil dibuat.

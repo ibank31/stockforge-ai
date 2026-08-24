@@ -8,8 +8,9 @@ from .prompt_compiler import PromptPackage
 
 _BASE_NEGATIVE = (
     "multiple objects when one object is required",
-    "collage, scene, environment, unnecessary props",
-    "readable text, fake typography, logos, trademarks, watermarks, signatures",
+    "collage, scene, environment, frame, border, unnecessary props",
+    "people, hands, fingers, faces, bodies, tools, measuring devices, meters, screens, phones, computers, cables",
+    "readable text, fake typography, letters, numbers, labels, logos, trademarks, watermarks, signatures, stamps, postmarks",
     "recognizable copyrighted artwork or characters, celebrity likenesses",
     "deformed geometry, malformed object structure, duplicated elements",
     "plastic texture, CGI appearance, generic AI aesthetic",

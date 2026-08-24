@@ -21,12 +21,17 @@ runner = CliRunner()
 
 
 def test_z_image_profile_is_bounded_for_free_worker():
-    request = profile_for("z-image-turbo").request("isolated botanical stamp", seed=42)
+    request = profile_for("z-image-turbo").request("single translucent resin pebble", seed=42)
 
     assert request.model_id == "z-image-turbo"
     assert (request.width, request.height, request.steps, request.batch_size) == (1024, 1024, 8, 1)
     assert request.guidance_scale == 0.0
     assert request.parameters["quota_policy"] == "single-candidate"
+    assert request.parameters["asset_policy"] == "standalone_single_subject_v1"
+    assert "single translucent resin pebble" in request.prompt
+    assert "No people, hands" in request.prompt
+    assert "measuring instruments" in request.prompt
+    assert "stamp, postmark" in request.prompt
 
 
 def test_configured_worker_routes_only_supported_profile(tmp_path: Path):
@@ -37,7 +42,7 @@ def test_configured_worker_routes_only_supported_profile(tmp_path: Path):
         profile_names=("z-image-turbo",),
         score=10,
     )
-    request = profile_for("z-image-turbo").request("commercial botanical asset")
+    request = profile_for("z-image-turbo").request("single translucent resin pebble")
 
     selected = route_remote_generation(
         workspace=tmp_path,

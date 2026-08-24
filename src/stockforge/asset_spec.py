@@ -7,8 +7,8 @@ import re
 from typing import Any
 
 ASSET_FAMILIES = frozenset({
-    "ephemera", "culinary_illustration", "glasscore_3d_ui",
-    "nursery_boho", "retro_tech_nostalgia", "generic",
+    "material_atmosphere", "ui_3d_metaphor", "surreal_concept",
+    "retro_tech_nostalgia", "craft_element", "organic_motif", "generic",
 })
 ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "texture", "graphic"})
 BACKGROUND_POLICIES = frozenset({"white", "transparent", "neutral", "scene"})
@@ -143,8 +143,9 @@ def standalone_asset_spec(
         quality_gates=(
             "thumbnail readability",
             "clean silhouette",
-            "no accidental text",
-            "no logos or trademarks",
+            "no accidental text, letters, numbers, labels, or typography",
+            "no logos, trademarks, stamps, postmarks, or watermarks",
+            "no people, hands, faces, bodies, tools, devices, screens, or unrelated props",
             "no obvious AI artifacts",
             "commercial design utility",
         ),

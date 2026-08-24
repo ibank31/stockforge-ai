@@ -12,8 +12,6 @@ from comfy_diffusion.models import ModelManager
 from comfy_diffusion.nodes import run_node
 from comfy_diffusion.sampling import sample
 
-from reality_engine import compile_prompt, reality_preflight
-
 # Official ComfyUI Qwen Image T2I assets.
 MODEL_REPO = "Comfy-Org/Qwen-Image_ComfyUI"
 LORA_REPO = "lightx2v/Qwen-Image-Lightning"
@@ -23,7 +21,6 @@ QWEN_IMAGE_FILE = "qwen_image_fp8_e4m3fn.safetensors"
 QWEN_CLIP_FILE = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
 QWEN_VAE_FILE = "qwen_image_vae.safetensors"
 QWEN_LORA_FILE = "Qwen-Image-Lightning-8steps-V1.0.safetensors"
-REALITY_WORKFLOW = "wall_moisture_inspection"
 
 
 def _prepare_models():
@@ -189,33 +186,27 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
     if not 4 <= int(steps) <= 12:
         raise gr.Error("Steps must be between 4 and 12 for the free-tier benchmark.")
 
-    reality_preflight(REALITY_WORKFLOW)
-    compiled_prompt = compile_prompt(prompt, task_id=REALITY_WORKFLOW)
-    print(f"[StockForge] Reality workflow: {REALITY_WORKFLOW}")
-    print(f"[StockForge] Compiled prompt length: {len(compiled_prompt)}")
-
-    return generate_gpu(compiled_prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
+    print(f"[StockForge] Standalone prompt length: {len(prompt)}")
+    return generate_gpu(prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
 
 
-def reality_health():
-    """Non-GPU health proof for the active reality compiler."""
-    workflow = reality_preflight(REALITY_WORKFLOW)
-    probe = compile_prompt("professional construction inspection photograph", REALITY_WORKFLOW)
+def portfolio_health():
+    """Non-GPU health proof for the standalone-asset generation boundary."""
     return {
         "status": "ok",
-        "reality_engine": "active",
-        "compiler": "active",
-        "workflow": REALITY_WORKFLOW,
-        "tool": workflow.tool,
-        "target": workflow.target,
-        "human_action": workflow.action,
-        "compiled_prompt_length": len(probe),
+        "generation_mode": "standalone_portfolio",
+        "legacy_reality_compiler": "disabled",
+        "default_constraints": [
+            "one primary subject",
+            "white isolated background",
+            "no people, hands, tools, devices, screens, text, numbers, stamps, or unrelated props",
+        ],
         "gpu_used": False,
     }
 
 
 with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
-    gr.Markdown("# StockForge V5 · ZeroGPU\nOfficial Qwen Image FP8 + 8-step Lightning + Reality Knowledge Layer.")
+    gr.Markdown("# StockForge V5 · ZeroGPU\nStandalone Asset Portfolio · Qwen Image FP8 + 8-step Lightning.")
     prompt = gr.Textbox(label="Prompt", lines=4)
     with gr.Row():
         width = gr.Number(value=1024, label="Width", precision=0)
@@ -230,9 +221,9 @@ with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
     gpu_seconds = gr.Number(label="Measured GPU-function seconds", precision=3)
     generate_button.click(generate, [prompt, width, height, steps, seed, randomize], [output, output_seed, gpu_seconds], api_name="generate")
 
-    health_button = gr.Button("Reality Health Check")
-    health_output = gr.JSON(label="Reality Engine Status")
-    health_button.click(reality_health, outputs=health_output, api_name="reality_health")
+    health_button = gr.Button("Standalone Portfolio Health Check")
+    health_output = gr.JSON(label="Standalone Portfolio Status")
+    health_button.click(portfolio_health, outputs=health_output, api_name="portfolio_health")
 
     gpu_probe_button = gr.Button("GPU Capability Probe")
     gpu_probe_output = gr.JSON(label="GPU Runtime Capability")

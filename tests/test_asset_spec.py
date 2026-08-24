@@ -8,17 +8,17 @@ from stockforge.asset_spec import AssetSpecError, standalone_asset_spec
 def _spec(**overrides):
     values = {
         "asset_id": "asset-001",
-        "market_opportunity_id": "opportunity-ephemera",
-        "buyer_segment": "designers",
-        "buyer_job": "scrapbook and editorial composition",
-        "channel": "digital design",
-        "asset_family": "ephemera",
-        "asset_type": "ephemera",
-        "micro_niche": "vintage botanical postal ephemera",
-        "subject": "single fictional botanical postage stamp",
-        "visual_language": "tactile antique printmaking",
-        "medium": "aged paper and engraved ink",
-        "originality_levers": ("fictional botanical specimen", "irregular analog printing"),
+        "market_opportunity_id": "opportunity-material-atmosphere",
+        "buyer_segment": "web_product_teams",
+        "buyer_job": "landing page hero and product explainer",
+        "channel": "web and presentation",
+        "asset_family": "material_atmosphere",
+        "asset_type": "texture",
+        "micro_niche": "tactile translucent resin material study",
+        "subject": "single translucent resin pebble with soft internal color gradient",
+        "visual_language": "clean contemporary studio art direction",
+        "medium": "frosted translucent resin with subtle microtexture",
+        "originality_levers": ("restrained tactile material", "single clear silhouette"),
     }
     values.update(overrides)
     return standalone_asset_spec(**values)
@@ -30,11 +30,12 @@ def test_standalone_policy_is_explicit():
     assert spec.background_policy == "white"
     assert spec.text_policy == "none"
     assert "thumbnail readability" in spec.quality_gates
+    assert "no people, hands, faces, bodies, tools, devices, screens, or unrelated props" in spec.quality_gates
 
 
 def test_spec_is_serializable():
     payload = _spec().to_dict()
-    assert payload["asset_family"] == "ephemera"
+    assert payload["asset_family"] == "material_atmosphere"
     assert payload["originality_levers"]
 
 

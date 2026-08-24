@@ -17,9 +17,6 @@ import gradio as gr
 import torch
 from huggingface_hub import hf_hub_download
 
-# Reuse the checked-in Reality Engine implementation from the HF deployment.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "zerogpu"))
-from reality_engine import compile_prompt, reality_preflight  # noqa: E402
 from comfy_diffusion import check_runtime, vae_decode  # noqa: E402
 from comfy_diffusion.conditioning import encode_prompt  # noqa: E402
 from comfy_diffusion.models import ModelManager  # noqa: E402
@@ -32,7 +29,6 @@ HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
 Z_IMAGE_FILE = "z_image_turbo_fp8_e4m3fn.safetensors"
 QWEN_FILE = "qwen_3_4b_fp8_mixed.safetensors"
 AE_FILE = "ae.safetensors"
-REALITY_WORKFLOW = "wall_moisture_inspection"
 MODEL_CACHE = None
 JOB_CACHE = {}
 
@@ -85,14 +81,12 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
         raise gr.Error("Baseline worker is fixed at 1024x1024")
     if not 4 <= int(steps) <= 12:
         raise gr.Error("Steps must be between 4 and 12")
-    reality_preflight(REALITY_WORKFLOW)
-    compiled = compile_prompt(prompt, task_id=REALITY_WORKFLOW)
     started = time.perf_counter()
     model, clip, vae = get_models()
     if randomize_seed:
         seed = int.from_bytes(os.urandom(8), "little") & 0xFFFFFFFFFFFFFFFF
     seed = int(seed)
-    positive = encode_prompt(clip, compiled)
+    positive = encode_prompt(clip, prompt)
     negative = encode_prompt(clip, "")
     latent = {"samples": torch.zeros((1, 16, int(height) // 8, int(width) // 8), dtype=torch.float32)}
     sampled_model = run_node("ModelSamplingAuraFlow", model=model, shift=3.0)[0]

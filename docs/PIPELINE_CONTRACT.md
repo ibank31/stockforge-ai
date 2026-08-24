@@ -30,7 +30,7 @@ The initial runner is intentionally linear and deterministic. DAG scheduling, co
 A marketplace production pipeline should eventually resemble:
 
 1. opportunity/concept selection
-2. prompt construction
+2. prompt assembly
 3. generation
 4. image validation
 5. enhancement/upscale

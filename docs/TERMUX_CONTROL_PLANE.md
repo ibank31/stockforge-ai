@@ -2,13 +2,13 @@
 
 ## Tujuan
 
-Termux adalah **control plane** StockForge. Perangkat Android tidak mengunduh atau menjalankan checkpoint model. Termux menyimpan konfigurasi non-rahasia, membangun satu generation request yang dibatasi, membuat dan mengklaim job yang spesifik, lalu memanggil worker GPU remote melalui provider adapter. Worker remote melakukan inference; hasil yang berhasil di-ingest kembali ke proyek dan dikemas sebagai satu arsip unduhan. Default saat ini adalah profile `qwen-image`, karena itulah jalur ZeroGPU yang sudah memiliki bukti generation di repository. `z-image-turbo` tetap profile hemat yang harus dipasang hanya pada worker yang secara eksplisit menyatakannya didukung.
+Termux adalah **control plane** StockForge. Android tidak mengunduh atau menjalankan checkpoint model. Termux menyimpan konfigurasi non-rahasia, membangun satu generation request yang dibatasi, membuat dan mengklaim job spesifik, lalu memanggil worker GPU remote. Worker melakukan inference, hasil di-ingest kembali ke proyek, dan satu paket unduhan dibuat untuk setiap execution sukses.
 
-Paket unduhan memiliki status `review_ready`. Status ini berarti generation berhasil dipersist dan paket berisi gambar serta provenance ringkas. Status tersebut **bukan** jaminan penerimaan marketplace; compliance, hak, dan penilaian visual manusia tetap diperlukan sebelum submission.
+Control plane sekarang menerapkan kebijakan `standalone_single_subject_v1` pada setiap `generate`. Anda memberi **subject**, bukan scene atau prompt panjang. Sistem menambahkan aturan: satu subjek lengkap, latar putih bersih, tanpa scene, manusia, tangan, alat, perangkat, layar, angka, text, stamp/postmark, branding, atau props yang tidak diminta.
+
+Paket unduhan berstatus `review_ready`. Ini berarti generation berhasil dipersist dan memiliki provenance ringkas; status tersebut bukan jaminan penerimaan marketplace atau pengganti review hak/compliance manusia.
 
 ## Instalasi Android
-
-Jalankan sekali dari Termux. Control plane tidak membutuhkan Real-ESRGAN, BasicSR, atau checkpoint lokal; jangan memasang extra `upscale` pada Android. Paket `python-pillow` Termux dipakai sebagai dependency sistem untuk pemeriksaan gambar ringan.
 
 ```bash
 pkg update
@@ -26,87 +26,73 @@ source .venv/bin/activate
 python -m stockforge.cli init
 ```
 
-Setelah environment aktif, gunakan `python -m stockforge.cli` pada seluruh contoh berikut. Jangan menggunakan `uv run` atau `uv sync --extra dev` pada Termux ini, karena resolver dapat mencoba memasang extra native `upscale` yang tidak dipakai oleh control plane remote.
+Jangan menggunakan `uv sync --extra dev` pada Termux; control plane remote tidak membutuhkan checkpoint lokal, BasicSR, atau Real-ESRGAN.
 
 ## Konfigurasi worker GPU remote
 
-Jangan menaruh token API dalam file konfigurasi atau prompt. Simpan token sebagai environment variable Termux dan rujuk hanya **nama** variable tersebut.
-
 ```bash
 export STOCKFORGE_HF_TOKEN='nilai-token-anda'
-stockforge provider configure \
+python -m stockforge.cli provider configure \
   --id zerogpu \
-  --endpoint 'https://RUANG-ANDA.hf.space' \
+  --endpoint 'https://ibank31-stockforge-zerogpu.hf.space' \
   --profile qwen-image \
   --secret-env STOCKFORGE_HF_TOKEN \
   --timeout-seconds 300 \
   --score 100
+
+python -m stockforge.cli provider list
 ```
 
-Endpoint harus mengekspos endpoint Gradio `generate_remote` StockForge. Perintah berikut hanya mencatat URL, capability, profil model, timeout, dan nama environment variable token. Nilai token tidak ditulis ke `providers.json`.
-
-```bash
-stockforge provider list
-```
+Hanya nama environment variable yang disimpan pada konfigurasi; nilai token tidak pernah ditulis ke `providers.json` atau manifest.
 
 ## Membuat proyek dan preflight
 
 ```bash
-stockforge project create botanical-assets
-stockforge generate \
-  --project botanical-assets \
+python -m stockforge.cli project create standalone-portfolio
+
+python -m stockforge.cli generate \
+  --project standalone-portfolio \
   --provider zerogpu \
   --profile qwen-image \
-  --prompt 'single fictional vintage botanical postage stamp, tactile analog paper, clean white isolated background, no readable text' \
+  --prompt 'single translucent resin pebble with a soft internal sage-to-coral gradient and frosted microtexture' \
+  --seed 42 \
   --dry-run
 ```
 
-`--dry-run` tidak memanggil GPU. Outputnya menampilkan provider, model, resolusi 1024×1024, delapan langkah, seed, batch satu gambar, serta estimasi waktu GPU profile. Gunakan preflight sebelum setiap batch untuk memastikan profile dan provider cocok.
+`--dry-run` tidak memanggil GPU. Output harus menunjukkan profile, resolusi 1024×1024, delapan langkah, batch satu, satu kandidat, dan `asset_policy: standalone_single_subject_v1`.
 
 ## Menjalankan satu generation
 
+Hapus `--dry-run` hanya setelah preflight benar.
+
 ```bash
-stockforge generate \
-  --project botanical-assets \
+python -m stockforge.cli generate \
+  --project standalone-portfolio \
   --provider zerogpu \
   --profile qwen-image \
-  --prompt 'single fictional vintage botanical postage stamp, tactile analog paper, clean white isolated background, no readable text' \
+  --prompt 'single translucent resin pebble with a soft internal sage-to-coral gradient and frosted microtexture' \
   --seed 42
 ```
 
-Satu perintah membuat tepat satu job, mengklaim job tersebut berdasarkan ID sehingga tidak mengambil job lain dalam antrean, dan memakai execution identity yang dapat dipulihkan. Semua profile gratis saat ini dibatasi pada 1024×1024, delapan langkah, batch satu, dan satu kandidat per job untuk menghemat kuota provider; guidance mengikuti profile yang dipilih.
+Satu perintah membuat tepat satu job. Jangan menjalankan request kedua secara paralel ketika worker masih mengantre atau cold-start.
 
-Jika berhasil, keluaran JSON menyertakan `job_id`, `execution_id`, `artifact_ids`, dan `release_package.path`. Arsip berada secara default di:
-
-```text
-<project>/deliveries/stockforge-<execution-id>.zip
-```
-
-Salin atau ekstrak arsip ke penyimpanan unduhan Android:
+Jika sukses, output JSON memuat `release_package.path`. Ekstrak ke Download Android:
 
 ```bash
-unzip -o '<release_package.path>' -d ~/storage/downloads/stockforge-final
+unzip -o '<PATH_DARI_release_package.path>' \
+  -d ~/storage/downloads/stockforge-final
 ```
 
-Arsip hanya memuat `images/`, `manifest.json`, dan `README.txt`; log worker, cache, dan file intermediate tidak ikut.
+## Lane portofolio awal
 
-## Profil model
+| Lane | Contoh subject one-object |
+|---|---|
+| Material atmosphere | translucent resin pebble, waxed paper sculpture, iridescent glass droplet |
+| UI-adjacent 3D metaphor | abstract modular node, floating translucent toggle metaphor, soft geometric stack |
+| Playful conceptual object | single cloud-shaped pencil eraser, rubber duck made of folded paper, fruit-shaped cable organizer |
+| Retro-tech metaphor | non-branded retro cursor object, pixel-inspired ceramic token, floppy-disk-shaped resin icon |
+| Craft/natural motif | hand-cut paper leaf, textile knot, botanical silhouette without stamp/frame/text |
 
-| Profile | Peran | Batas default |
-|---|---|---|
-| `qwen-image` | Profile default untuk Space ZeroGPU yang sudah mempunyai bukti generation di repository. | 1024×1024, 8 langkah, batch 1, guidance 1. |
-| `z-image-turbo` | Profile hemat untuk worker yang dikonfigurasi mendukung model ini dan telah lulus benchmark internal. | 1024×1024, 8 langkah, batch 1, guidance 0. |
+## Profil model dan Kaggle
 
-Provider hanya akan dipilih jika metadata profile-nya menyatakan model tersebut didukung. Ini mencegah request Qwen terkirim ke worker yang hanya mendukung Z-Image-Turbo. Kaggle tetap fallback eksperimental sampai storage preflight dan benchmark generation berhasil.
-
-## Kontrol Kaggle
-
-Controller Kaggle sekarang memakai direktori `deploy/kaggle` yang dicek ke repository.
-
-```bash
-stockforge kaggle test
-stockforge kaggle doctor
-stockforge kaggle quota
-```
-
-`kaggle doctor` tidak memakai GPU dan membantu memeriksa CLI, autentikasi, metadata kernel, serta worker file. Jangan mendorong kernel atau menggunakan quota Kaggle sebelum doctor berhasil dan benchmark satu gambar tercatat.
+`qwen-image` adalah profile default untuk Space ZeroGPU. `z-image-turbo` hanya boleh dipakai pada worker yang menyatakan profile tersebut didukung. Kaggle tetap fallback eksperimental; lakukan `python -m stockforge.cli kaggle test`, `doctor`, dan `quota` sebelum memakai quota GPU.

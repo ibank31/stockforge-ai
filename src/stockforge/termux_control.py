@@ -16,6 +16,26 @@ class TermuxControlError(ValueError):
     """Raised when a Termux generation command is not safe to submit."""
 
 
+_STANDALONE_PROMPT_POLICY = (
+    "Create exactly one standalone commercial visual asset for flexible web, marketing, "
+    "product, editorial, and presentation use. The stated subject is the only primary object. "
+    "Show the complete object, centered and clearly separated, on a pure clean white studio background "
+    "with generous empty surrounding space. No scene, no environment, no collage, no frame, and no border. "
+    "No people, hands, fingers, faces, bodies, tools, measuring instruments, devices, phones, computers, "
+    "screens, cables, packaging, labels, numbers, letters, readable text, typography, logo, trademark, "
+    "watermark, stamp, postmark, dashboard, or unrelated props. Prioritize a clean silhouette, believable "
+    "material, restrained palette, and immediate thumbnail recognition."
+)
+
+
+def standalone_prompt(subject: str) -> str:
+    """Wrap a subject in the mandatory single-asset policy for direct Termux generation."""
+    cleaned = str(subject).strip()
+    if not cleaned:
+        raise TermuxControlError("A standalone asset subject is required.")
+    return f"{_STANDALONE_PROMPT_POLICY} Subject: {cleaned}"
+
+
 @dataclass(frozen=True, slots=True)
 class GenerationProfile:
     """A bounded, reproducible model profile for quota-constrained workers."""
@@ -43,7 +63,7 @@ class GenerationProfile:
 
     def request(self, prompt: str, *, seed: int | None = None) -> GenerationRequest:
         return GenerationRequest(
-            prompt=prompt,
+            prompt=standalone_prompt(prompt),
             width=self.width,
             height=self.height,
             steps=self.steps,
@@ -56,6 +76,7 @@ class GenerationProfile:
                 "profile": self.name,
                 "estimated_gpu_seconds": self.estimated_gpu_seconds,
                 "quota_policy": "single-candidate",
+                "asset_policy": "standalone_single_subject_v1",
             },
         )
 
