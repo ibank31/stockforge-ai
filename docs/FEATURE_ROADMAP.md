@@ -32,13 +32,13 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Generation | Remote Gradio durable adapter | DONE | `generate_remote` contract tests; live endpoint remains runtime-dependent |
 | Generation | Hugging Face ZeroGPU preview route | LIVE | Recorded Z-Image Turbo benchmark and selected preview workflow |
 | Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
-| Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow |
+| Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow; maturation plan now active |
 | Format | Native SVG deterministic route | IN PROGRESS | Single folder-upload and new eight-action file-flow micro-set presets pass local native-structure tests; micro-set is design-ready but has not been generated or commercially validated; human review and Adobe portal validation remain pending |
 | Format | PNG true-alpha route | BLOCKED | Conservative alpha normalizer exists; production route still needs anti-fringe, trim policy, and one portal validation |
 | Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
 | QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |
 | QA | Deduplication and similarity controls | DONE | Exact/perceptual pipeline tests |
-| QA | Semantic/anatomy/OCR/logo/watermark ensemble | IN PROGRESS | Provider boundary exists; production benchmark and policy gates remain |
+| QA | Semantic/anatomy/OCR/logo/watermark ensemble | IN PROGRESS | Provider boundary exists; production benchmark and policy gates remain; this is the main JPEG maturation gap |
 | Delivery | Review-ready package and Android export separation | LIVE | Package/export tests and handoff workflow |
 | Delivery | Adobe metadata XMP upload copy | LIVE | Portal field auto-population observed; final submit remains manual |
 | Delivery | Android preview export | DONE | Future successful generation exports one visual to `PREVIEW_TO_MANUS` when the mount exists |
@@ -47,17 +47,18 @@ market evidence → buyer job → AssetSpec → concept/prompt
 | Learning | Evaluation summary for future decisions | DONE | `portfolio evaluation-summary` reports reviewed records only; no automatic generation |
 | Architecture | Model registry and provider cache abstraction | IN PROGRESS | Contract exists in parts; unify model identity, cache, and delivery evidence |
 | Architecture | Provider health, failover, and recovery | IN PROGRESS | Durable identity exists; live failover and worker persistence remain |
-| Intelligence | Acceptance/sales feedback loop | PLANNED | Requires trustworthy marketplace outcome data |
+| Intelligence | Acceptance/sales feedback loop | PLANNED | Requires trustworthy marketplace outcome data; JPEG market research and metadata safeguards are now documented |
 | Runtime | Kaggle Qwen-Image end-to-end generation | BLOCKED | Previous experiment exhausted disk before image output |
 | Runtime | Live Qwen Image benchmark on ZeroGPU | PLANNED | Must be run once with controlled quota and recorded evidence |
 
 ## Active priorities
 
-1. Compare the existing folder-upload single-icon baseline against one controlled file-flow micro-set trial; require buyer-value gates above the internal threshold before any portal validation, then expand other SVG families only when each has a clear buyer job.
-2. Keep PNG alpha blocked until its producer and portal path are independently verified.
-3. Strengthen provider health, quota, retry, and failover without duplicating logical jobs.
-4. Add semantic/commercial QA benchmarks using labeled internal outputs, not generic leaderboards alone.
-5. Connect evidence logs to buyer-job scoring while keeping confidence and source URLs explicit.
+1. Mature JPEG before routine generation: use global buyer-job research, distinct scene hypotheses, prompt/layout gates, and one-candidate evidence rules.
+2. Benchmark the prepared Kaggle Real-ESRGAN finalizer at runtime and inspect source/master at 100% before treating it as production-ready.
+3. Strengthen provider-backed semantic/commercial QA for JPEG while preserving fail-closed behavior when no provider is configured.
+4. Expand reviewed JPEG lane/category mappings and platform-specific metadata without keyword stuffing or ranking guarantees.
+5. Keep SVG value-upgrade and PNG alpha work frozen until the JPEG maturation checkpoint is complete.
+6. Strengthen provider health, quota, retry, and failover without duplicating logical jobs.
 
 ## Safety gates
 
@@ -65,4 +66,4 @@ No generation route may be activated merely because a format extension exists. N
 
 ## Source of truth
 
-The current snapshot is [`STATUS.md`](STATUS.md). The system design is [`ARCHITECTURE.md`](ARCHITECTURE.md). The current niche/format decision is [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md). Historical milestones belong in [`CHANGELOG.md`](CHANGELOG.md).
+The current snapshot is [`STATUS.md`](STATUS.md). The system design is [`ARCHITECTURE.md`](ARCHITECTURE.md). The current niche/format decision is [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md). JPEG maturation is tracked in [`research/JPEG_MATURATION_PLAN_2026-08-24.md`](research/JPEG_MATURATION_PLAN_2026-08-24.md). Historical milestones belong in [`CHANGELOG.md`](CHANGELOG.md).

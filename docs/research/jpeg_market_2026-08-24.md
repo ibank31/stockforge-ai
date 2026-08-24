@@ -53,3 +53,10 @@ Sources:
 ## Corrections to source record
 
 The URL `https://helpx.adobe.com/stock/contributor/submit-your-content/submit-photos/technical-legal-requirements-for-photo-submissions.html` returned a 404 and is not an active source. The valid current URL is `https://helpx.adobe.com/stock/contributor/submit-your-content/submit-photos/technical-legal-requirements-photo-submission.html`.
+
+## Adobe category evidence
+
+Adobe’s active category guide explains that categories help customers filter content and recommends using the category that matches the content’s theme, context, mood, and intent rather than choosing the most popular option. The current list includes Business, The Environment, Food, Graphic Resources, Industry, Lifestyle, People, Science, Technology, and others. Adobe Sensei may suggest a category, but contributors are expected to review and correct it. StockForge should therefore keep automatic category mapping conservative and require explicit human review where a scene crosses categories or where the lane is not a clear match.
+
+Source:
+- [Adobe — Choose the right category for your content](https://helpx.adobe.com/stock/contributor/content-policies-guidelines/metadata/choose-right-category-content.html), accessed August 24, 2026.

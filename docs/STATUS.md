@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-24
 **Branch:** `main`
-**Latest verified commit:** `7114f00`
+**Latest verified commit:** `4e1b149`
 
 ## Current milestone
 
@@ -43,11 +43,12 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Current priorities
 
-1. Obtain human buyer review of the completed file-flow micro-set trial and compare it against the single folder-upload baseline; keep the micro-set at `REVIEW_REQUIRED` until the value and product-packaging decision is explicit.
-2. Keep JPEG scene generation behind the pre-GPU prompt, rights, layout, quota, and visual-quality gates.
-3. Build a local PNG alpha producer with true-alpha assertion, anti-fringe checks, canvas trimming, sRGB validation, and one controlled portal validation.
-4. Connect the new platform metadata relevance reports to evidence logs and buyer-job routing without turning engagement or earnings screenshots into sales forecasts.
-5. Keep model/provider registry, health, quota, and failover contracts explicit before adding more GPU providers.
+1. Mature the JPEG route before any routine generation: select one globally researched buyer job, strengthen the scene prompt/layout contract, and keep one-candidate evidence rules.
+2. Benchmark the prepared Kaggle Real-ESRGAN finalizer once the target runtime is available, comparing source/master at 100% for artifacts, texture, edges, color, dimensions, and sRGB.
+3. Strengthen semantic/commercial QA for JPEG; the no-provider path must remain review/blocking rather than pretending anatomy, realism, or buyer usefulness passed.
+4. Expand reviewed JPEG lane/category mappings conservatively and keep title/keyword generation visual-first, platform-specific, and anti-spam.
+5. Keep SVG value-upgrade and PNG alpha work frozen until the JPEG maturation checkpoint is complete; do not generate or upload them in this phase.
+6. Keep model/provider registry, health, quota, and failover contracts explicit before adding more GPU providers.
 
 ## Non-negotiable safety rules
 
@@ -60,7 +61,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **282 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. The folder-upload and micro-set trial evidence are durable. The micro-set structural route passed locally, but human buyer review and portal validation remain pending. Platform-specific metadata relevance safeguards validate limits, duplicate/spam patterns, category requirements, and visual-first keyword ordering without inventing demand. The working tree must be rechecked after this status synchronization.
+The current main branch has passed **282 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. JPEG market/Adobe research and the frozen SVG plan are durable. The JPEG route has a verified historical preview→finalizer→XMP workflow, but the actual target-runtime Real-ESRGAN benchmark and a provider-backed semantic QA pass remain incomplete. Platform-specific metadata relevance safeguards validate limits, duplicate/spam patterns, category requirements, and visual-first keyword ordering without inventing demand. The working tree must be rechecked after this status synchronization.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 
@@ -80,7 +81,8 @@ Every reviewed generation can be recorded in the project-local append-only ledge
 | Feature state and next work | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
 | Product/format decision | [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) |
 | SVG market research | [`research/SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) and [`research/svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) |
-| Global discoverability and value plan | [`research/svg_global_discoverability_notes_2026-08-24.md`](research/svg_global_discoverability_notes_2026-08-24.md) and [`research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md`](research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md) |
+| Global discoverability and SVG value plan | [`research/svg_global_discoverability_notes_2026-08-24.md`](research/svg_global_discoverability_notes_2026-08-24.md) and [`research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md`](research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md) |
+| JPEG maturation and market research | [`research/JPEG_MATURATION_PLAN_2026-08-24.md`](research/JPEG_MATURATION_PLAN_2026-08-24.md) and [`research/jpeg_market_2026-08-24.md`](research/jpeg_market_2026-08-24.md) |
 | Marketplace readiness | [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) |
 | Android operation | [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) |
 | History | [`CHANGELOG.md`](CHANGELOG.md) |
