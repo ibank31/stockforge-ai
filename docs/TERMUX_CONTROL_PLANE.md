@@ -210,9 +210,8 @@ python -m stockforge.cli kaggle-finalizer submit \
 
 # 4. Periksa status hingga selesai. Tidak memakai GPU tambahan.
 python -m stockforge.cli kaggle-finalizer status
-python -m stockforge.cli kaggle-finalizer logs
 
-# 5. Unduh output Kaggle ke proyek. Tidak memakai GPU.
+# 5. Unduh output Kaggle—termasuk log diagnostik bila job gagal—ke proyek. Tidak memakai GPU.
 python -m stockforge.cli kaggle-finalizer output \
   --project stock-assets
 

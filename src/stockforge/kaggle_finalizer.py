@@ -133,8 +133,8 @@ def remote(action: str, kernel: str | None = None, output_dir: str | Path | None
     """Read finalizer status/logs or download its latest output through Kaggle CLI."""
     metadata = load_metadata()
     target = kernel or str(metadata.get("id") or FINALIZER_KERNEL_DEFAULT)
-    if action not in {"status", "logs", "output"}:
-        raise KaggleWorkerError("Finalizer action must be status, logs, or output")
+    if action not in {"status", "output"}:
+        raise KaggleWorkerError("Finalizer action must be status or output")
     command: list[str] = ["kaggle", "kernels", action, target]
     if action == "output" and output_dir is not None:
         destination = Path(output_dir).expanduser().resolve()

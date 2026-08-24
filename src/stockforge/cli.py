@@ -874,12 +874,6 @@ def kaggle_finalizer_status(kernel: str | None = typer.Option(None, "--kernel", 
     raise typer.Exit(code=kaggle_finalizer_remote("status", kernel))
 
 
-@kaggle_finalizer_app.command("logs")
-def kaggle_finalizer_logs(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> None:
-    """Read finalizer kernel logs through the Kaggle API."""
-    raise typer.Exit(code=kaggle_finalizer_remote("logs", kernel))
-
-
 @kaggle_finalizer_app.command("output")
 def kaggle_finalizer_output(
     project: str = typer.Option(..., "--project", "-p"),
