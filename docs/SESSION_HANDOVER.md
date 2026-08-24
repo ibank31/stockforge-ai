@@ -34,7 +34,7 @@ Setiap GPU job harus memiliki buyer hypothesis dan tujuan yang jelas. Jangan mel
 
 ## Current engineering state
 
-Branch remote dan lokal hanya `main`. Folder-upload SVG lane changes are prepared on top of the rejected modular-ribbon evidence; the next commit must update this handover's exact hash. Current SVG trial evidence is stored under `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **273 passed, 1 skipped**. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
+Branch remote dan lokal hanya `main`. Folder-upload SVG lane changes are committed and pushed at `28e1c85` on `main`, on top of the rejected modular-ribbon evidence. Current SVG trial evidence is stored under `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **273 passed, 1 skipped**. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
 
 ## Output and learning contract
 
