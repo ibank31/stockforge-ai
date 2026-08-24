@@ -124,7 +124,7 @@ def configure_remote_provider(
     endpoint: str,
     secret_env: str | None = None,
     timeout_seconds: int = 300,
-    profile_names: tuple[str, ...] = ("qwen-image",),
+    profile_names: tuple[str, ...] = ("z-image-turbo",),
     score: float = 0.0,
 ) -> ProviderConfig:
     """Persist one remote worker configuration without writing its secret value."""

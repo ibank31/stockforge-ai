@@ -35,7 +35,7 @@ export STOCKFORGE_HF_TOKEN='nilai-token-anda'
 python -m stockforge.cli provider configure \
   --id zerogpu \
   --endpoint 'https://ibank31-stockforge-zerogpu.hf.space' \
-  --profile qwen-image \
+  --profile z-image-turbo \
   --secret-env STOCKFORGE_HF_TOKEN \
   --timeout-seconds 300 \
   --score 100
@@ -53,7 +53,7 @@ python -m stockforge.cli project create standalone-portfolio
 python -m stockforge.cli generate \
   --project standalone-portfolio \
   --provider zerogpu \
-  --profile qwen-image \
+  --profile z-image-turbo \
   --prompt 'single translucent resin pebble with a soft internal sage-to-coral gradient and frosted microtexture' \
   --seed 42 \
   --dry-run
@@ -69,7 +69,7 @@ Hapus `--dry-run` hanya setelah preflight benar.
 python -m stockforge.cli generate \
   --project standalone-portfolio \
   --provider zerogpu \
-  --profile qwen-image \
+  --profile z-image-turbo \
   --prompt 'single translucent resin pebble with a soft internal sage-to-coral gradient and frosted microtexture' \
   --seed 42
 ```
@@ -95,4 +95,4 @@ unzip -o '<PATH_DARI_release_package.path>' \
 
 ## Profil model dan Kaggle
 
-`qwen-image` adalah profile default untuk Space ZeroGPU. `z-image-turbo` hanya boleh dipakai pada worker yang menyatakan profile tersebut didukung. Kaggle tetap fallback eksperimental; lakukan `python -m stockforge.cli kaggle test`, `doctor`, dan `quota` sebelum memakai quota GPU.
+`z-image-turbo` adalah profile default untuk Space ZeroGPU karena runtime live memakai FP8 Z-Image Turbo yang telah diverifikasi. `qwen-image` tetap profile alternatif dan hanya boleh dipakai pada worker yang secara eksplisit menyatakan dukungannya. Kaggle tetap fallback eksperimental; lakukan `python -m stockforge.cli kaggle test`, `doctor`, dan `quota` sebelum memakai quota GPU.

@@ -109,7 +109,7 @@ def doctor() -> None:
 def provider_configure(
     provider_id: str = typer.Option(..., "--id"),
     endpoint: str = typer.Option(..., "--endpoint"),
-    profile: str = typer.Option("qwen-image", "--profile"),
+    profile: str = typer.Option("z-image-turbo", "--profile"),
     secret_env: str | None = typer.Option(None, "--secret-env"),
     timeout_seconds: int = typer.Option(300, "--timeout-seconds", min=1),
     score: float = typer.Option(0.0, "--score"),
@@ -152,7 +152,7 @@ def generate(
     project: str = typer.Option(..., "--project", "-p"),
     prompt: str = typer.Option(..., "--prompt"),
     provider: str | None = typer.Option(None, "--provider"),
-    profile: str = typer.Option("qwen-image", "--profile"),
+    profile: str = typer.Option("z-image-turbo", "--profile"),
     seed: int | None = typer.Option(None, "--seed", min=0),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
