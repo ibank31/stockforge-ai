@@ -92,9 +92,23 @@ def source_file(data: dict) -> Path:
     return staged
 
 
+def _ensure_basicsr_torchvision_compat() -> None:
+    """Provide the single legacy module BasicSR 1.4.2 expects on current TorchVision."""
+    import types
+    import torchvision.transforms.functional as functional
+
+    module_name = "torchvision.transforms.functional_tensor"
+    if module_name in sys.modules:
+        return
+    compatibility = types.ModuleType(module_name)
+    compatibility.rgb_to_grayscale = functional.rgb_to_grayscale
+    sys.modules[module_name] = compatibility
+
+
 def build_upscaler():
     try:
         import torch
+        _ensure_basicsr_torchvision_compat()
         from basicsr.archs.rrdbnet_arch import RRDBNet
         from realesrgan import RealESRGANer
     except ImportError:
@@ -112,6 +126,7 @@ def build_upscaler():
             ]
         )
         import torch
+        _ensure_basicsr_torchvision_compat()
         from basicsr.archs.rrdbnet_arch import RRDBNet
         from realesrgan import RealESRGANer
     weights = WEIGHTS_DIR / "RealESRGAN_x4plus.pth"
