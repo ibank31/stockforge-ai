@@ -50,20 +50,28 @@ def compile_asset_prompt(spec: AssetSpec) -> PromptPackage:
 
     palette = ", ".join(spec.palette) if spec.palette else "restrained commercially coherent color palette"
     levers = ", ".join(spec.originality_levers)
-    uses = ", ".join(spec.commercial_use_cases) if spec.commercial_use_cases else "commercial design use"
-    extras = " ".join(spec.extra_constraints)
+    mechanism = next(
+        (item.removeprefix("Visual mechanism:").strip() for item in spec.extra_constraints
+         if item.startswith("Visual mechanism:")),
+        "one clear visual mechanism that is legible at thumbnail size",
+    )
+    extras = " ".join(item for item in spec.extra_constraints if not item.startswith("Visual mechanism:"))
 
+    # Keep buyer/use-case language out of the image-facing instruction.  Terms
+    # such as developer, dashboard, packaging, or SaaS can pull a model toward
+    # literal devices, labels, or fake interfaces even when the asset contract
+    # forbids them.  Buyer context remains frozen in metadata and provenance.
     prompt = (
-        f"Premium commercial stock {spec.asset_type} asset for {spec.buyer_job}. "
-        f"Asset family: {spec.asset_family}. Micro-niche: {spec.micro_niche}. "
-        f"Primary subject: {spec.subject}. Visual language: {spec.visual_language}. "
-        f"Medium/material: {spec.medium}. Composition: {spec.composition}. "
-        f"Negative space: {spec.negative_space}. {isolation}. {background}. "
-        f"Palette: {palette}. Branding policy: {spec.branding_policy}. {text}. "
-        f"Differentiate through: {levers}. "
-        f"Commercial use cases: {uses}. "
-        "Prioritize practical design utility, thumbnail readability, believable material behavior, "
-        "clean geometry, professional art direction, and marketplace-ready finish. "
+        f"Premium commercial stock {spec.asset_type} asset. "
+        f"Primary subject, one complete object or fused controlled system only: {spec.subject}. "
+        f"Visual mechanism: {mechanism}. "
+        f"Material behavior: {spec.medium}; surfaces must be physically believable and cleanly resolved. "
+        f"Composition contract: {spec.composition}. Negative-space contract: {spec.negative_space}. "
+        f"{isolation}. {background}. Palette: {palette}. {text}. "
+        f"Distinctness levers: {levers}. Visual language: {spec.visual_language}. "
+        "Prioritize a complete readable silhouette, clean geometry, credible material behavior, "
+        "controlled shadow, professional art direction, and a thumbnail-readable focal idea. "
+        "Do not add a literal device, interface, business prop, product label, or decorative element unless it is the approved primary subject. "
         "Do not turn the asset into a generic decorative image. "
         f"{extras}"
     ).strip()

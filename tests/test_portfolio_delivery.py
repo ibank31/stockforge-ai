@@ -71,6 +71,7 @@ def test_portfolio_release_package_includes_metadata_worksheet_and_review_checkl
 
     with zipfile.ZipFile(package.path) as archive:
         assert sorted(archive.namelist()) == [
+            "PORTFOLIO_REVIEW.json",
             "README.txt",
             "REVIEW_CHECKLIST.md",
             "TECHNICAL_READINESS.json",
@@ -84,6 +85,7 @@ def test_portfolio_release_package_includes_metadata_worksheet_and_review_checkl
         worksheet = archive.read("portfolio_metadata_draft.csv").decode("utf-8")
         checklist = archive.read("REVIEW_CHECKLIST.md").decode("utf-8")
         technical = json.loads(archive.read("TECHNICAL_READINESS.json"))
+        portfolio_review = json.loads(archive.read("PORTFOLIO_REVIEW.json"))
 
     assert manifest["portfolio"]["brief_id"] == "ai_governance--review-gate"
     assert metadata["created_using_generative_ai"] is True
@@ -92,6 +94,8 @@ def test_portfolio_release_package_includes_metadata_worksheet_and_review_checkl
     assert "submission" in checklist
     assert technical[0]["artifact_id"] == artifact.id
     assert technical[0]["report"]["ready"] is False
+    assert portfolio_review[0]["artifact_id"] == artifact.id
+    assert portfolio_review[0]["review"]["decision"] in {"REVIEW", "REJECT"}
 
 
 def test_fiber_arch_uses_reviewed_concept_metadata_without_unseen_materials():

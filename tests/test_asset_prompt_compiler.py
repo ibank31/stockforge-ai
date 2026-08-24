@@ -39,11 +39,13 @@ def test_compiler_returns_canonical_prompt_package_with_commercial_fields():
     package = compile_asset_prompt(_spec())
 
     assert isinstance(package, PromptPackage)
-    assert "landing page hero and product explainer" in package.prompt
+    assert "landing page hero and product explainer" not in package.prompt
+    assert "website hero, product explainer, presentation" not in package.prompt
     assert "single translucent resin pebble" in package.prompt
     assert "frosted translucent resin" in package.prompt
+    assert "Material behavior" in package.prompt
+    assert "Composition contract" in package.prompt
     assert "single standalone object" in package.prompt
-    assert "website hero, product explainer, presentation" in package.prompt
     assert "restrained tactile material" in package.prompt
     assert package.legal_constraints
     assert "product explainer" in package.metadata_hints

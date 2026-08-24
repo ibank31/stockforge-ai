@@ -143,6 +143,38 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
             "copy space",
         ),
     },
+    ("ai_governance", "review-gate"): {
+        "title": "Translucent Review Gate With Stacked Tokens",
+        "keywords": ("translucent gate", "stacked tokens", "clear acrylic", "matte ceramic", "layered object", "isometric view", "minimal sculpture", "copy space", "white background", "ink blue", "muted amber"),
+    },
+    ("playful_surreal_product_metaphors", "zipper-cloud"): {
+        "title": "Soft Paper Cloud With Unbranded Zipper",
+        "keywords": ("paper cloud", "soft cloud", "unbranded zipper", "folded paper", "surreal object", "minimal sculpture", "warm cream", "cobalt blue", "coral accent", "isolated object", "white background", "copy space"),
+    },
+    ("synthetic_media_trust", "source-capsule"): {
+        "title": "Transparent Source Capsule in Paper Cradle",
+        "keywords": ("transparent capsule", "paper cradle", "clear acrylic", "ink blue", "matte ceramic", "layered object", "editorial illustration", "isolated object", "white background", "copy space", "minimal sculpture"),
+    },
+    ("returns_recommerce", "return-arc"): {
+        "title": "Reusable Parcel Form With Circular Return Arc",
+        "keywords": ("reusable parcel", "circular arc", "kraft paper", "recycled plastic", "matte ceramic", "isometric object", "unlabelled package", "isolated object", "white background", "copy space", "minimal 3d"),
+    },
+    ("digital_accessibility", "input-hub"): {
+        "title": "Modular Access Hub With Three Clear Paths",
+        "keywords": ("modular hub", "clear paths", "matte ceramic", "clear acrylic", "paper element", "abstract object", "centered composition", "isolated object", "white background", "copy space", "minimal illustration"),
+    },
+    ("human_made_collage_elements", "woven-loop"): {
+        "title": "Woven Fibre Loop With Paper Tab",
+        "keywords": ("woven fibre", "paper tab", "woven loop", "uncoated paper", "handmade texture", "cut paper element", "editorial craft", "isolated object", "white background", "minimal collage", "copy space"),
+    },
+    ("circular_packaging_systems", "refill-capsule"): {
+        "title": "Blank Refill Capsule With Reusable Outer Form",
+        "keywords": ("refill capsule", "reusable form", "blank container", "recycled kraft", "matte ceramic", "clear recycled plastic", "isometric object", "isolated object", "white background", "copy space", "minimal 3d"),
+    },
+    ("software_supply_chain_integrity", "component-chain"): {
+        "title": "Modular Component Chain With Transparent Path",
+        "keywords": ("modular components", "transparent path", "graphite ceramic", "clear acrylic", "matte paper", "connected modules", "horizontal object", "isolated object", "white background", "copy space", "minimal 3d"),
+    },
 }
 
 
@@ -298,7 +330,7 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         keywords=("synthetic media trust", "media literacy", "content provenance", "AI verification", "responsible sharing", "manipulated media", "source transparency", "digital trust", "content disclosure", "misinformation literacy", "editorial header", "trust and safety", "education campaign", "technology policy", "responsible AI"),
         test_cap=15,
         concepts=(
-            _concept("source-capsule", "a transparent source capsule nested inside a paper frame", "traceable origin without a seal", "centered object, three-quarter view", "clean copy space right", PALETTES["trust"], ("provenance metaphor", "transparent containment", "no news imagery")),
+            _concept("source-capsule", "a transparent source capsule held by one folded paper cradle", "traceable origin without a seal", "object positioned on the left third with a full silhouette", "at least one third of the right side is clean white copy space", PALETTES["trust"], ("transparent containment", "paper cradle", "no news imagery")),
             _concept("evidence-frames", "three nested translucent frames with one clear connection thread", "layered verification", "vertical object with open center", "clean copy space left", PALETTES["trust"], ("verification sequence", "open structure", "editorial clarity")),
             _concept("clarity-lens", "a simple clear lens revealing a clean abstract layer beneath", "careful checking before sharing", "front-facing isolated object", "clean copy space above", PALETTES["trust"], ("review action", "no faces", "calm visual language")),
             _concept("share-gate", "a paper path passing through a transparent choice gate", "responsible sharing decision", "horizontal low-profile object", "clean copy space on the upper right", PALETTES["trust"], ("decision point", "source path", "no fake interface")),
@@ -350,7 +382,7 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         keywords=("digital accessibility", "inclusive design", "web accessibility", "accessible technology", "adaptable interface", "assistive technology concept", "equitable access", "keyboard navigation", "inclusive digital experience", "accessible product design", "flexible input mode", "information hierarchy", "public service website", "accessibility SaaS", "web design training"),
         test_cap=15,
         concepts=(
-            _concept("input-hub", "a central adaptable hub with three non-device input paths", "multiple ways to participate", "centered modular object", "clean copy space right", PALETTES["access"], ("adaptable input", "no device screen", "respectful abstraction")),
+            _concept("input-hub", "a central adaptable hub with three clear raised paths", "multiple ways to participate without a literal interface", "object positioned on the left third with a full silhouette", "at least one third of the right side is clean white copy space", PALETTES["access"], ("adaptable paths", "raised material contrast", "respectful abstraction")),
             _concept("clear-route", "a clear raised path passing through a simple open arch", "findable navigation", "horizontal low-profile object", "clean copy space above", PALETTES["access"], ("navigation clarity", "spatial metaphor", "no icon shorthand")),
             _concept("contrast-layers", "three tactile layers with distinct material separation", "readable hierarchy and distinction", "front-facing stack", "clean copy space left", PALETTES["access"], ("clear hierarchy", "material contrast", "no compliance claim")),
             _concept("open-portal", "a quiet open portal with adjustable side elements", "access that adapts to different needs", "vertical centered object", "clean copy space right", PALETTES["access"], ("adaptability", "open participation", "no token symbols")),
@@ -402,8 +434,8 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
         keywords=("collage element", "cut paper illustration", "handmade graphic", "editorial texture", "torn paper", "imperfect craft", "scrapbook style", "zine aesthetic", "isolated cut paper", "editorial asset", "tactile collage shape", "social media element", "editorial design", "small business social", "brand toolkit"),
         test_cap=10,
         concepts=(
+            _concept("woven-loop", "a woven fibre loop with a single paper tab", "connection element for layouts", "object positioned on the left third with a full silhouette", "at least one third of the right side is clean white copy space", PALETTES["collage"], ("woven material", "reusable component", "clean silhouette")),
             _concept("torn-arch", "one torn uncoated-paper arch with clear fibrous edge", "friendly editorial frame without border", "centered isolated component", "clean white surrounding space", PALETTES["collage"], ("edge specificity", "component utility", "no handwriting")),
-            _concept("woven-loop", "a woven fibre loop with a single paper tab", "connection element for layouts", "centered isolated component", "clean white surrounding space", PALETTES["collage"], ("woven material", "reusable component", "clean silhouette")),
             _concept("paper-burst", "one irregular paper burst with no lettering or symbol", "visual emphasis element", "centered isolated component", "clean white surrounding space", PALETTES["collage"], ("torn edge", "controlled irregularity", "no logo-like form")),
             _concept("folded-ribbon", "a folded paper ribbon bridge without text", "directional layout connector", "horizontal isolated component", "clean white surrounding space", PALETTES["collage"], ("paper fold", "directional composition", "non-verbal accent")),
             _concept("material-badge", "a blank material badge made of paper and woven fibre", "spotlight component without a symbol", "centered isolated component", "clean white surrounding space", PALETTES["collage"], ("blank badge", "material contrast", "no icon or seal")),

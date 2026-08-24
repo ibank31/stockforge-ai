@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from stockforge.cli import app
 from stockforge.portfolio import PortfolioError, build_brief, lane_for, list_lanes, plan_batch
+from stockforge.portfolio_io import preview_preflight
 
 
 runner = CliRunner()
@@ -28,6 +29,15 @@ def test_all_priority_lanes_build_a_safe_seed_brief():
         assert brief.metadata.marketplace_transaction_data == "DATA NOT PUBLICLY AVAILABLE"
         assert "readable text" in brief.prompt_package.negative_prompt
         assert "human review" in " ".join(brief.asset_spec.quality_gates).lower()
+
+
+def test_all_priority_lane_seed_briefs_pass_the_local_pre_gpu_contract():
+    for lane in list_lanes():
+        brief = build_brief(lane.key, lane.concepts[0].key).to_dict()
+        report = preview_preflight({"lane": brief["lane"], "briefs": [brief]}, brief)
+
+        assert report["gpu_eligible"] is True, (lane.key, report["blockers"])
+        assert all(item["status"] == "pass" for item in report["checks"])
 
 
 def test_plan_rejects_count_larger_than_registered_distinct_concepts():

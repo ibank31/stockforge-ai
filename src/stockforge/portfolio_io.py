@@ -15,6 +15,24 @@ class PortfolioPlanError(ValueError):
 # Lane-specific terms whose positive use makes an isolated asset too likely to
 # resemble a real device or a familiar branded/product silhouette.  The checks
 # are intentionally local and deterministic: a failed gate costs no GPU time.
+_UNIVERSAL_BLOCKED_SUBJECT_TERMS = (
+    "dashboard",
+    "screen",
+    "user interface",
+    "phone",
+    "computer",
+    "keyboard",
+    "code text",
+    "barcode",
+    "logo",
+    "trademark",
+    "watermark",
+    "stamp",
+    "postmark",
+    "seal",
+)
+
+
 _LANE_BLOCKED_SUBJECT_TERMS: dict[str, tuple[str, ...]] = {
     "retro_tech_developer_metaphors": (
         "audio cassette",
@@ -147,18 +165,23 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
     })
 
     lower_subject = subject.casefold()
-    forbidden = [
+    universal_forbidden = [
+        term for term in _UNIVERSAL_BLOCKED_SUBJECT_TERMS
+        if re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", lower_subject)
+    ]
+    lane_forbidden = [
         term for term in _LANE_BLOCKED_SUBJECT_TERMS.get(lane_key, ())
         if re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", lower_subject)
     ]
+    forbidden = tuple(dict.fromkeys((*universal_forbidden, *lane_forbidden)))
     if forbidden:
         blockers.append(
-            "subject conflicts with the lane's no-real-device rule: " + ", ".join(forbidden)
+            "subject contains blocked risk terms: " + ", ".join(forbidden)
         )
     checks.append({
-        "name": "lane-subject-risk",
+        "name": "subject-risk",
         "status": "pass" if not forbidden else "fail",
-        "detail": "No blocked real-device silhouette term is present." if not forbidden else ", ".join(forbidden),
+        "detail": "No universal or lane-specific blocked subject term is present." if not forbidden else ", ".join(forbidden),
     })
 
     lower_composition = f"{composition} {negative_space}".casefold()
@@ -186,10 +209,27 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
         "detail": "No ambiguous two-object holding relation." if not ambiguous_holding else "Use inside, contained, or cutout/opening instead of holding.",
     })
 
+    mechanism = str(concept.get("visual_mechanism", "")).strip()
     if not subject:
         blockers.append("subject is required")
-    if not str(concept.get("visual_mechanism", "")).strip():
-        blockers.append("visual mechanism is required")
+    if len(mechanism.split()) < 3:
+        blockers.append("visual mechanism must state a thumbnail-readable relationship or outcome")
+    checks.append({
+        "name": "visual-mechanism",
+        "status": "pass" if len(mechanism.split()) >= 3 else "fail",
+        "detail": "Visual mechanism is explicit." if len(mechanism.split()) >= 3 else "Mechanism is missing or too generic.",
+    })
+
+    metadata = brief.get("metadata")
+    fallback_title = f"{lane.get('name', lane_key)}: {subject}"
+    reviewed_metadata = isinstance(metadata, dict) and metadata.get("title") != fallback_title
+    if not reviewed_metadata:
+        blockers.append("brief requires reviewed visual-first metadata instead of a generated lane-and-subject title")
+    checks.append({
+        "name": "visual-metadata",
+        "status": "pass" if reviewed_metadata else "fail",
+        "detail": "Title is independently reviewed and visual-first." if reviewed_metadata else "Fallback metadata cannot reach GPU.",
+    })
 
     return {
         "version": 1,

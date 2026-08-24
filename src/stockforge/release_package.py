@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .adobe_gate import inspect_image
 from .database import Database
+from .portfolio_review import evaluate_portfolio_candidate
 
 
 class ReleasePackageError(RuntimeError):
@@ -82,7 +83,9 @@ def build_release_package(
     if portfolio is not None and not isinstance(portfolio, dict):
         raise ReleasePackageError("Execution portfolio context is invalid.")
     technical_reports = []
+    portfolio_reviews = []
     if portfolio is not None:
+        project_artifacts = database.list_artifacts(project_id)
         for artifact, source in artifacts:
             report = inspect_image(source)
             technical_reports.append({
@@ -90,13 +93,24 @@ def build_release_package(
                 "file": package_file(artifact, source),
                 "report": report.to_dict(),
             })
+            portfolio_reviews.append({
+                "artifact_id": artifact.id,
+                "file": package_file(artifact, source),
+                "review": evaluate_portfolio_candidate(
+                    source,
+                    project_root=root,
+                    current_artifact_id=artifact.id,
+                    project_artifacts=project_artifacts,
+                ).to_dict(),
+            })
     manifest = {
-        "schema_version": 3,
+        "schema_version": 4,
         "status": "review_ready",
         "notice": "This package contains generated outputs that passed execution persistence. It is not a marketplace acceptance guarantee; human compliance review remains required.",
         "execution": execution.to_dict(),
         "portfolio": portfolio,
         "technical_reports": technical_reports,
+        "portfolio_reviews": portfolio_reviews,
         "artifacts": [
             {
                 "id": artifact.id,
@@ -147,6 +161,10 @@ def build_release_package(
                     "TECHNICAL_READINESS.json",
                     json.dumps(technical_reports, indent=2, sort_keys=True) + "\n",
                 )
+                archive.writestr(
+                    "PORTFOLIO_REVIEW.json",
+                    json.dumps(portfolio_reviews, indent=2, sort_keys=True) + "\n",
+                )
                 master_finalization = execution.parameters.get("master_finalization")
                 if master_finalization is not None:
                     archive.writestr(
@@ -166,6 +184,7 @@ def build_release_package(
                 checklist_lines.extend(f"- [ ] {str(item)}" for item in checklist)
                 checklist_lines.extend([
                     "- [ ] Review TECHNICAL_READINESS.json; finalize the file if the technical gate is REVIEW or FAIL.",
+                    "- [ ] Review PORTFOLIO_REVIEW.json; a REJECT decision stops this concept, while REVIEW still requires semantic and commercial inspection.",
                     "- [ ] Verify final file format, dimensions, colour profile, and any marketplace-specific requirements.",
                     "- [ ] Verify this image is not a seed/crop/color-only duplicate of another selected portfolio asset.",
                     "- [ ] Record any rejection reason before generating a replacement.",
