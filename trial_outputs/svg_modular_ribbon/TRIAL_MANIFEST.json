@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "trial_type": "local_native_svg",
+  "asset_type": "native_object",
+  "lane_key": "native_vector_elements",
+  "concept_key": "modular-ribbon",
+  "execution_id": "91f5b18c-543d-4b01-9cc5-6632c4bc1087",
+  "artifact_id": "369f2852-27a1-4cac-9089-cdfb33847816",
+  "remote_gpu_called": false,
+  "kaggle_called": false,
+  "provider_called": false,
+  "format": "svg",
+  "technical_status": "PASS",
+  "commercial_status": "REVIEW_REQUIRED",
+  "human_evaluation_recorded": false,
+  "output": "native_vector_elements--modular-ribbon.svg",
+  "preview": "native_vector_elements--modular-ribbon_preview.webp",
+  "svg_sha256": "a7d37cf8b07d6677a6d353da312e98abc92aca2bf3683077f090f858656cfec8",
+  "preview_sha256": "b30508d1db0447dca415f458c9234a761894048b1f752dc2442ea0a9521f7763",
+  "decision_note": "The technical gate passed. Human review is still required for distinctness, visual utility, pale-module contrast, artboard use, and marketplace suitability before upload or learning-led engine changes."
+}

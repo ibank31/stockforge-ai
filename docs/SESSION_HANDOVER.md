@@ -34,7 +34,7 @@ Setiap GPU job harus memiliki buyer hypothesis dan tujuan yang jelas. Jangan mel
 
 ## Current engineering state
 
-Branch remote dan lokal hanya `main`. Commit aktif terakhir adalah `94b586d` plus native-vector work in progress. Test suite terakhir sebelum native-vector change: **263 passed, 1 skipped**; rerun after the current change is required before commit. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
+Branch remote dan lokal hanya `main`. Commit aktif terakhir adalah `deffddf`; current SVG trial evidence is stored under `trial_outputs/svg_modular_ribbon/`. Test suite terakhir: **272 passed, 1 skipped**. Remote Gradio adapter memakai endpoint `generate_remote` dengan durable `stockforge_job_id`; ZeroGPU deployment memakai `remote_api.py` sebagai entrypoint programmatic.
 
 ## Output and learning contract
 
@@ -44,4 +44,4 @@ After a human review, record the result with `portfolio evaluate`. The append-on
 
 ## Next safe work
 
-The asset-type selector and readiness report are complete. Native SVG now has modular-ribbon and technical-badge deterministic presets, but the broader object/icon family and portal validation remain incomplete. Continue with deterministic format-specific builders and tests. Do not generate now. Do not activate the PNG production route before alpha pipeline and portal validation are complete. A future generation requires a documented hypothesis, one controlled candidate, full review, and an evaluation record before it can inform any future engine change.
+The asset-type selector, readiness report, trial-readiness guard, and native SVG pattern/object presets are complete. One local modular-ribbon SVG trial was built and passed structural checks; its technical status is PASS but its commercial status remains REVIEW_REQUIRED. Evidence is in `trial_outputs/svg_modular_ribbon/`. Do not mark it upload-ready or add a learning score until human review is recorded. PNG remains blocked until an alpha-capable path and portal validation are complete. A future remote generation requires a documented hypothesis, one controlled candidate, full review, and an evaluation record before it can inform any future engine change.
