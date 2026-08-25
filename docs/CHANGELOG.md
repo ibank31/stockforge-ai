@@ -1,5 +1,16 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Rotor-armature trial completed end-to-end
+
+### LIVE — review package created; visual review pending
+
+- The authorized `technical_mechanical_component_illustrations--rotor-armature` trial completed with exit code `0` after the WebP preview context-routing correction.
+- Job: `8ae398e9-1c15-4ab6-9959-6405cb95bfc3`; execution: `d3c2c121-77c7-590c-97b1-3da15ff26dcc`; artifact: `d419cdcf-da49-49f8-98c4-5ef4c8415920`.
+- The review package was created at the Termux project delivery path with status `review_ready`.
+- Android export succeeded to `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/technical-mechanical-component-illustrations-rotor-armature__preview.webp`.
+- This confirms the remote generation, durable execution persistence, WebP preview handling, release packaging, and preview export path. It does not confirm visual quality, buyer fit, final JPEG technical readiness, marketplace acceptance, or sales potential.
+- No upscale, Kaggle run, approved upload copy, Adobe upload, or submission was performed.
+
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
 ## 2026-08-25 — Second controlled trial exposed incomplete WebP context routing
