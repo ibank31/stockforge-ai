@@ -201,3 +201,14 @@ User KEEP recorded for execution `a20f3fca-9903-5fc3-afee-fc97fe6a2317`; evaluat
 Exactly one private Kaggle RealESRGAN_x4plus finalizer was submitted for this preview as kernel version 13 and completed. Imported master execution: `d27d373c-33d1-4785-8505-5e1462530148`; artifact: `a37740f9-c5a0-4629-8749-6689240362d3`. Full-resolution 9-tile audit completed. Master is JPEG 4096×4096, 16.777216 MP, RGB, assumed sRGB, quality 95, 4:4:4, decodable; no obvious text/logo/watermark/human/tool/IP issue observed. Minor note: painterly/stipple texture and a blank heart-shaped collar tag.
 
 User requested finalization through ready-upload status. Bundle: `/home/ubuntu/stockforge-live/workspace/projects/stock-assets/adobe-upload-bundles/adobe-20260825T120521Z-d27d373c`; category 1 Animals; status `manual_portal_upload_prepared_not_submitted`. Only JPEG upload-copy was uploaded to temporary storage for Termux retrieval; Adobe submission remains manual and no marketplace outcome is known.
+
+
+## Vector native route recommendation — approval pending
+
+User asked how to obtain a vector format that is easier to commercialize through StockForge. Current route: local native SVG construction only; do not trace JPEG or ask the raster model to imitate vector style. Adobe accepts AI/EPS/SVG and requires editable/original content, organized groups/layers, RGB, artboard offset `(0,0)`, max 45 MB, and appropriate size. Adobe's generative-AI vector guidance requires reworking output for editability and limits acceptable submissions to original editable scenes/subjects, simple editable icon shapes, or seamless patterns.
+
+StockForge has verified deterministic SVG presets `folder_upload`, `file_flow_micro_set`, `technical_badge`, `geometric_pattern`, and `modular_ribbon`. The active route validates native XML geometry and forbids raster/script/text embeds. It uses no GPU, Kaggle, or credential. It is suitable for utility icons, icon sheets, and simple repeat patterns, not general AI-to-SVG illustration.
+
+Recommended first vector hypothesis: `document_review_delivery_micro_set`, eight coherent utility symbols for intake, organize, review, approve, archive, restore, sync, and share. This is a buyer-job hypothesis for UI, documentation, marketing, presentations, and animation—not a sales promise. Adobe supply proxies on 2026-08-25 were 604,515 for `utility icons`, 384,106 for `file management icon`, 25,018 for `"tech icons"`, 86,903 for `"icon pack"`, and 6,279,918 for `seamless geometric pattern`; these counts do not establish demand, approval, ranking, conversion, revenue, or sales.
+
+No vector lane, batch, SVG, preview, or upload was created. Await user approval before implementing one buyer-specific preset and dry-run. Research report: `docs/research/VECTOR_NATIVE_WORKFLOW_RECOMMENDATION_2026-08-25.md`; evidence: `docs/research/VECTOR_ROUTE_EVIDENCE_2026-08-25.md`.
