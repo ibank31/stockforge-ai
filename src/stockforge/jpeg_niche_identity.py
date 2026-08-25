@@ -141,6 +141,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("axial construction", "material relationship", "recognizable component silhouette", "purposeful edge hierarchy"),
         prohibited_shorthand=("CAD screenshot", "blueprint", "dimension line", "model number", "manufacturer mark", "logo", "brand-specific housing", "certification symbol", "spark plug", "motorcycle engine", "tool cluster"),
     ),
+    "technical_cable_entry_fitting_illustrations": JpegNicheIdentity(
+        lane_key="technical_cable_entry_fitting_illustrations",
+        signature="compact non-rotating cable-entry fitting where threaded body, cap nut, seal insert, and short cable stub form one readable product silhouette",
+        lighting="controlled neutral studio light with graphite, muted brass, steel, dark elastomer, and one restrained cable-color separation; no glossy catalog glare",
+        framing="centered three-quarter isolated fitting study with complete silhouette, visible entry axis, and enough margin for thumbnail recognition",
+        context="clean white technical illustration studio; generic enclosure-installation language without an enclosure scene, tools, labels, or specification sheet",
+        distinctness=("threaded cable-entry silhouette", "seal-and-strain-relief hierarchy", "non-rotating connector identity", "compact cable stub cue"),
+        prohibited_shorthand=("CAD screenshot", "blueprint", "dimension line", "model number", "manufacturer mark", "logo", "brand-specific housing", "readable label", "numeric marking", "IP rating", "UL mark", "IEC mark", "ATEX badge", "IECEx badge", "certification seal", "pressure gauge", "rotor", "armature", "winding", "coil", "gear", "spark plug", "motor housing", "axial shaft", "wheel", "valve handle", "plumbing scene", "wrench", "drill", "human hand", "hardware pile"),
+    ),
 }
 
 
