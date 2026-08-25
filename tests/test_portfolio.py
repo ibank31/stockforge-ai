@@ -14,14 +14,14 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 21
+    assert len(lanes) == 22
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
 
         assert brief.asset_spec.market_opportunity_id == lane.opportunity_id
         assert brief.asset_spec.background_policy in {"white", "transparent"}
-        if lane.key in {"native_vector_utility_sets", "native_vector_workflow_sets"}:
+        if lane.key in {"native_vector_utility_sets", "native_vector_workflow_sets", "native_vector_workflow_diagram_kits"}:
             assert brief.asset_spec.isolation_policy == "cluster"
         else:
             assert brief.asset_spec.isolation_policy == "isolated"
@@ -201,7 +201,7 @@ def test_priority_lane_seeds_only_send_verified_raster_products_to_gpu():
         if lane.key == "human_made_collage_elements":
             assert report["gpu_eligible"] is False
             assert any("alpha producer" in blocker for blocker in report["blockers"])
-        elif lane.key in {"native_vector_elements", "native_vector_patterns", "native_vector_utility_sets", "native_vector_workflow_sets"}:
+        elif lane.key in {"native_vector_elements", "native_vector_patterns", "native_vector_utility_sets", "native_vector_workflow_sets", "native_vector_workflow_diagram_kits"}:
             assert report["gpu_eligible"] is False
             assert any("local native-vector" in blocker for blocker in report["blockers"])
         else:

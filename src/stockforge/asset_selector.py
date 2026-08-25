@@ -61,9 +61,9 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         readiness="READY_FOR_TRIAL",
         candidate_niches=("document review and delivery workflow icon set", "software onboarding action icons", "documentation workflow icons"),
         blockers=("visual buyer-fit and set coherence still require human review", "portal upload validation is still pending"),
-        next_step="Use the document-review-delivery micro-set concept, build one local icon sheet, inspect workflow semantics and SVG structure, then consider one manual upload validation.",
-        recommended_lane_keys=("native_vector_workflow_sets",),
-        recommended_concept_keys=("document-review-delivery-micro-set",),
+        next_step="Use the monochrome document-lifecycle diagram-kit concept, run local geometry QA and visual review, then consider one manual upload validation only after the redesigned trial is accepted.",
+        recommended_lane_keys=("native_vector_workflow_diagram_kits",),
+        recommended_concept_keys=("document-lifecycle-diagram-kit",),
     ),
     AssetTypePolicy(
         key="native_object",

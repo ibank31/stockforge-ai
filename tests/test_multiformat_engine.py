@@ -6,7 +6,7 @@ import pytest
 from stockforge.adobe_png_gate import inspect_transparent_png
 from stockforge.asset_spec import AssetSpec, AssetSpecError
 from stockforge.format_router import FormatRoutingError, require_production_route, route_asset_spec
-from stockforge.native_vector import build_document_review_delivery_micro_set_svg, build_file_flow_micro_set_svg, build_folder_upload_svg, build_modular_ribbon_svg, inspect_native_svg
+from stockforge.native_vector import build_document_lifecycle_diagram_kit_svg, build_document_review_delivery_micro_set_svg, build_file_flow_micro_set_svg, build_folder_upload_svg, build_modular_ribbon_svg, inspect_native_svg
 
 
 def _spec(**overrides: object) -> AssetSpec:
@@ -195,6 +195,38 @@ def test_document_review_delivery_micro_set_builds_workflow_specific_svg(tmp_pat
     assert "<text" not in svg
     assert "<image" not in svg
     assert inspect_native_svg(tmp_path / "document-review-delivery-micro-set.svg").ready is True
+
+
+def test_document_lifecycle_diagram_kit_enforces_safe_zones_and_separated_connectors(tmp_path: Path) -> None:
+    spec = _spec(
+        asset_id="document-lifecycle-diagram-kit",
+        asset_type="icon_set",
+        product_kind="native_vector",
+        delivery_format="svg",
+        isolation_policy="cluster",
+        layout_mode="square",
+        background_policy="transparent",
+        medium="editable monochrome SVG document lifecycle diagram components",
+        subject="six editable document lifecycle modules for intake, organize, review, approve, archive, and deliver",
+        palette=("#111827", "#F8FAFC", "#64748B"),
+        tags=("native_vector_workflow_diagram_kits", "document-lifecycle-diagram-kit", "icon_set"),
+    )
+
+    report = build_document_lifecycle_diagram_kit_svg(spec, tmp_path / "document-lifecycle-diagram-kit.svg")
+
+    assert report.ready is True
+    assert report.native_paths_only is True
+    assert report.transparent_background is True
+    assert any(name == "geometry_clearance" and "Six card safe zones" in detail for name, detail in report.checks)
+    svg = (tmp_path / "document-lifecycle-diagram-kit.svg").read_text(encoding="utf-8")
+    assert "native-vector-document-lifecycle-diagram-kit-v1" in svg
+    assert 'data-geometry-qa="workflow-safe-v1"' in svg
+    assert svg.count('id="workflow-card-') == 12
+    assert svg.count('id="workflow-connectors"') == 1
+    assert "circular" not in svg.casefold()
+    assert "<text" not in svg
+    assert "<image" not in svg
+    assert inspect_native_svg(tmp_path / "document-lifecycle-diagram-kit.svg").ready is True
 
 
 def test_native_vector_rejects_scene_contract() -> None:

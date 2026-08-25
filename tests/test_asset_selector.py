@@ -47,12 +47,12 @@ def test_icon_set_recommendation_resolves_to_clustered_svg_brief() -> None:
     lane = lane_for(policy.recommended_lane_keys[0])
     brief = build_brief(lane.key, policy.recommended_concept_keys[0])
 
-    assert brief.concept.key == "document-review-delivery-micro-set"
+    assert brief.concept.key == "document-lifecycle-diagram-kit"
     assert brief.asset_spec.asset_type == "icon_set"
     assert brief.asset_spec.product_kind == "native_vector"
     assert brief.asset_spec.delivery_format == "svg"
     assert brief.asset_spec.isolation_policy == "cluster"
-    assert "document review" in brief.asset_spec.buyer_job
+    assert "document lifecycle" in brief.asset_spec.buyer_job
     assert brief.metadata.human_review_required is True
 
 
