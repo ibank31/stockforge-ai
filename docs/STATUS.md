@@ -132,3 +132,12 @@ The pet-enrichment preview was rejected by the user because the generated image 
 A new materially distinct illustration lane is now registered as `sewing_craft_tool_clipart` with brief `sewing_craft_tool_clipart--beginner-kit`. The concept is a compact controlled cluster of unbranded sewing/textile-craft tools—fabric scissors, thread spool, measuring tape, thimble, pincushion, and a seam-ripper-like tool—in cheerful hand-drawn clip-art style with bold outline and bright flat color. The user's Adobe screenshot is treated only as an anecdotal directional signal, not verified sales evidence.
 
 The one-candidate batch is `sewing_craft_tool_clipart-20260825T073904Z-69b50234`. Dry-run reports `gpu_eligible=true`, seven checks pass, zero blockers, square JPEG route, white background, isolated controlled cluster, and no provider call. Targeted tests pass 18/18. The exact brief remains ready for one user-approved preview only; no generation, finalizer, upload-copy, or submission has occurred.
+
+
+## Sewing/craft clip-art master ready for review
+
+The user accepted the sewing/craft preview as keep. The learning summary records one accepted review for `sewing_craft_tool_clipart` with overall average 4.5/5, while correctly reporting `INSUFFICIENT_EVIDENCE` because one review and no marketplace outcome cannot establish demand.
+
+One private Kaggle finalizer completed for the exact accepted preview. Master artifact `45a2279b-b72e-46c0-b53c-8c381f2fa50c` is registered from master execution `4d85705f-987d-4cc0-a51a-d3c02ca0d730`; the master is `masters/563e9a47-3dbc-440b-93da-bc7d6535bb75-master.jpg`. Adobe deterministic technical check returned `ready=true`: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, 1,164,873 bytes.
+
+Visual review confirms the accepted compact sewing/textile-craft clip-art cluster and no visible Adobe logo, email UI, dollar amount, human, face, readable text, watermark, or copyrighted character. The master is technically ready and retained for manual review. Upload-copy preparation remains a separate explicit gate; no upload or submission has occurred.

@@ -538,3 +538,12 @@ The pet-enrichment preview was rejected because an unintended dog silhouette vio
 A new `sewing_craft_tool_clipart` lane with concept `beginner-kit` was added. It targets a compact controlled cluster of unbranded sewing/textile-craft tools in cheerful hand-drawn clip-art style: fabric scissors, thread spool, measuring tape, thimble, pincushion, and a seam-ripper-like tool. Adobe branding, email UI, dollar amounts, human hands/faces, generic hardware, power tools, gears, spark plugs, readable text, trademarks, and copyrighted characters are prohibited.
 
 Research is stored in `docs/research/NEW_TOOL_CRAFT_CLIPART_NICHE_RESEARCH_2026-08-25.md`. The one-candidate batch is `sewing_craft_tool_clipart-20260825T073904Z-69b50234`; its pre-GPU gate reports `gpu_eligible=true`, seven checks pass, zero blockers, and no provider call. Targeted tests pass 18/18. User approval is required before exactly one preview.
+
+
+## 2026-08-25 — Sewing/craft clip-art master completed
+
+The user accepted the sewing/craft clip-art preview as keep. One evaluation record was added with overall score 4.5/5; the learning summary remains `INSUFFICIENT_EVIDENCE` because the sample contains one review and no marketplace outcome.
+
+Exactly one private Kaggle finalizer completed for the accepted preview. Master artifact `45a2279b-b72e-46c0-b53c-8c381f2fa50c` was registered from master execution `4d85705f-987d-4cc0-a51a-d3c02ca0d730`. Adobe deterministic technical gate returned `ready=true`: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, and 1,164,873 bytes. Full audit is stored in `docs/research/SEWING_CRAFT_MASTER_AUDIT_2026-08-25.md`.
+
+No upload-copy, Adobe upload, or submission occurred. Upload preparation remains a separate explicit user gate.

@@ -119,3 +119,14 @@ The next evidence-bound hypothesis is `sewing_craft_tool_clipart--beginner-kit`.
 Research is recorded in `docs/research/NEW_TOOL_CRAFT_CLIPART_NICHE_RESEARCH_2026-08-25.md`. Adobe exact-query supply proxies were 9,838 for `sewing tools clipart illustration`, 154,438 for `craft tools illustration set`, 33,877 for `home repair tools cartoon illustration`, and 238,612 for `hand tools illustration set`. These are supply proxies only. The user screenshot is not sales proof.
 
 Batch `sewing_craft_tool_clipart-20260825T073904Z-69b50234` is created. Dry-run reports `gpu_eligible=true`, seven checks pass, zero blockers, remote raster route, square JPEG, white background, isolated controlled cluster, and no provider call. Targeted tests pass 18/18. The next allowed action is one preview only after explicit user approval of the exact brief.
+
+
+## Sewing/craft clip-art master completed
+
+The user accepted the sewing/craft preview as keep. Learning summary records one accepted review for `sewing_craft_tool_clipart` with overall average 4.5/5 and recommendation `INSUFFICIENT_EVIDENCE`; no marketplace outcome is claimed.
+
+Exactly one private Kaggle finalizer completed for the accepted preview. Master artifact `45a2279b-b72e-46c0-b53c-8c381f2fa50c` was registered from master execution `4d85705f-987d-4cc0-a51a-d3c02ca0d730`, with source artifact `563e9a47-3dbc-440b-93da-bc7d6535bb75` and source execution `e5976fb6-0490-556e-94c7-5b4b62bb3c90`. Master path: `masters/563e9a47-3dbc-440b-93da-bc7d6535bb75-master.jpg`. Finalizer was Kaggle private kernel `iqbalteguh/stockforge-finalizer`, using `RealESRGAN_x4plus` at 4×.
+
+Adobe deterministic gate returned `ready=true`: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, 1,164,873 bytes. Visual review confirms the compact sewing/textile-craft cluster and no visible Adobe logo, email UI, dollar amount, human, face, readable text, watermark, or copyrighted character. Audit report: `docs/research/SEWING_CRAFT_MASTER_AUDIT_2026-08-25.md`.
+
+The master is retained for manual review. Do not prepare upload-copy or submit to Adobe without explicit user approval for that separate action. Do not treat the earlier user-reported Adobe upload as acceptance or sales evidence.
