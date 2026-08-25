@@ -206,6 +206,53 @@ def test_portfolio_snapshot_freezes_selected_brief_context(tmp_path: Path, monke
     assert snapshot["human_review_required"] is True
 
 
+def test_portfolio_release_package_keeps_webp_preview_review_only(tmp_path: Path):
+    from PIL import Image
+
+    project_id = str(uuid4())
+    project_root = tmp_path / "project"
+    source_path = project_root / "artifacts" / "preview.webp"
+    source_path.parent.mkdir(parents=True)
+    Image.new("RGB", (1024, 1024), (25, 50, 90)).save(source_path, format="WEBP")
+
+    database = Database(tmp_path / "stockforge.db")
+    database.initialize()
+    database.create_project(project_id, "demo", project_root)
+    artifact = Artifact.from_file(project_id, "artifacts/preview.webp", project_root, kind="generated-image")
+    database.create_artifact(artifact)
+    portfolio = _portfolio_context()
+    portfolio["asset_spec"] = {"delivery_format": "jpeg"}
+    portfolio["format_route"] = {"delivery_format": "jpeg"}
+    execution = GenerationExecutionRecord.create(
+        project_id,
+        state="succeeded",
+        operation="image.generate",
+        provider_id="zerogpu",
+        artifact_ids=(artifact.id,),
+        parameters={"portfolio": portfolio},
+    )
+    database.create_execution(execution)
+
+    package = build_release_package(
+        database=database,
+        project_id=project_id,
+        project_root=project_root,
+        execution_id=execution.id,
+    )
+
+    with zipfile.ZipFile(package.path) as archive:
+        technical = json.loads(archive.read("TECHNICAL_READINESS.json"))
+        names = set(archive.namelist())
+
+    report = technical[0]["report"]
+    assert f"images/{artifact.id}.webp" in names
+    assert report["ready"] is False
+    assert report["status"] == "REVIEW"
+    assert report["preview_only"] is True
+    assert report["delivery_format"] == "jpeg"
+    assert "final delivery file" in report["reason"]
+
+
 class _FourXUpscaler:
     provider_id = "test-upscaler"
     model_id = "test-x4"

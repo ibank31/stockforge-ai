@@ -20,8 +20,12 @@ class ReleasePackageError(RuntimeError):
     """Raised when an execution cannot safely be released for download."""
 
 
-def _technical_report_for(source: Path) -> dict[str, object]:
-    """Choose a local technical gate from the delivered format, not its origin."""
+def _technical_report_for(
+    source: Path,
+    *,
+    intended_delivery_format: str | None = None,
+) -> dict[str, object]:
+    """Choose a gate from the final format while preserving provider previews."""
     suffix = source.suffix.casefold()
     if suffix in {".jpg", ".jpeg"}:
         return inspect_image(source).to_dict()
@@ -29,7 +33,35 @@ def _technical_report_for(source: Path) -> dict[str, object]:
         return inspect_transparent_png(source).to_dict()
     if suffix == ".svg":
         return inspect_native_svg(source).to_dict()
+    if suffix == ".webp" and intended_delivery_format in {"jpeg", "png"}:
+        return {
+            "ready": False,
+            "status": "REVIEW",
+            "format": "webp",
+            "delivery_format": intended_delivery_format,
+            "preview_only": True,
+            "reason": (
+                "Provider preview is WebP; it is review-only and must not be treated "
+                "as the final delivery file. Finalize the selected preview into the "
+                f"contracted {intended_delivery_format.upper()} delivery format before upload."
+            ),
+        }
     raise ReleasePackageError(f"No technical gate is registered for delivery format: {source.suffix or 'unknown'}")
+
+
+def _portfolio_delivery_format(portfolio: dict[str, object]) -> str | None:
+    """Read the immutable intended delivery format from a portfolio snapshot."""
+    asset_spec = portfolio.get("asset_spec")
+    if isinstance(asset_spec, dict):
+        value = asset_spec.get("delivery_format")
+        if isinstance(value, str) and value.strip():
+            return value.strip().casefold()
+    route = portfolio.get("format_route")
+    if isinstance(route, dict):
+        value = route.get("delivery_format")
+        if isinstance(value, str) and value.strip():
+            return value.strip().casefold()
+    return None
 
 
 def _portfolio_review_for(*, source: Path, project_root: Path, current_artifact_id: str, project_artifacts: list[object]) -> dict[str, object]:
@@ -117,7 +149,10 @@ def build_release_package(
     if portfolio is not None:
         project_artifacts = database.list_artifacts(project_id)
         for artifact, source in artifacts:
-            report = _technical_report_for(source)
+            report = _technical_report_for(
+                source,
+                intended_delivery_format=_portfolio_delivery_format(portfolio),
+            )
             technical_reports.append({
                 "artifact_id": artifact.id,
                 "file": package_file(artifact, source),

@@ -2,6 +2,16 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-25 — Controlled rotor-armature trial reached inference; packaging fix required
+
+### REVIEW_REQUIRED — no release package returned
+
+- The single authorized `technical_mechanical_component_illustrations--rotor-armature` trial passed plan discovery, brief inspection, dry-run, and the repaired remote endpoint boundary.
+- Hugging Face container logs show the prompt reached the worker, all three model files loaded, and sampling completed 8/8 steps. This proves the worker proceeded through inference for this request; it does not prove commercial quality or marketplace readiness.
+- Termux then stopped locally while building the review package: the provider returned a `.webp` preview, but the release builder attempted to select a final-delivery technical gate from that preview suffix and raised `No technical gate is registered for delivery format: .webp`.
+- No release package was returned to the user, no retry was performed, and no upscale, Kaggle run, XMP export, upload, or submission occurred.
+- A local fix now preserves WebP as a review-only preview and defers the contracted JPEG gate to finalization. The regression and full suite pass: **291 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**. The fix is prepared locally but is not yet deployed or used for another GPU request.
+
 ## 2026-08-25 — ZeroGPU endpoint patch deployed and verified
 
 ### LIVE — active Space registration fixed
