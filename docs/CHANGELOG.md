@@ -514,3 +514,16 @@ If a feature is implemented but not verified, record it as `IN PROGRESS`, not `D
 - Moved the default Adobe technical bundle destination to the project-local `adobe-upload-bundles/`; only the approved JPEG visual is copied to Android.
 - Fixed active documentation links and command terminology so `portfolio learning-summary` is the current niche-learning command and legacy `evaluation-summary` is not the primary continuation path.
 - No generation, finalizer, upload, or marketplace submission was triggered by this consolidation.
+
+
+## 2026-08-25 — New illustration JPEG niche prepared
+
+### READY — evidence-bound pet-enrichment object trial, no generation
+
+- Recorded the user's report that the seed-starting tray was uploaded manually to Adobe; no acceptance, moderation, download, revenue, or sales evidence was inferred.
+- Added the materially distinct `pet_enrichment_object_illustrations` lane with one registered concept, `puzzle-feeder`, and `test_cap=1`.
+- Added the supported `product_illustration` asset family and regression coverage for the new identity, prompt contract, metadata, and square isolated JPEG route.
+- Evidence is recorded in `docs/research/NEW_ILLUSTRATION_NICHE_RESEARCH_2026-08-25.md`; ASPCA/RSPCA buyer-job guidance and Adobe exact-query supply proxy support a controlled test, not a sales claim.
+- Full suite after the lane addition: **299 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+- Created one portfolio batch: `pet_enrichment_object_illustrations-20260825T064838Z-60a86ece`; pre-GPU gate reports `gpu_eligible=true`, seven checks pass, zero blockers, remote route `huggingface-zerogpu`, and one square 1024×1024 preview.
+- No provider call, generation, retry, finalizer, upload-copy, Adobe upload, or submission has occurred. Explicit user approval is required before one preview of the exact brief.

@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 15
+    assert len(lanes) == 16
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -62,6 +62,24 @@ def test_seed_starting_tray_lane_is_one_candidate_isolated_jpeg_with_horticultur
     assert "propagation tray" in brief.asset_spec.identity_signature
     assert "brand seed packet" in brief.prompt_package.negative_prompt
     assert brief.metadata.title == "Indoor Seed-Starting Tray with Emerging Seedlings"
+    assert brief.metadata.created_using_generative_ai is True
+    assert brief.metadata.human_review_required is True
+
+
+def test_pet_enrichment_lane_is_one_candidate_isolated_jpeg_with_pet_care_identity():
+    brief = build_brief("pet_enrichment_object_illustrations", "puzzle-feeder")
+
+    assert brief.brief_id == "pet_enrichment_object_illustrations--puzzle-feeder"
+    assert brief.asset_spec.delivery_format == "jpeg"
+    assert brief.asset_spec.product_kind == "raster_illustration"
+    assert brief.asset_spec.layout_mode == "square"
+    assert brief.asset_spec.background_policy == "white"
+    assert brief.asset_spec.isolation_policy == "isolated"
+    assert "puzzle feeder" in brief.asset_spec.micro_niche
+    assert "treat-puzzle" in brief.asset_spec.identity_signature
+    assert "animal face" in brief.prompt_package.negative_prompt
+    assert "readable text" in brief.prompt_package.negative_prompt
+    assert brief.metadata.title == "Interactive Treat Puzzle Feeder for Pet Enrichment"
     assert brief.metadata.created_using_generative_ai is True
     assert brief.metadata.human_review_required is True
 

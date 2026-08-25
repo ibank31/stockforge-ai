@@ -39,7 +39,7 @@ def test_each_jpeg_lane_has_unique_identity_in_prompt_and_negative_prompt():
         assert spec.identity_signature in brief.prompt_package.prompt
         assert "niche-specific shorthand:" in brief.prompt_package.negative_prompt
 
-    assert len(jpeg_lanes) == 11
+    assert len(jpeg_lanes) == 12
     assert len(set(signatures)) == len(signatures)
 
 

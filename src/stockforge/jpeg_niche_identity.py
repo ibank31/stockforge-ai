@@ -114,6 +114,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("cell-tray geometry", "seedling-stage clarity", "moisture-and-compost material relationship", "propagation-specific silhouette"),
         prohibited_shorthand=("brand seed packet", "readable label", "named cultivar", "garden-tool pile", "greenhouse clutter", "certification badge", "eco claim", "botanical pattern", "generic plant pot"),
     ),
+    "pet_enrichment_object_illustrations": JpegNicheIdentity(
+        lane_key="pet_enrichment_object_illustrations",
+        signature="single recognizable interactive treat-puzzle feeder with rounded compartments and a clear enrichment function",
+        lighting="soft warm daylight with restrained material highlights and no glossy pet-product ad glare",
+        framing="three-quarter isolated product study with a complete silhouette and clear interaction surface",
+        context="quiet warm-white editorial studio using muted teal, coral, cream, and natural-rubber accents",
+        distinctness=("treat-puzzle geometry", "foraging and enrichment cue", "single-object pet-care silhouette", "rounded compartment hierarchy"),
+        prohibited_shorthand=("brand logo", "product label", "readable text", "animal face", "animal body", "medical claim", "safety certification", "sharp exposed parts", "loose hazardous components", "generic toy pile"),
+    ),
     "technical_mechanical_component_illustrations": JpegNicheIdentity(
         lane_key="technical_mechanical_component_illustrations",
         signature="precision-friendly conceptual mechanical component with readable axial geometry and one clear functional silhouette",

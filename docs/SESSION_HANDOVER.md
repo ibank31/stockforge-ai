@@ -95,3 +95,14 @@ The user gave `keep` for the single `seed_starting_tray_propagation--seed-tray` 
 One private Kaggle finalizer job completed on `iqbalteguh/stockforge-finalizer` using `RealESRGAN_x4plus` at 4×. Master artifact `20032d2f-3ef2-43a2-a103-cb2707fe10ed`, master execution `83709936-fae9-4643-bd07-bb332b3ba455`, file `masters/b8c4cc8b-6002-4c09-b3d5-1dd7725f3ca9-master.jpg`. The Adobe deterministic gate passes: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, 1,451,346 bytes, quality 95, and 4:4:4 subsampling.
 
 The master was reviewed in the whole-image view and all nine ordered overlapping 100% tiles. No readable text, label, logo, watermark, person, hand, seed packet, severe crop loss, major halo, or duplicated structural geometry was observed. Minor bright specks on gray plastic and somewhat smooth AI-upscaled leaf texture remain marketplace-review notes. The master remains `review_ready` / `visual_review_required`. No upload-copy, Android export, Adobe upload, or submission has occurred. Next action requires explicit approval before `portfolio prepare-adobe-upload`; if approved, metadata and category must still be reviewed truthfully and the portal submission remains manual.
+
+
+## Next illustration lane — preview approval pending
+
+The user reports that the seed-starting tray was manually uploaded to Adobe Stock; no moderation, acceptance, download, revenue, or sales evidence was provided. A materially distinct illustration hypothesis is now prepared: `pet_enrichment_object_illustrations--puzzle-feeder`. The selected object is one square isolated JPEG illustration of an interactive treat-puzzle feeder board with rounded compartments and generic treat pieces, without animals, people, brands, labels, or text.
+
+Evidence is recorded in `docs/research/NEW_ILLUSTRATION_NICHE_RESEARCH_2026-08-25.md`. Buyer-job evidence comes from ASPCA and RSPCA pet-enrichment guidance; Adobe exact-query proxy is 339 results for `pet enrichment toy illustration`, compared with much denser sourdough/fermentation queries. This is evidence for a controlled test, not a sales or demand claim.
+
+Lane registration and the `product_illustration` asset family are complete. Targeted tests passed 17/17; full suite passed 299 passed, 1 skipped, and 49 non-blocking Pillow deprecation warnings. Portfolio batch `pet_enrichment_object_illustrations-20260825T064838Z-60a86ece` was created. Dry-run reports `gpu_eligible=true`, seven checks pass, zero blockers, remote provider route `huggingface-zerogpu`, profile `z-image-turbo`, square 1024×1024 preview, and estimated 55 GPU seconds. No provider call or generation has occurred.
+
+Next allowed action is exactly one preview only after the user explicitly approves this exact brief. Do not run live generation, retries, batches, finalizer, upload preparation, or submission before that approval.

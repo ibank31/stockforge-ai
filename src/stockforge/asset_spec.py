@@ -8,7 +8,7 @@ from typing import Any
 
 ASSET_FAMILIES = frozenset({
     "material_atmosphere", "ui_3d_metaphor", "surreal_concept",
-    "retro_tech_nostalgia", "craft_element", "organic_motif", "technical_component_illustration", "generic",
+    "retro_tech_nostalgia", "craft_element", "organic_motif", "technical_component_illustration", "product_illustration", "generic",
 })
 ASSET_TYPES = frozenset({"photo", "illustration", "ephemera", "3d", "icon", "icon_set", "texture", "graphic"})
 BACKGROUND_POLICIES = frozenset({"white", "transparent", "neutral", "scene"})

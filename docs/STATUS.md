@@ -111,3 +111,15 @@ The user gave `keep` for the single seed-starting preview and noted that one cel
 One private Kaggle finalizer job completed for the selected preview using `RealESRGAN_x4plus` at 4×. The master is `masters/b8c4cc8b-6002-4c09-b3d5-1dd7725f3ca9-master.jpg`, artifact `20032d2f-3ef2-43a2-a103-cb2707fe10ed`, execution `83709936-fae9-4643-bd07-bb332b3ba455`. Adobe deterministic checks pass: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, 1,451,346 bytes, quality 95, and 4:4:4 subsampling.
 
 The master was inspected in all nine ordered overlapping full-resolution tiles. No readable text, label, logo, watermark, person, hand, seed packet, severe crop loss, major halo, or duplicated structural geometry was observed. Minor bright specks on gray plastic and somewhat smooth AI-upscaled leaf texture remain human review notes. The master remains `review_ready` / `visual_review_required`; no upload-copy, Android export, Adobe upload, or marketplace submission has occurred. A separate explicit approval is required before `portfolio prepare-adobe-upload`.
+
+
+## Adobe manual upload note — user-reported
+
+The user reports that the seed-starting tray JPEG was uploaded to Adobe Stock manually after the `READY_UPLOAD_ADOBE` package was prepared. No portal screenshot, acceptance result, moderation result, download, revenue, or sales evidence was provided, so the event is recorded only as a user-reported manual upload and does not promote the asset beyond the existing evidence state. The next experiment must use a materially different illustration JPEG niche and must not reuse the seed-starting or rotor-armature lanes as a pseudo-retry.
+
+
+## Next illustration hypothesis — pet-enrichment object
+
+A new materially distinct illustration lane is registered as `pet_enrichment_object_illustrations` with brief `pet_enrichment_object_illustrations--puzzle-feeder`. It is based on ASPCA/RSPCA enrichment guidance and a narrow Adobe exact-query supply proxy. The selected asset is one square isolated JPEG illustration of an interactive treat-puzzle feeder board with rounded compartments and generic treat pieces, without animals, people, brands, labels, or text.
+
+The repository supports this lane through the new `product_illustration` asset family. Targeted tests passed 17/17 and the full suite passed 299 tests, 1 skipped, with 49 non-blocking Pillow deprecation warnings. One portfolio batch was created at `portfolio-plans/pet_enrichment_object_illustrations-20260825T064838Z-60a86ece.json`. The dry-run pre-GPU gate passed with `gpu_eligible=true`, seven checks pass, zero blockers, square 1024×1024 preview route, and estimated 55 GPU seconds. No provider call or generation has occurred. User approval is required for exactly one preview of this exact brief.
