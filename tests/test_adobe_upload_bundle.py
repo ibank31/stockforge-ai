@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 from PIL import Image, ImageCms
 
-from stockforge.adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
+from stockforge.adobe_upload_bundle import AdobeUploadBundleError, _category_for, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
 from stockforge.artifact import Artifact
 from stockforge.database import Database
 from stockforge.execution_record import GenerationExecutionRecord
@@ -65,6 +65,10 @@ def _registered_master(tmp_path: Path):
         execution_id=execution.id,
     ))
     return database, project_id, project_root, execution, artifact
+
+
+def test_technical_component_lane_gets_automatic_industry_category() -> None:
+    assert _category_for({"lane_key": "technical_mechanical_component_illustrations"}, None) == 10
 
 
 def test_prepare_adobe_upload_bundle_creates_official_csv_and_manifest(tmp_path: Path):

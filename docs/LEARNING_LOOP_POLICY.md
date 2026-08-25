@@ -62,3 +62,12 @@ No automatic conclusion has been drawn about sales demand. The next decision sho
 > **StockForge decides what to make; the user judges what is visibly useful; the ledger records why; the next decision cites the record.**
 
 This policy complements the append-only generation evaluation ledger, the evidence-bound niche shortlist, the format gates, and the manual marketplace submission contract.
+
+
+## 7. Upload-readiness boundary
+
+For a reviewed finalized master, StockForge owns the deterministic preparation of the upload data: safe filename, title, visual-first keywords, Adobe category mapping where the lane is unambiguous, CSV, embedded XMP, technical-gate report, and a per-asset checklist. The user does not need to invent or type these fields.
+
+The user-facing manual boundary begins after the bundle is prepared. The user must inspect the final JPEG and checklist, verify the generative-AI declaration and any portal-provided category suggestion, complete Adobe terms and CAPTCHA personally, and explicitly decide whether to submit. StockForge never claims that a technical pass guarantees moderation acceptance or sales, and never submits a portal form automatically.
+
+For the current technical mechanical component lane, the automatic category is Adobe category 10 — Industry because Adobe defines Industry around work and manufacturing content. This is a reviewed lane mapping, not a general rule for every mechanical-looking image. If the final visible subject or buyer job changes materially, the mapping must be re-audited rather than reused silently.

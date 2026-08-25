@@ -24,6 +24,7 @@ class AdobeUploadBundleError(RuntimeError):
 ADOBE_CATEGORY_BY_LANE = {
     "tactile_material_atmospheres": 8,  # Graphic resources
     "playful_surreal_product_metaphors": 8,  # Graphic resources
+    "technical_mechanical_component_illustrations": 10,  # Industry
 }
 
 CSV_HEADER = ("Filename", "Title", "Keywords", "Category", "Releases")

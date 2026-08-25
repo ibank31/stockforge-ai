@@ -1,5 +1,14 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Automatic category and upload metadata path
+
+### DONE — engine-owned metadata, manual-only portal boundary
+
+- Added automatic Adobe category mapping for `technical_mechanical_component_illustrations` to category **10 — Industry**, based on Adobe's published category definition for work and manufacturing content.
+- Confirmed the existing bundle builder automatically generates a safe JPEG filename, title, visual-first keyword list, official CSV, embedded XMP metadata, technical-gate report, generative-AI declaration marker, and manual checklist.
+- The upload bundle remains explicitly non-submitting: it requires a reviewed master and explicit approval to prepare files, but it never clicks submit, completes CAPTCHA, or silently asserts rights/marketplace acceptance.
+- Full suite after the mapping: **296 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+
 ## 2026-08-25 — Rotor-armature master finalized and audited
 
 ### DONE — Kaggle 4× finalizer, JPEG gate, and full-resolution review
