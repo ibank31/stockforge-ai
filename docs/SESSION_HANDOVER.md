@@ -221,3 +221,12 @@ User requested a more valuable native vector than previous generic work. Impleme
 Added native builder preset `document_review_delivery_micro_set`, local tag routing, selector recommendation, Adobe category mapping 8 (Graphic Resources), and regression coverage. Batch `native_vector_workflow_sets-20260825T130127Z-411eacf7` and brief `native_vector_workflow_sets--document-review-delivery-micro-set` were created project-local. The remote `portfolio generate --dry-run` command correctly failed closed because this lane is local-native-vector; the correct readiness report passed with `trial_allowed=true`, `provider_call_allowed=false`, and `single_candidate_only=true`. No SVG file was built, no provider/GPU call was made, and no upload occurred.
 
 Targeted tests: 42 passed. Full suite: 304 passed, 1 skipped, 49 existing Pillow deprecation warnings. Compileall and whitespace check passed. Awaiting explicit user approval for exactly one local SVG build and visual review. No marketplace outcome may be inferred.
+
+
+## SVG two-trial diagnosis — redesign required before trial three
+
+User feedback: both prior SVG trials were visually unsatisfying; many elements collide with lines. Trial 1 `file-flow-micro-set` is native and clean but generic (broad primitives, equal grid, no workflow rhythm). Trial 2 `document-review-delivery-micro-set` is more buyer-specific but cramped: circular containers leave insufficient usable space, thick strokes/arrowheads merge with outer rings or document corners, and the set remains eight independent primitives rather than a composed visual system.
+
+Root cause: current QA validates XML/native elements and forbidden embeds but not stroke envelopes, inner-boundary clearance, pairwise overlap, min gaps, or thumbnail readability. The current transparent SVG preview on a dark viewer backdrop also makes pale fills and edge collisions harder to evaluate. The next redesign must be substantive: editable workflow diagram kit, larger safe cells, lighter stroke hierarchy, fewer decorative rings, intentional connectors/rhythm, explicit geometry clearance checks, overlap checks, and white/checkerboard renders. No third trial has been built or authorized.
+
+Research diagnosis: `docs/research/DOCUMENT_WORKFLOW_VECTOR_TRIAL_DIAGNOSIS_2026-08-25.md`.
