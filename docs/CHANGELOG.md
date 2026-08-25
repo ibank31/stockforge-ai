@@ -1,5 +1,14 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Historical evaluation path normalization
+
+### FIXED — Android absolute plan paths
+
+- Diagnosed the second ledger failure: Termux had reached the new historical fallback, but the old execution stored an Android absolute `plan_file`, which the project-local loader correctly rejected.
+- Added fail-closed normalization that keeps only the JSON basename and reloads it inside the current project's `portfolio-plans/` directory. No absolute directory is trusted.
+- Added regression coverage for Android-style absolute paths and invalid plan references.
+- Full suite after the fix: **295 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+
 ## 2026-08-25 — Evidence-to-learning operating contract
 
 ### DONE — user-simple feedback, engine-owned decisions

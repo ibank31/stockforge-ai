@@ -34,7 +34,7 @@ from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
 from .portfolio import PortfolioError, build_brief, lane_for, list_lanes, metadata_from_dict, plan_manifest
-from .portfolio_io import PortfolioPlanError, jpeg_metadata_preflight, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
+from .portfolio_io import PortfolioPlanError, jpeg_metadata_preflight, load_project_plan, normalize_historical_plan_reference, portfolio_snapshot, preview_preflight, select_brief
 from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .artifact import sha256_file
@@ -861,7 +861,8 @@ def portfolio_evaluate(
             brief_id = portfolio.get("brief_id")
             if not isinstance(plan_file, str) or not isinstance(brief_id, str):
                 raise PortfolioError("Portfolio context has no immutable asset specification or recoverable plan reference.")
-            _plan_path, historical_plan = load_project_plan(project_root, plan_file)
+            historical_plan_ref = normalize_historical_plan_reference(plan_file)
+            _plan_path, historical_plan = load_project_plan(project_root, historical_plan_ref)
             historical_brief = select_brief(historical_plan, brief_id)
             asset_spec = historical_brief.get("asset_spec")
             if not isinstance(asset_spec, dict):

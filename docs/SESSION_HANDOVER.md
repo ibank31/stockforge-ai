@@ -61,3 +61,8 @@ Future execution snapshots now use schema version 2 and retain buyer job, asset 
 The rotor-armature preview audit concluded: strong visual recognizability and silhouette, moderate buyer utility, promising but unproven niche hypothesis, review-ready WebP only, no final JPEG, and no marketplace submission. See `docs/research/ROTOR_ARMATURE_TRIAL_VISUAL_MARKET_AUDIT_2026-08-25.md` and `docs/LEARNING_LOOP_POLICY.md`.
 
 Do not reopen prohibited image `1000802462.jpg`. Do not run another GPU request, upscale, Kaggle job, upload, or submission without a new explicit decision after the visual audit.
+
+
+## 2026-08-25 — Historical evaluation path fix
+
+The first attempt to record the successful rotor-armature trial in the learning ledger failed because Termux was still on `e082695`. After syncing `b3a6291`, the historical fallback correctly activated but rejected the old execution's Android absolute `plan_file`. The fix now strips the directory and loads only the JSON basename from the current project-local `portfolio-plans/` directory; no absolute path is trusted. Full suite after this fix: 295 passed, 1 skipped, 49 non-blocking Pillow warnings. This is a no-GPU code/documentation fix. Do not regenerate the rotor-armature image because of this ledger issue.

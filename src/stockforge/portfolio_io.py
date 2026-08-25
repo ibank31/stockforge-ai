@@ -59,6 +59,14 @@ def _project_plan_directory(project_root: Path) -> Path:
     return (Path(project_root).resolve() / "portfolio-plans").resolve()
 
 
+def normalize_historical_plan_reference(plan_file: str | Path) -> Path:
+    """Reduce a legacy absolute plan path to a safe project-local reference."""
+    name = Path(plan_file).expanduser().name
+    if not name or name in {".", ".."} or Path(name).suffix.lower() != ".json":
+        raise PortfolioPlanError("Historical portfolio plan reference must name a JSON file.")
+    return Path("portfolio-plans") / name
+
+
 def resolve_project_plan(project_root: Path, plan_path: str | Path) -> Path:
     """Resolve a plan path and ensure it is a JSON file inside the project plan directory."""
     root = Path(project_root).resolve()
@@ -370,7 +378,7 @@ def portfolio_snapshot(plan: dict[str, Any], brief: dict[str, Any], plan_path: P
     return {
         "schema_version": 2,
         "batch_id": plan["batch_id"],
-        "plan_file": plan_path.name,
+        "plan_file": str(Path("portfolio-plans") / plan_path.name),
         "brief_id": brief["brief_id"],
         "lane_key": lane["key"],
         "lane_name": lane.get("name", lane["key"]),

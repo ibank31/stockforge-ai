@@ -11,7 +11,7 @@ from stockforge.cli import app
 from stockforge.database import Database
 from stockforge.execution_record import GenerationExecutionRecord
 from stockforge.portfolio import build_brief, metadata_from_dict
-from stockforge.portfolio_io import PortfolioPlanError, load_project_plan, portfolio_snapshot, preview_preflight, select_brief
+from stockforge.portfolio_io import PortfolioPlanError, load_project_plan, normalize_historical_plan_reference, portfolio_snapshot, preview_preflight, select_brief
 from stockforge.release_package import build_release_package
 
 
@@ -136,6 +136,16 @@ def test_pre_gpu_gate_blocks_retro_tech_real_device_and_ambiguous_holding_before
     assert denied["gpu_eligible"] is False
     assert any("cassette" in item for item in denied["blockers"])
     assert any("ambiguous 'holding'" in item for item in denied["blockers"])
+
+
+def test_normalize_historical_plan_reference_discards_android_directories() -> None:
+    normalized = normalize_historical_plan_reference(
+        "/storage/emulated/0/StockForge/projects/stock-assets/portfolio-plans/rotor.json"
+    )
+    assert normalized.as_posix() == "portfolio-plans/rotor.json"
+
+    with pytest.raises(PortfolioPlanError, match="must name a JSON file"):
+        normalize_historical_plan_reference("/storage/emulated/0/StockForge/projects/stock-assets/portfolio-plans")
 
 
 def test_saved_plan_cannot_be_loaded_from_another_project(tmp_path: Path):
