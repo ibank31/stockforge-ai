@@ -132,6 +132,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("treat-puzzle geometry", "foraging and enrichment cue", "single-object pet-care silhouette", "rounded compartment hierarchy"),
         prohibited_shorthand=("brand logo", "product label", "readable text", "animal face", "animal body", "medical claim", "safety certification", "sharp exposed parts", "loose hazardous components", "generic toy pile"),
     ),
+    "animal_adoption_foster_story_vignettes": JpegNicheIdentity(
+        lane_key="animal_adoption_foster_story_vignettes",
+        signature="original animal-adoption story vignette with one visible transition action, triangular helper hierarchy, and tactile first-day-home care cues",
+        lighting="bright soft daylight with a warm focal key on the transitioning animal and restrained material separation for fabric and carrier surfaces",
+        framing="tight square three-quarter vignette with a diagonal carrier-to-helper movement, one clear focal animal, two supporting species, and complete readable silhouettes",
+        context="warm-white editorial campaign studio with a small unbranded carrier and care props; no literal shelter, poster, logo, or rescue-event scene",
+        distinctness=("visible transition action", "three-species silhouette contrast", "tactile care-prop storytelling", "triangular focal hierarchy"),
+        prohibited_shorthand=("superhero", "comic book", "cape", "mask", "lightning bolt", "shield emblem", "royal costume", "sports team", "brand logo", "named shelter", "adopt me", "slogan", "readable text", "celebrity", "artist style", "copyrighted character", "human face", "human hand", "real rescue event", "medical claim", "generic mascot lineup", "generic character sheet"),
+    ),
     "animal_adoption_foster_helper_characters": JpegNicheIdentity(
         lane_key="animal_adoption_foster_helper_characters",
         signature="friendly original animal-helper trio with distinct species silhouettes and practical volunteer styling for adoption and foster communication",

@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 19
+    assert len(lanes) == 20
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -83,6 +83,26 @@ def test_animal_adoption_foster_helper_lane_is_one_candidate_isolated_jpeg_with_
     assert "copyrighted character" in brief.prompt_package.negative_prompt
     assert "readable text" in brief.prompt_package.negative_prompt
     assert brief.metadata.title == "Original Animal Adoption and Foster Community Helper Trio"
+    assert brief.metadata.created_using_generative_ai is True
+    assert brief.metadata.human_review_required is True
+
+
+def test_animal_adoption_foster_story_vignette_lane_is_one_candidate_isolated_jpeg_with_story_identity():
+    brief = build_brief("animal_adoption_foster_story_vignettes", "first-day-home")
+
+    assert brief.brief_id == "animal_adoption_foster_story_vignettes--first-day-home"
+    assert brief.asset_spec.delivery_format == "jpeg"
+    assert brief.asset_spec.product_kind == "raster_illustration"
+    assert brief.asset_spec.layout_mode == "square"
+    assert brief.asset_spec.background_policy == "white"
+    assert brief.asset_spec.isolation_policy == "isolated"
+    assert "first-day-home" in brief.asset_spec.micro_niche
+    assert "visible transition action" in brief.asset_spec.identity_signature
+    assert "superhero" in brief.prompt_package.negative_prompt
+    assert "generic mascot lineup" in brief.prompt_package.negative_prompt
+    assert "carrier" in brief.prompt_package.prompt.lower()
+    assert "readable text" in brief.prompt_package.negative_prompt
+    assert brief.metadata.title == "Animal Adoption First Day Home Story Vignette"
     assert brief.metadata.created_using_generative_ai is True
     assert brief.metadata.human_review_required is True
 

@@ -74,3 +74,21 @@ Karena itu, brief berikutnya tidak akan menyebut superhero franchise, comic univ
 [3]: https://www.aspca.org/about-us/press-releases/new-research-points-social-media-important-tool-animal-shelters-and-rescues "ASPCA — New Research Points to Social Media as Important Tool for Animal Shelters and Rescues"
 [4]: https://www.avma.org/resources-tools/pet-owners/petcare "AVMA — Pet care"
 [5]: https://helpx.adobe.com/stock/contributor/submit-your-content/submit-generative-ai-content/generative-ai-content-guidelines.html "Adobe Stock — Generative AI content guidelines"
+
+
+## 8. Revision after generic mascot rejection
+
+The first preview was rejected by the user because it felt like a standard mascot template. Its weaknesses were a static lineup, four near-duplicate characters, weak role differentiation, and little visible story. A simple palette change or another group portrait would be an insufficient retry.
+
+The revised candidate is therefore a separate concept/lane: **animal adoption and foster story vignette**. The visual answer changes from “a group of friendly mascots” to “a readable first-day-home action”: one small puppy-like focal animal steps out from an open unbranded soft pet carrier, while a cat-like helper and rabbit-like helper flank it in different plain volunteer roles; one folded blanket and one blank circular tag rest beside the group. The composition uses a controlled triangular/diagonal hierarchy rather than a lineup. No text, slogan, logo, cape, mask, superhero shorthand, named shelter, or recognizable franchise design is permitted.
+
+This is still tied to the same supported buyer job—shelter adoption campaign, foster recruitment, volunteer education, and animal-welfare social content—because ASPCA and Best Friends resources explicitly describe promotional assets, adoption/foster campaigns, social graphics, flyers, posters, and outreach tools [1] [2]. The revised hypothesis is not claimed to be more sellable; it is only more specific and narratively useful on the evidence available. It remains subject to one new dry-run, one explicit preview approval, and human visual review.
+
+| Revision criterion | First rejected preview | New candidate |
+|---|---|---|
+| Visible story | Static mascot lineup | Focal animal exits carrier with care props and helper roles |
+| Composition | Four characters with weak hierarchy | Three-character triangular/diagonal hierarchy |
+| Character differentiation | Mostly same dog/cat-like portrait treatment | Puppy-like focal, cat-like helper, rabbit-like helper with distinct roles |
+| Commercial utility hypothesis | Generic character presence | Adoption/foster “first day home” campaign vignette |
+| IP risk | Superhero-like visual echo | Plain volunteer styling; no superhero shorthand or named IP |
+| Retry status | Rejected and frozen | New lane/concept requiring new dry-run and explicit approval |

@@ -262,6 +262,26 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
             "isolated illustration",
         ),
     },
+    ("animal_adoption_foster_story_vignettes", "first-day-home"): {
+        "title": "Animal Adoption First Day Home Story Vignette",
+        "keywords": (
+            "animal adoption",
+            "pet foster",
+            "first day home",
+            "animal rescue",
+            "animal welfare",
+            "shelter campaign",
+            "foster care",
+            "pet carrier",
+            "animal helper",
+            "volunteer illustration",
+            "adoption campaign",
+            "pet care",
+            "friendly animal characters",
+            "community outreach",
+            "isolated illustration",
+        ),
+    },
     ("technical_mechanical_component_illustrations", "rotor-armature"): {
         "title": "Conceptual Electromechanical Rotor Armature Component Illustration",
         "keywords": ("electromechanical component", "rotor armature", "mechanical component", "technical illustration", "industrial technology", "engineering documentation", "conceptual machine part", "copper metal", "graphite housing", "isolated object", "white background", "clean silhouette"),
@@ -499,6 +519,36 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
             ),
         ),
         notes="Evidence-bound first character-lane hypothesis from the user's anecdotal screenshot signal, ASPCA/Best Friends campaign resources, AVMA pet-care education topics, and Adobe supply proxies; no demand, approval, ranking, download, conversion, revenue, or sales claim.",
+    ),
+    PortfolioLane(
+        key="animal_adoption_foster_story_vignettes",
+        name="Animal adoption and foster story-vignette illustrations",
+        tier="first",
+        evidence_confidence="low",
+        opportunity_id="C66",
+        buyer_segment="animal_welfare_content_teams",
+        buyer_job="specific narrative illustration for shelter adoption campaigns, foster recruitment, first-day-home education, and animal-welfare social content",
+        channel="web",
+        asset_family="product_illustration",
+        asset_type="illustration",
+        micro_niche="original fictional animal adoption first-day-home story vignette",
+        visual_language="bright editorial story illustration with triangular character hierarchy, visible transition action, tactile care props, and original non-superhero styling",
+        medium="warm cream, coral red, teal blue, sunny yellow, charcoal, soft green, soft fabric, and matte carrier material with restrained paper texture",
+        commercial_use_cases=("shelter adoption campaign", "foster recruitment post", "first-day-home education", "animal-welfare social graphic", "community outreach article"),
+        keywords=("animal adoption", "pet foster", "first day home", "animal rescue", "animal welfare", "shelter campaign", "foster care", "pet carrier", "animal helper", "volunteer illustration", "adoption campaign", "pet care", "friendly animal characters", "community outreach", "isolated illustration"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "first-day-home",
+                "one compact story vignette with a small original fictional puppy-like focal animal stepping out from an open unbranded soft pet carrier, flanked by a cat-like helper and a rabbit-like helper in plain color-block volunteer vests and simple bandanas; one folded blanket and one blank circular tag rest beside the group; no emblem or text",
+                "a focal animal exits an open carrier while two distinct helpers and tactile care props create an immediately readable first-day-home adoption story",
+                "single centered three-quarter isolated story vignette with a clear triangular hierarchy, visible transition action, complete silhouettes, and controlled prop spacing",
+                "minimal clean surrounding margin; no reserved copy space",
+                ("warm cream", "coral red", "teal blue", "sunny yellow", "charcoal", "soft green"),
+                ("visible first-day-home action", "three-species silhouette contrast", "tactile care-prop storytelling", "plain volunteer styling", "campaign-ready focal hierarchy"),
+            ),
+        ),
+        notes="Material revision after the prior generic mascot preview was rejected. Evidence-bound hypothesis uses ASPCA/Best Friends adoption and foster campaign resources plus Adobe supply proxies; no demand, approval, ranking, download, conversion, revenue, or sales claim.",
     ),
     PortfolioLane(
         key="technical_mechanical_component_illustrations",
@@ -1064,9 +1114,13 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         "marketplace metadata must match visible content",
         "human review is required before submission",
     )
-    if lane.key == "animal_adoption_foster_helper_characters":
+    if lane.key in {
+        "animal_adoption_foster_helper_characters",
+        "animal_adoption_foster_story_vignettes",
+    }:
         quality_gates = (
-            "one complete controlled trio of fictional animal characters only",
+            "one complete controlled fictional animal group with only approved care props",
+
             "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
             "no real people, human hands, human faces, human bodies, screens, phones, computers, tools, devices, or unrelated props",
             "no actual adoption, rescue, medical, safety, legal, or outcome guarantee",

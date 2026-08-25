@@ -183,3 +183,12 @@ Research selected `animal_adoption_foster_helper_characters` with concept `rescu
 Registry and identity were added with `test_cap=1`, JPEG square/white/isolated route, explicit animal-helper quality gates, and prohibited superhero/comic/cape/mask/lightning/shield/brand/named-shelter/slogan/copyrighted-character/real-event/medical-claim shorthand. Adobe category mapping is Animals (1) for future package preparation, subject to portal verification.
 
 Full suite: **302 passed, 1 skipped, 49 non-blocking Pillow warnings**; compileall and `git diff --check` passed. Batch: `animal_adoption_foster_helper_characters-20260825T103937Z-5097e7a7`; brief: `animal_adoption_foster_helper_characters--rescue-foster-helpers`. Dry-run: **7/7 pre-GPU checks pass, 0 blockers**, `z-image-turbo`, square 1024×1024, 8 steps, batch size 1, estimated 55 GPU seconds. No provider call or generation has occurred. Await explicit approval for exactly one preview.
+
+
+## Animal adoption/foster story-vignette revision — approval pending
+
+The user rejected the first animal-helper preview as too standard/template-like. Keep execution `9e49d293-914e-53d6-9c31-eba714bb5622` and artifact `344d9992-34ac-41c7-b070-794b70aa88c9` rejected/frozen; do not retry it, recolor it, crop it, or silently mutate its prompt.
+
+The materially revised lane is `animal_adoption_foster_story_vignettes`, concept `first-day-home`, with one small original fictional puppy-like focal animal stepping out from an open unbranded soft pet carrier, flanked by a cat-like helper and rabbit-like helper in plain color-block volunteer vests and simple bandanas; a folded blanket and blank circular tag are the only approved care props. The visual identity is a story vignette with visible transition action, triangular/diagonal focal hierarchy, three-species contrast, tactile care-prop storytelling, and no superhero/IP shorthand.
+
+Registry category mapping is Animals (1), subject to portal verification. Full suite after revision: **303 passed, 1 skipped, 49 non-blocking Pillow warnings**; compileall and `git diff --check` passed. New batch `animal_adoption_foster_story_vignettes-20260825T114431Z-7152b2fd` and brief `animal_adoption_foster_story_vignettes--first-day-home` are project-local. Dry-run: **7/7 pre-GPU checks pass, 0 blockers**, `z-image-turbo`, 1024×1024 square, 8 steps, batch size 1, estimated 55 GPU seconds. No provider call or generation has occurred for the revision. Await explicit approval for exactly one preview.
