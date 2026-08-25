@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 18
+    assert len(lanes) == 19
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -64,6 +64,25 @@ def test_cable_entry_fitting_lane_is_one_candidate_isolated_jpeg_with_connector_
     assert "rotor" in brief.prompt_package.negative_prompt
     assert "readable text" in brief.prompt_package.negative_prompt
     assert brief.metadata.title == "Unbranded Cable Gland Strain Relief Fitting with Generic Cable"
+    assert brief.metadata.created_using_generative_ai is True
+    assert brief.metadata.human_review_required is True
+
+
+def test_animal_adoption_foster_helper_lane_is_one_candidate_isolated_jpeg_with_original_character_identity():
+    brief = build_brief("animal_adoption_foster_helper_characters", "rescue-foster-helpers")
+
+    assert brief.brief_id == "animal_adoption_foster_helper_characters--rescue-foster-helpers"
+    assert brief.asset_spec.delivery_format == "jpeg"
+    assert brief.asset_spec.product_kind == "raster_illustration"
+    assert brief.asset_spec.layout_mode == "square"
+    assert brief.asset_spec.background_policy == "white"
+    assert brief.asset_spec.isolation_policy == "isolated"
+    assert "animal adoption" in brief.asset_spec.micro_niche
+    assert "animal-helper trio" in brief.asset_spec.identity_signature
+    assert "superhero" in brief.prompt_package.negative_prompt
+    assert "copyrighted character" in brief.prompt_package.negative_prompt
+    assert "readable text" in brief.prompt_package.negative_prompt
+    assert brief.metadata.title == "Original Animal Adoption and Foster Community Helper Trio"
     assert brief.metadata.created_using_generative_ai is True
     assert brief.metadata.human_review_required is True
 

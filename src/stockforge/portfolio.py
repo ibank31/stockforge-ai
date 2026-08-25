@@ -242,6 +242,26 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
             "enrichment board",
         ),
     },
+    ("animal_adoption_foster_helper_characters", "rescue-foster-helpers"): {
+        "title": "Original Animal Adoption and Foster Community Helper Trio",
+        "keywords": (
+            "animal adoption",
+            "pet foster",
+            "animal rescue",
+            "animal welfare",
+            "shelter campaign",
+            "community helpers",
+            "fictional animal characters",
+            "animal mascot",
+            "volunteer campaign",
+            "pet care education",
+            "social media campaign",
+            "adoption event",
+            "friendly animal illustration",
+            "original character",
+            "isolated illustration",
+        ),
+    },
     ("technical_mechanical_component_illustrations", "rotor-armature"): {
         "title": "Conceptual Electromechanical Rotor Armature Component Illustration",
         "keywords": ("electromechanical component", "rotor armature", "mechanical component", "technical illustration", "industrial technology", "engineering documentation", "conceptual machine part", "copper metal", "graphite housing", "isolated object", "white background", "clean silhouette"),
@@ -449,6 +469,36 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
             ),
         ),
         notes="Evidence-bound illustration hypothesis using ASPCA/RSPCA pet-enrichment guidance and a narrow Adobe exact-query supply proxy; safety claims, demand, approval, ranking, and sales remain unproven.",
+    ),
+    PortfolioLane(
+        key="animal_adoption_foster_helper_characters",
+        name="Animal adoption and foster community-helper character illustrations",
+        tier="first",
+        evidence_confidence="low",
+        opportunity_id="C65",
+        buyer_segment="animal_welfare_content_teams",
+        buyer_job="original friendly animal characters for shelter adoption campaigns, foster recruitment, volunteer education, and animal-welfare social content",
+        channel="web",
+        asset_family="product_illustration",
+        asset_type="illustration",
+        micro_niche="original fictional animal adoption and foster community-helper trio",
+        visual_language="bright editorial character illustration with distinct animal silhouettes, plain volunteer styling, warm expressions, and controlled group hierarchy",
+        medium="warm cream, coral red, teal blue, sunny yellow, charcoal, and soft green with clean color-block clothing and restrained paper texture",
+        commercial_use_cases=("shelter adoption campaign", "foster recruitment post", "animal-welfare social graphic", "volunteer education", "community outreach article"),
+        keywords=("animal adoption", "pet foster", "animal rescue", "animal welfare", "shelter campaign", "community helpers", "fictional animal characters", "animal mascot", "volunteer campaign", "pet care education", "social media campaign", "adoption event", "friendly animal illustration", "original character", "isolated illustration"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "rescue-foster-helpers",
+                "one compact trio of original fictional animal community helpers with three distinct species silhouettes, plain color-block volunteer vests, simple bandanas, warm expressions, and no emblem or text",
+                "distinct animal silhouettes and plain volunteer styling create a readable adoption and foster support group",
+                "single centered three-quarter isolated character trio with complete silhouettes, clear focal hierarchy, and compact controlled spacing",
+                "minimal clean surrounding margin; no reserved copy space",
+                ("warm cream", "coral red", "teal blue", "sunny yellow", "charcoal", "soft green"),
+                ("animal-welfare campaign utility", "role-based trio silhouette", "plain volunteer styling", "original species contrast"),
+            ),
+        ),
+        notes="Evidence-bound first character-lane hypothesis from the user's anecdotal screenshot signal, ASPCA/Best Friends campaign resources, AVMA pet-care education topics, and Adobe supply proxies; no demand, approval, ranking, download, conversion, revenue, or sales claim.",
     ),
     PortfolioLane(
         key="technical_mechanical_component_illustrations",
@@ -1006,6 +1056,23 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
 
     brief_id = f"{lane.key}--{concept.key}"
     identity = identity_for(lane.key) if concept.delivery_format == "jpeg" else None
+    quality_gates = (
+        "one complete primary object or controlled system only",
+        "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
+        "no people, hands, faces, bodies, screens, phones, computers, tools, devices, cables, or unrelated props",
+        "no actual compliance, accessibility, environmental, security, medical, or legal guarantee",
+        "marketplace metadata must match visible content",
+        "human review is required before submission",
+    )
+    if lane.key == "animal_adoption_foster_helper_characters":
+        quality_gates = (
+            "one complete controlled trio of fictional animal characters only",
+            "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
+            "no real people, human hands, human faces, human bodies, screens, phones, computers, tools, devices, or unrelated props",
+            "no actual adoption, rescue, medical, safety, legal, or outcome guarantee",
+            "marketplace metadata must match visible content",
+            "human review is required before submission",
+        )
     asset_spec = AssetSpec(
         asset_id=brief_id,
         market_opportunity_id=lane.opportunity_id,
@@ -1031,14 +1098,7 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         originality_levers=concept.originality_levers,
         variation_policy="retain only materially distinct concepts; seed-only, crop-only, and color-only variants are rejected",
         commercial_use_cases=lane.commercial_use_cases,
-        quality_gates=(
-            "one complete primary object or controlled system only",
-            "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
-            "no people, hands, faces, bodies, screens, phones, computers, tools, devices, cables, or unrelated props",
-            "no actual compliance, accessibility, environmental, security, medical, or legal guarantee",
-            "marketplace metadata must match visible content",
-            "human review is required before submission",
-        ),
+        quality_gates=quality_gates,
         model_preferences=("resolution>=1024",),
         metadata_hints=(lane.key, lane.tier, concept.key, "generative_ai_disclosure_required"),
         extra_constraints=(

@@ -190,3 +190,21 @@ After explicit user approval `SETUJU SIAP UPLOAD CABLE GLAND`, StockForge prepar
 Project-local bundle: `adobe-upload-bundles/adobe-20260825T101659Z-9b01c985/`. It contains one JPEG upload-copy `asset-7976851d/sf-7976851d.jpg`, embedded XMP title/keywords, `UPLOAD_METADATA.txt`, `BATCH_MANIFEST.json`, and `README.txt`. Title: `Unbranded Cable Gland Strain Relief Fitting with Generic Cable`. The bundle records 15 visual-first keywords and requires truthful GenAI disclosure. The technical ZIP is `/home/ubuntu/stockforge-live/CABLE_GLAND_ADOBE_UPLOAD_PACKAGE.zip`.
 
 No Android Download mount was available in this sandbox, so no local Android folder was modified. Only the JPEG upload-copy was placed at a temporary CDN URL for the user's Termux pull. The technical ZIP, CSV/manifest/checklist, JSON, and XMP-sidecar-type technical data remain project-local and must not be copied into `Download/MACHINE STOCKFORGE/`. Adobe portal upload/submission remains manual and has not occurred.
+
+
+## Cable-gland manual upload reported by user
+
+The user reported that the cable-gland JPEG was manually uploaded to Adobe Stock. This is user-reported operational history only. No Adobe moderation result, approval, rejection, download, ranking, conversion, revenue, or sales evidence was provided or inferred. The project bundle remains `manual_portal_upload_prepared_not_submitted` from StockForge's perspective until an official outcome is supplied by the user.
+
+A new research request now pivots to a separate generic illustrated animal-character direction inspired by the user's screenshot. The screenshot is treated as anecdotal directional evidence for recognizable focal character, team composition, bright accessories, and social/marketing utility; its text, interface, revenue figure, branding, exact masks/costumes, and exact animal designs must not be copied.
+
+
+## New animal adoption/foster character hypothesis — dry-run ready
+
+A new materially distinct JPEG lane `animal_adoption_foster_helper_characters` was added after the user supplied a screenshot showing a group of colorful animal characters. The screenshot is only anecdotal directional evidence for focal-character clarity, group hierarchy, bright accessory contrast, and social/marketing utility; its text, UI, revenue number, branding, masks, capes, symbols, exact animals, and exact designs are not copied. The rejected `pet_enrichment_object_illustrations` experiment remains rejected and is not being retried.
+
+The selected hypothesis is `rescue-foster-helpers`: one compact trio of original fictional animal community helpers with three distinct species silhouettes, plain color-block volunteer vests, simple bandanas, warm expressions, and no emblem or text. Buyer job: original friendly animal characters for shelter adoption campaigns, foster recruitment, volunteer education, and animal-welfare social content. ASPCA and Best Friends public resources support the existence of campaign, adoption, foster, social, poster, flyer, and volunteer-communication jobs; Adobe query counts are supply proxies only. No demand, approval, ranking, download, conversion, revenue, or sales claim is made.
+
+Added JPEG identity prohibits superhero/comic/cape/mask/lightning/shield shorthand, named shelters, slogans, brands, fictional copyrighted characters, artists, celebrities, real events, and medical claims. The lane uses one candidate, square 1024×1024 ZeroGPU preview route, JPEG delivery, white background, human review required, and no people/property claim until visual review. Quality gates explicitly permit fictional animal faces/bodies while still prohibiting real people, human hands/faces/bodies, text, brands, tools, screens, props, and outcome guarantees.
+
+Full verification after code/schema updates: **302 passed, 1 skipped, 49 non-blocking Pillow warnings**, compileall passed, and `git diff --check` passed. Project-local batch: `animal_adoption_foster_helper_characters-20260825T103937Z-5097e7a7`; brief: `animal_adoption_foster_helper_characters--rescue-foster-helpers`. `portfolio generate --dry-run` returned **7/7 pre-GPU checks pass, 0 blockers**, profile `z-image-turbo`, 1024×1024 square, 8 steps, batch size 1, estimated 55 GPU seconds. No provider call or generation has occurred. Explicit approval is still required before exactly one preview.

@@ -132,6 +132,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("treat-puzzle geometry", "foraging and enrichment cue", "single-object pet-care silhouette", "rounded compartment hierarchy"),
         prohibited_shorthand=("brand logo", "product label", "readable text", "animal face", "animal body", "medical claim", "safety certification", "sharp exposed parts", "loose hazardous components", "generic toy pile"),
     ),
+    "animal_adoption_foster_helper_characters": JpegNicheIdentity(
+        lane_key="animal_adoption_foster_helper_characters",
+        signature="friendly original animal-helper trio with distinct species silhouettes and practical volunteer styling for adoption and foster communication",
+        lighting="bright soft daylight with warm facial readability, clean color-block separation, and no cinematic superhero glow",
+        framing="tight square three-quarter group framing with one focal animal and two supporting silhouettes, complete feet and ears, and compact thumbnail readability",
+        context="warm-white editorial campaign studio; community-helper energy without a literal shelter, poster, logo, or rescue-event scene",
+        distinctness=("role-based animal trio", "plain volunteer styling", "original species contrast", "adoption-and-foster campaign utility"),
+        prohibited_shorthand=("superhero", "comic book", "cape", "mask", "lightning bolt", "shield emblem", "royal costume", "sports team", "brand logo", "named shelter", "adopt me", "slogan", "readable text", "celebrity", "artist style", "copyrighted character", "human face", "human hand", "real rescue event", "medical claim"),
+    ),
     "technical_mechanical_component_illustrations": JpegNicheIdentity(
         lane_key="technical_mechanical_component_illustrations",
         signature="precision-friendly conceptual mechanical component with readable axial geometry and one clear functional silhouette",
