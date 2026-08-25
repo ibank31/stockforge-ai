@@ -45,3 +45,17 @@ Counts are snapshots of Adobe search pages and supply proxies only. They do not 
 [3]: https://helpx.adobe.com/stock/contributor/submit-your-content/submit-icons/single-vector-icons-sheets-submission-overview.html "Single vector icons and sheets submission overview | Adobe Stock Contributor Help"
 [4]: https://m3.material.io/styles/icons/applying-icons "Icons | Material Design 3"
 [5]: https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-patterns/patterns-overview.html "Pattern overview | Adobe Illustrator Help"
+
+## Monochrome convention and current quality gap
+
+Adobe's vector requirements page, updated 7 April 2026, says customers use vectors for logos, branding, digital illustrations, packaging, motion graphics, and more, including changing icon colors. It also recommends logical editable groups/layers, avoiding unnecessary color swatches/effects, and transparent backgrounds rather than a checkerboard faux background [6]. Adobe's icon-sheet overview says icons are simplified visual communication tools that prioritize clarity and instant recognition over artistic complexity; icon sheets group related symbols by theme/style for consistent reuse [7].
+
+Google's Material Icons guide provides a concrete design-system precedent for monochrome: active icons on light backgrounds are commonly black at partial opacity, and icons can be styled to other colors through tinting/CSS. The guide describes icons as simple, minimal representations of universal UI concepts optimized for clarity across sizes [8]. This explains why monochrome appears frequently in utility icon search results: it is flexible as an alpha-mask/tintable base and avoids committing the buyer to a palette. It does **not** prove that most Adobe Stock icons are monochrome, nor does it prove monochrome assets sell better.
+
+The two StockForge trials have a different problem than color alone. Trial 1 uses generic primitives and thick strokes whose semantic marks touch or cross their base shapes by construction. Trial 2 adds decorative circular containers but fails to reserve an inner safe zone: child document corners, arrowheads, and strokes approach or cross the container boundary. Both pass XML/native-element checks because the current QA does not measure geometric clearance, stroke envelopes, pairwise overlaps, or thumbnail perception.
+
+The correct response is not simply to recolor the existing SVG. The next route should use a monochrome-first or two-tone-neutral system, remove decorative circular containers unless they carry semantic value, apply a fixed safe grid, reduce stroke hierarchy, use consistent cap/join rules, and add geometry QA before visual review. A restrained optional accent can be kept only where it communicates state (for example, approval) rather than decoration.
+
+[6]: https://helpx.adobe.com/in/stock/contributor/help/vector-requirements.html "Requirements for contributing vector art to Adobe Stock | Stock Contributor"
+[7]: https://helpx.adobe.com/stock/contributor/submit-your-content/submit-icons/single-vector-icons-sheets-submission-overview.html "Single vector icons and icon sheets submission overview | Adobe Stock"
+[8]: https://developers.google.com/fonts/docs/material_icons "Material Icons Guide | Google Developers"

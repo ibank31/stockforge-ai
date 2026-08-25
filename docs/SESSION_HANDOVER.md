@@ -230,3 +230,10 @@ User feedback: both prior SVG trials were visually unsatisfying; many elements c
 Root cause: current QA validates XML/native elements and forbidden embeds but not stroke envelopes, inner-boundary clearance, pairwise overlap, min gaps, or thumbnail readability. The current transparent SVG preview on a dark viewer backdrop also makes pale fills and edge collisions harder to evaluate. The next redesign must be substantive: editable workflow diagram kit, larger safe cells, lighter stroke hierarchy, fewer decorative rings, intentional connectors/rhythm, explicit geometry clearance checks, overlap checks, and white/checkerboard renders. No third trial has been built or authorized.
 
 Research diagnosis: `docs/research/DOCUMENT_WORKFLOW_VECTOR_TRIAL_DIAGNOSIS_2026-08-25.md`.
+
+
+## Monochrome convention and vector quality diagnosis
+
+User observed that Adobe Stock icon results often appear black-and-white and said both StockForge SVG trials are visibly behind in quality. Official Adobe guidance explains that vector value includes adaptability such as changing icon colors; Adobe's icon guidance prioritizes simple communication, instant recognition, and coherent themed sheets. Google Material Icons provides a monochrome/tinting precedent. These are functional design conventions, not evidence that monochrome dominates Adobe Stock or sells better.
+
+Trial 1 remains generic and uses broad primitives with semantic marks touching their base shapes. Trial 2 is more specific but decorative circular containers reduce inner space; thick child strokes and arrowheads collide with container borders. Existing native SVG validation only checks XML/elements/forbidden embeds, so it can pass despite poor art direction and geometric collisions. The correction is not recolor-only: use monochrome-first/two-tone-neutral, remove non-semantic circles, reduce stroke hierarchy, enforce safe grid/clearance, and add geometry QA for bounds, stroke envelopes, pairwise overlap, and thumbnail readability. No third trial built. Evidence appended to `VECTOR_ROUTE_EVIDENCE_2026-08-25.md`; status updated without marketplace claims.
