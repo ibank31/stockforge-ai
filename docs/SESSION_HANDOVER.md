@@ -66,3 +66,10 @@ Do not reopen prohibited image `1000802462.jpg`. Do not run another GPU request,
 ## 2026-08-25 — Historical evaluation path fix
 
 The first attempt to record the successful rotor-armature trial in the learning ledger failed because Termux was still on `e082695`. After syncing `b3a6291`, the historical fallback correctly activated but rejected the old execution's Android absolute `plan_file`. The fix now strips the directory and loads only the JSON basename from the current project-local `portfolio-plans/` directory; no absolute path is trusted. Full suite after this fix: 295 passed, 1 skipped, 49 non-blocking Pillow warnings. This is a no-GPU code/documentation fix. Do not regenerate the rotor-armature image because of this ledger issue.
+
+
+## 2026-08-25 — Rotor-armature master finalized
+
+The one authorized private Kaggle finalizer job completed successfully. The imported master is `/storage/emulated/0/StockForge/projects/stock-assets/masters/d419cdcf-da49-49f8-98c4-5ef4c8415920-master.jpg`, 4096×4096, 16.777216 MP, RGB, embedded sRGB, JPEG quality 95, 4:4:4. It passed the deterministic Adobe-oriented technical gate and a four-tile full-resolution audit. The master remains `visual_review_required`: it is a conceptual electromechanical illustration with strong silhouette and clean winding continuity, but it must not be described as CAD, blueprint, dimensionally accurate, certified, standard-compliant, or manufacturer-specific.
+
+The review package is `/storage/emulated/0/StockForge/projects/stock-assets/deliveries/stockforge-6b828979-3d26-485d-a33e-5b6b92c0991a.zip`. No `READY_UPLOAD_ADOBE` copy exists and no marketplace submission has occurred. Do not prepare the upload bundle until the user explicitly approves after the final master audit; even then, portal declarations, generative-AI disclosure, category, title, and keywords require final manual verification.

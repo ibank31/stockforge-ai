@@ -1,5 +1,14 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Rotor-armature master finalized and audited
+
+### DONE — Kaggle 4× finalizer, JPEG gate, and full-resolution review
+
+- One private Kaggle `RealESRGAN_x4plus` finalizer job completed successfully and was imported into StockForge with preserved preview-to-master lineage.
+- Master `d419cdcf-da49-49f8-98c4-5ef4c8415920-master.jpg` passed deterministic checks: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, quality 95, and 4:4:4 subsampling.
+- The 4096×4096 master was inspected through four ordered overlapping tiles. No blocking duplicated shaft, broken ring, severe winding smear, readable text/logo, or major halo was observed; stylized geometry remains a positioning limitation.
+- Added `docs/research/ROTOR_ARMATURE_MASTER_FINALIZATION_AUDIT_2026-08-25.md`. The master remains `visual_review_required`; no Adobe upload copy or submission was created.
+
 ## 2026-08-25 — Historical evaluation path normalization
 
 ### FIXED — Android absolute plan paths
