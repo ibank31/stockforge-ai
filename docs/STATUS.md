@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-24
 **Branch:** `main`
-**Latest verified commit:** `320ab34` (nine-lane JPEG identity framework committed and pushed)
+**Latest verified commit:** `678d4a6` (nine-lane JPEG identity framework plus status sync committed and pushed; screenshot research pending)
 
 ## Current milestone
 
@@ -43,7 +43,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Current priorities
 
-1. Mature the JPEG route before any routine generation: select one globally researched buyer job, strengthen the scene prompt/layout contract, and keep one-candidate evidence rules.
+1. Mature the JPEG route before any routine generation: evaluate the new `Technical Mechanical Component Illustrations` hypothesis against the existing nine lanes, select one globally researched buyer job, strengthen the scene prompt/layout contract, and keep one-candidate evidence rules.
 2. Benchmark the prepared Kaggle Real-ESRGAN finalizer once the target runtime is available, comparing source/master at 100% for artifacts, texture, edges, color, dimensions, and sRGB.
 3. Strengthen semantic/commercial QA for JPEG; the no-provider path must remain review/blocking rather than pretending anatomy, realism, or buyer usefulness passed.
 4. Use the non-upload JPEG metadata preflight across supported platforms and the new nine-lane identity profiles; expand reviewed lane/category mappings only when the visual category is unambiguous, and keep title/keyword handling visual-first, platform-specific, and anti-spam.
@@ -61,7 +61,7 @@ Adobe’s public guidance supports transparent PNG utility assets and genuine ed
 
 ## Verification
 
-The current main branch has passed **283 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. JPEG market/Adobe research and the frozen SVG plan are durable. JPEG scene prompt safety now distinguishes controlled human-centered scene stories from isolated-object negative prompting while retaining anatomy, text, artifact, and IP safeguards. The JPEG route has a verified historical preview→finalizer→XMP workflow, but the actual target-runtime Real-ESRGAN benchmark and a provider-backed semantic QA pass remain incomplete. Platform-specific metadata relevance safeguards validate limits, duplicate/spam patterns, category requirements, and visual-first keyword ordering without inventing demand. A new JPEG metadata preflight report now projects reviewed metadata to supported platforms without upload, category guessing, or ranking prediction. A nine-lane JPEG identity registry now adds explicit signature, lighting, framing, context, distinctness, and prohibited-shorthand constraints to persisted briefs and compiled prompts; this improves prompt consistency but does not prove market demand or output quality. The nine-lane JPEG identity framework is committed and pushed; the working tree must be rechecked after this status synchronization.
+The current main branch has passed **283 tests with 1 skipped** in the sandbox, with 45 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. JPEG market/Adobe research and the frozen SVG plan are durable. JPEG scene prompt safety now distinguishes controlled human-centered scene stories from isolated-object negative prompting while retaining anatomy, text, artifact, and IP safeguards. The JPEG route has a verified historical preview→finalizer→XMP workflow, but the actual target-runtime Real-ESRGAN benchmark and a provider-backed semantic QA pass remain incomplete. Platform-specific metadata relevance safeguards validate limits, duplicate/spam patterns, category requirements, and visual-first keyword ordering without inventing demand. A new JPEG metadata preflight report now projects reviewed metadata to supported platforms without upload, category guessing, or ranking prediction. A nine-lane JPEG identity registry now adds explicit signature, lighting, framing, context, distinctness, and prohibited-shorthand constraints to persisted briefs and compiled prompts; this improves prompt consistency but does not prove market demand or output quality. New screenshot research classifies ten user-provided Adobe Stock examples into multiple product families and identifies Technical Mechanical Component Illustrations as the next research hypothesis, not an approved generation lane. The screenshot report is evidence-bound and does not treat earnings as demand proof. The nine-lane JPEG identity framework is committed and pushed; the working tree must be rechecked after this status synchronization.
 
 The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
 

@@ -2,6 +2,17 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-25 — Adobe Stock best-seller screenshot research
+
+### DONE — classify product families without copying or generating
+
+- Analyzed ten user-provided Adobe Stock best-seller screenshots directly and separated them into technical mechanical components, surreal landscape, symbolic water object, botanical motif, craft toolkit cluster, natural food macro photo, original character group, seasonal topical artwork, and culinary food illustration.
+- Cross-checked the interpretation against Adobe category guidance, photo/illustration requirements, generative-AI rules, transparent PNG utility guidance, Adobe Creative Trends 2026, Creative Market garden graphics, Envato clipart categories, and public creator context.
+- Recorded that the screenshots are heterogeneous; their shared lesson is recognizable focal subject, clear silhouette, memorable art direction, and imaginable buyer utility—not one universal niche.
+- Identified `Technical Mechanical Component Illustrations` as the strongest next research hypothesis because two separate mechanical component examples recur, have concrete buyer jobs, and avoid people/release burden. Technical accuracy must remain conservative and human-reviewed.
+- Kept character, seasonal, botanical, and PNG/transparent interpretations separated because their IP, expiry, format, and product-packaging risks differ.
+- No generation, provider call, Kaggle run, upload, or submission was performed.
+
 ## 2026-08-25 — JPEG niche identity framework
 
 ### DONE — nine-lane prompt identity contract
