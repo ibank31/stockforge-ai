@@ -82,3 +82,29 @@ No Kaggle upscale is required before composition/semantic review. If the candida
 ## 10. Explicit authorization gate
 
 Generation may begin only after the user explicitly approves this exact pretrial hypothesis and one-candidate JPEG trial. Approval must not be inferred from general instructions to mature JPEG. Until then, this document remains planning evidence only.
+
+## Runtime incident note — 25 August 2026
+
+Termux trial reached the live request after the client fast-forwarded to `ab90f70` and the local dry-run passed. The live request returned `HTTP 500 from remote worker: Internal Server Error`; no image/release package was produced and no retry was performed.
+
+A read-only public ZeroGPU **Standalone Portfolio Health Check** was run afterward through the worker UI. It returned:
+
+```json
+{
+  "status": "ok",
+  "generation_mode": "standalone_portfolio",
+  "legacy_reality_compiler": "disabled",
+  "default_constraints": [
+    "one primary subject",
+    "white isolated background",
+    "no people, hands, tools, devices, screens, text, numbers, stamps, or unrelated props"
+  ],
+  "gpu_used": false
+}
+```
+
+This confirms that the Space is reachable and its CPU-only health route is healthy. It does **not** prove that model loading or the live generation route is healthy. The next safe action is diagnosis of the worker's live generation/model path or deployment logs, not another image generation request.
+
+Read-only deployment cross-check: the public Hugging Face Space `ibank31/stockforge-zerogpu` is running on ZERO and its active Space repository shows commit `a64c20e` (`feat: allow bounded hero landscape canvas`, about 19 hours old at inspection). The public app exposes the expected `generate_remote`-backed UI and `Standalone Portfolio Health Check` returned `status: ok`, `generation_mode: standalone_portfolio`, and `gpu_used: false`. The live `app.py` loads Z-Image Turbo, Qwen3 FP8 mixed text encoder, and AE VAE through Comfy runtime, so a successful health route does not validate model loading/inference. This further supports treating the user's HTTP 500 as a worker live-generation/model-runtime incident, not a local Termux or portfolio brief failure. No remote generation was triggered during this cross-check.
+
+A non-generation **Runtime Qwen Compatibility** audit on the public Space returned `status: ok`, `gpu_used: false`, `model_loaded: false`, and `qwen_image_support: true`, with Comfy diffusion Qwen-related modules present. This validates module compatibility only; it deliberately does not load the Z-Image/Qwen/AE checkpoints. Therefore it cannot clear the live 500, which remains isolated to the worker's model-loading or inference execution path.

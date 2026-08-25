@@ -87,6 +87,14 @@ def test_remote_provider_uses_live_generate_remote_contract(
     }
 
 
+def test_active_zerogpu_app_registers_generate_remote_endpoint():
+    app_source = Path("deploy/zerogpu/app.py").read_text(encoding="utf-8")
+
+    assert "def generate_remote(" in app_source
+    assert 'api_name="generate_remote"' in app_source
+    assert "remote_job_id" in app_source
+
+
 def test_remote_provider_surfaces_http_error_body(tmp_path: Path, monkeypatch):
     provider = RemoteGradioProvider(
         provider_id="huggingface-zerogpu",

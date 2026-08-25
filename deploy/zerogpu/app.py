@@ -883,6 +883,29 @@ def generate(prompt, width=1024, height=1024, steps=8, seed=0, randomize_seed=Tr
     return generate_gpu(prompt, int(width), int(height), int(steps), int(seed), bool(randomize_seed))
 
 
+_REMOTE_CACHE = {}
+
+
+def generate_remote(
+    prompt,
+    width=1024,
+    height=1024,
+    steps=8,
+    seed=0,
+    randomize_seed=True,
+    stockforge_job_id="",
+):
+    """Stable machine-to-machine endpoint registered on the active Space demo."""
+    job_id = str(stockforge_job_id or "").strip()
+    if not job_id:
+        raise gr.Error("stockforge_job_id is required")
+    if job_id in _REMOTE_CACHE:
+        return _REMOTE_CACHE[job_id]
+    result = generate(prompt, width, height, steps, seed, randomize_seed)
+    _REMOTE_CACHE[job_id] = result
+    return result
+
+
 def portfolio_health():
     """Non-GPU health proof for the standalone-asset generation boundary."""
     return {
@@ -913,8 +936,25 @@ with gr.Blocks(title="StockForge V5 ZeroGPU") as demo:
     output_seed = gr.Number(label="Used seed", precision=0)
     gpu_seconds = gr.Number(label="Measured GPU-function seconds", precision=3)
     generate_button.click(generate, [prompt, width, height, steps, seed, randomize], [output, output_seed, gpu_seconds], api_name="generate")
-
+    remote_prompt = gr.Textbox(visible=False)
+    remote_width = gr.Number(value=1024, visible=False)
+    remote_height = gr.Number(value=1024, visible=False)
+    remote_steps = gr.Number(value=8, visible=False)
+    remote_seed = gr.Number(value=0, visible=False)
+    remote_randomize = gr.Checkbox(value=True, visible=False)
+    remote_job_id = gr.Textbox(visible=False)
+    remote_button = gr.Button(visible=False)
+    remote_output = gr.Image(visible=False, type="pil")
+    remote_output_seed = gr.Number(visible=False)
+    remote_gpu_seconds = gr.Number(visible=False)
+    remote_button.click(
+        generate_remote,
+        [remote_prompt, remote_width, remote_height, remote_steps, remote_seed, remote_randomize, remote_job_id],
+        [remote_output, remote_output_seed, remote_gpu_seconds],
+        api_name="generate_remote",
+    )
     health_button = gr.Button("Standalone Portfolio Health Check")
+
     health_output = gr.JSON(label="Standalone Portfolio Status")
     health_button.click(portfolio_health, outputs=health_output, api_name="portfolio_health")
 
