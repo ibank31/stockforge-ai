@@ -181,3 +181,12 @@ The output passed lineage/checksum validation and was imported. Master artifact 
 Non-blocking visual notes: the central metal body has irregular stippled/speckled surface texture at 100%, and the short cable stub remains not visually obvious, so the object may read as a generic threaded adapter rather than an unmistakable cable gland. These are recorded for truthful human review; no prompt mutation or retry is allowed. Master status remains `review_ready` / `visual_review_required`.
 
 The project-local audit report is `docs/research/CABLE_GLAND_MASTER_AUDIT_2026-08-25.md`. No upload-copy, Android export, Adobe upload, or submission has occurred for cable-gland. A separate explicit approval is required before `portfolio prepare-adobe-upload` creates the JPEG upload-copy/package; Adobe portal action remains manual.
+
+
+## Cable-gland Adobe upload package prepared — manual submission pending
+
+After explicit user approval `SETUJU SIAP UPLOAD CABLE GLAND`, StockForge prepared one manual Adobe upload bundle for finalized-master execution `9b01c985-d2dd-42a4-a142-42e1118dcca6` using explicit reviewed category `10 — Industry`. The initial automatic category lookup correctly blocked because the new lane had no safe mapping; the explicit category was then supplied from the lane's industrial buyer-job research. Bundle status is `manual_portal_upload_prepared_not_submitted`.
+
+Project-local bundle: `adobe-upload-bundles/adobe-20260825T101659Z-9b01c985/`. It contains one JPEG upload-copy `asset-7976851d/sf-7976851d.jpg`, embedded XMP title/keywords, `UPLOAD_METADATA.txt`, `BATCH_MANIFEST.json`, and `README.txt`. Title: `Unbranded Cable Gland Strain Relief Fitting with Generic Cable`. The bundle records 15 visual-first keywords and requires truthful GenAI disclosure. The technical ZIP is `/home/ubuntu/stockforge-live/CABLE_GLAND_ADOBE_UPLOAD_PACKAGE.zip`.
+
+No Android Download mount was available in this sandbox, so no local Android folder was modified. Only the JPEG upload-copy was placed at a temporary CDN URL for the user's Termux pull. The technical ZIP, CSV/manifest/checklist, JSON, and XMP-sidecar-type technical data remain project-local and must not be copied into `Download/MACHINE STOCKFORGE/`. Adobe portal upload/submission remains manual and has not occurred.
