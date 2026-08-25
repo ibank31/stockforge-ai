@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-25
 **Branch:** `main`
-**Latest verified commit:** pending commit for historical evaluation path normalization; learning-loop foundation prepared locally; deployed Space commit: `935faa5`
+**Latest verified commit:** `4b3cb1e` (historical evaluation path normalization); learning-loop foundation prepared locally; deployed Space commit: `935faa5`
 
 **Current state:** The endpoint deployment is healthy: Space runtime is `RUNNING`, domain is `READY`, and Gradio metadata exposes `/generate_remote`. The authorized rotor-armature trial now completed end-to-end through Termux: execution `d3c2c121-77c7-590c-97b1-3da15ff26dcc`, artifact `d419cdcf-da49-49f8-98c4-5ef4c8415920`, and review package status `review_ready`. The preview was exported to `PREVIEW_TO_MANUS` as `technical-mechanical-component-illustrations-rotor-armature__preview.webp`. This proves technical execution and packaging only; the preview has now been visually and market-audited, with the lane retained as a promising hypothesis rather than accepted for upload. No final JPEG master exists, and no upscale, Kaggle run, upload, or submission was performed.
 
