@@ -106,3 +106,16 @@ Evidence is recorded in `docs/research/NEW_ILLUSTRATION_NICHE_RESEARCH_2026-08-2
 Lane registration and the `product_illustration` asset family are complete. Targeted tests passed 17/17; full suite passed 299 passed, 1 skipped, and 49 non-blocking Pillow deprecation warnings. Portfolio batch `pet_enrichment_object_illustrations-20260825T064838Z-60a86ece` was created. Dry-run reports `gpu_eligible=true`, seven checks pass, zero blockers, remote provider route `huggingface-zerogpu`, profile `z-image-turbo`, square 1024×1024 preview, and estimated 55 GPU seconds. No provider call or generation has occurred.
 
 Next allowed action is exactly one preview only after the user explicitly approves this exact brief. Do not run live generation, retries, batches, finalizer, upload preparation, or submission before that approval.
+
+
+## Tool-and-craft clip-art lane — preview approval pending
+
+The user rejected the pet-enrichment preview because an unintended dog silhouette appeared despite the no-animal brief. Do not promote that preview to master, retry it, or treat it as a successful candidate.
+
+The user supplied an Adobe Stock email screenshot showing a compact colorful tool/craft object cluster and a reported `$1276` “best seller” amount. This remains anecdotal user-provided direction only; no independent transaction evidence is available. Do not reproduce Adobe branding, email UI, exact icon designs, or any protected expression.
+
+The next evidence-bound hypothesis is `sewing_craft_tool_clipart--beginner-kit`. It is one controlled square JPEG cluster of unbranded sewing/textile-craft tools in cheerful hand-drawn clip-art style: fabric scissors, thread spool, measuring tape, thimble, pincushion, and a seam-ripper-like tool. The negative prompt excludes Adobe logo, email interface, buttons, dollar amount, human hands/faces, generic hardware, power tools, gears, spark plugs, readable text, trademarks, and copyrighted characters.
+
+Research is recorded in `docs/research/NEW_TOOL_CRAFT_CLIPART_NICHE_RESEARCH_2026-08-25.md`. Adobe exact-query supply proxies were 9,838 for `sewing tools clipart illustration`, 154,438 for `craft tools illustration set`, 33,877 for `home repair tools cartoon illustration`, and 238,612 for `hand tools illustration set`. These are supply proxies only. The user screenshot is not sales proof.
+
+Batch `sewing_craft_tool_clipart-20260825T073904Z-69b50234` is created. Dry-run reports `gpu_eligible=true`, seven checks pass, zero blockers, remote raster route, square JPEG, white background, isolated controlled cluster, and no provider call. Targeted tests pass 18/18. The next allowed action is one preview only after explicit user approval of the exact brief.

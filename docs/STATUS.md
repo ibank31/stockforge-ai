@@ -123,3 +123,12 @@ The user reports that the seed-starting tray JPEG was uploaded to Adobe Stock ma
 A new materially distinct illustration lane is registered as `pet_enrichment_object_illustrations` with brief `pet_enrichment_object_illustrations--puzzle-feeder`. It is based on ASPCA/RSPCA enrichment guidance and a narrow Adobe exact-query supply proxy. The selected asset is one square isolated JPEG illustration of an interactive treat-puzzle feeder board with rounded compartments and generic treat pieces, without animals, people, brands, labels, or text.
 
 The repository supports this lane through the new `product_illustration` asset family. Targeted tests passed 17/17 and the full suite passed 299 tests, 1 skipped, with 49 non-blocking Pillow deprecation warnings. One portfolio batch was created at `portfolio-plans/pet_enrichment_object_illustrations-20260825T064838Z-60a86ece.json`. The dry-run pre-GPU gate passed with `gpu_eligible=true`, seven checks pass, zero blockers, square 1024×1024 preview route, and estimated 55 GPU seconds. No provider call or generation has occurred. User approval is required for exactly one preview of this exact brief.
+
+
+## New tool-and-craft clip-art hypothesis — preview approval pending
+
+The pet-enrichment preview was rejected by the user because the generated image contained an unintended dog silhouette that violated the no-animal brief. It must not be promoted to master or reused as a successful candidate.
+
+A new materially distinct illustration lane is now registered as `sewing_craft_tool_clipart` with brief `sewing_craft_tool_clipart--beginner-kit`. The concept is a compact controlled cluster of unbranded sewing/textile-craft tools—fabric scissors, thread spool, measuring tape, thimble, pincushion, and a seam-ripper-like tool—in cheerful hand-drawn clip-art style with bold outline and bright flat color. The user's Adobe screenshot is treated only as an anecdotal directional signal, not verified sales evidence.
+
+The one-candidate batch is `sewing_craft_tool_clipart-20260825T073904Z-69b50234`. Dry-run reports `gpu_eligible=true`, seven checks pass, zero blockers, square JPEG route, white background, isolated controlled cluster, and no provider call. Targeted tests pass 18/18. The exact brief remains ready for one user-approved preview only; no generation, finalizer, upload-copy, or submission has occurred.

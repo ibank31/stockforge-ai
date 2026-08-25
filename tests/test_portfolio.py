@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 16
+    assert len(lanes) == 17
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -80,6 +80,25 @@ def test_pet_enrichment_lane_is_one_candidate_isolated_jpeg_with_pet_care_identi
     assert "animal face" in brief.prompt_package.negative_prompt
     assert "readable text" in brief.prompt_package.negative_prompt
     assert brief.metadata.title == "Interactive Treat Puzzle Feeder for Pet Enrichment"
+    assert brief.metadata.created_using_generative_ai is True
+    assert brief.metadata.human_review_required is True
+
+
+def test_sewing_craft_clipart_lane_is_one_candidate_isolated_jpeg_with_tool_set_identity():
+    brief = build_brief("sewing_craft_tool_clipart", "beginner-kit")
+
+    assert brief.brief_id == "sewing_craft_tool_clipart--beginner-kit"
+    assert brief.asset_spec.delivery_format == "jpeg"
+    assert brief.asset_spec.product_kind == "raster_illustration"
+    assert brief.asset_spec.layout_mode == "square"
+    assert brief.asset_spec.background_policy == "white"
+    assert brief.asset_spec.isolation_policy == "isolated"
+    assert "sewing" in brief.asset_spec.micro_niche
+    assert "sewing and textile-craft tools" in brief.asset_spec.identity_signature
+    assert "Adobe logo" in brief.prompt_package.negative_prompt
+    assert "human hand" in brief.prompt_package.negative_prompt
+    assert "readable text" in brief.prompt_package.negative_prompt
+    assert brief.metadata.title == "Colorful Beginner Sewing and Textile Craft Tool Set"
     assert brief.metadata.created_using_generative_ai is True
     assert brief.metadata.human_review_required is True
 

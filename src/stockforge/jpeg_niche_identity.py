@@ -114,6 +114,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("cell-tray geometry", "seedling-stage clarity", "moisture-and-compost material relationship", "propagation-specific silhouette"),
         prohibited_shorthand=("brand seed packet", "readable label", "named cultivar", "garden-tool pile", "greenhouse clutter", "certification badge", "eco claim", "botanical pattern", "generic plant pot"),
     ),
+    "sewing_craft_tool_clipart": JpegNicheIdentity(
+        lane_key="sewing_craft_tool_clipart",
+        signature="compact cheerful cluster of unbranded sewing and textile-craft tools with bold consistent outlines and clear object separation",
+        lighting="even bright illustration light with a small restrained offset shadow and no glossy product-ad glare",
+        framing="tight square clip-art cluster with a complete silhouette, balanced spacing, and immediate thumbnail recognition",
+        context="clean warm-white paper-like background using cobalt, coral, sunny yellow, teal, cream, and charcoal outline",
+        distinctness=("sewing-tool specificity", "compact mini-set rhythm", "bold outline hierarchy", "friendly flat-color contrast"),
+        prohibited_shorthand=("Adobe logo", "email interface", "button", "dollar amount", "brand logo", "readable text", "human face", "human hand", "construction wrench", "power drill", "gear", "spark plug", "generic hardware pile", "copyrighted character"),
+    ),
     "pet_enrichment_object_illustrations": JpegNicheIdentity(
         lane_key="pet_enrichment_object_illustrations",
         signature="single recognizable interactive treat-puzzle feeder with rounded compartments and a clear enrichment function",

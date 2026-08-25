@@ -527,3 +527,14 @@ If a feature is implemented but not verified, record it as `IN PROGRESS`, not `D
 - Full suite after the lane addition: **299 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
 - Created one portfolio batch: `pet_enrichment_object_illustrations-20260825T064838Z-60a86ece`; pre-GPU gate reports `gpu_eligible=true`, seven checks pass, zero blockers, remote route `huggingface-zerogpu`, and one square 1024×1024 preview.
 - No provider call, generation, retry, finalizer, upload-copy, Adobe upload, or submission has occurred. Explicit user approval is required before one preview of the exact brief.
+
+
+## 2026-08-25 — Sewing/craft clip-art hypothesis prepared
+
+### READY — one-candidate preview pending
+
+The pet-enrichment preview was rejected because an unintended dog silhouette violated the no-animal brief; no master or retry was created. The user's Adobe screenshot was recorded as anecdotal directional evidence only, without inferring sales or approval.
+
+A new `sewing_craft_tool_clipart` lane with concept `beginner-kit` was added. It targets a compact controlled cluster of unbranded sewing/textile-craft tools in cheerful hand-drawn clip-art style: fabric scissors, thread spool, measuring tape, thimble, pincushion, and a seam-ripper-like tool. Adobe branding, email UI, dollar amounts, human hands/faces, generic hardware, power tools, gears, spark plugs, readable text, trademarks, and copyrighted characters are prohibited.
+
+Research is stored in `docs/research/NEW_TOOL_CRAFT_CLIPART_NICHE_RESEARCH_2026-08-25.md`. The one-candidate batch is `sewing_craft_tool_clipart-20260825T073904Z-69b50234`; its pre-GPU gate reports `gpu_eligible=true`, seven checks pass, zero blockers, and no provider call. Targeted tests pass 18/18. User approval is required before exactly one preview.
