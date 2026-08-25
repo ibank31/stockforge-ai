@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "kind": "stockforge.portfolio_batch_plan",
+  "lane": {
+    "key": "seed_starting_tray_propagation",
+    "name": "Seed-starting tray and indoor propagation illustrations",
+    "tier": "first",
+    "evidence_confidence": "medium",
+    "opportunity_id": "C61",
+    "test_cap": 1,
+    "marketplace_transaction_data": "DATA NOT PUBLICLY AVAILABLE",
+    "notes": "Evidence-bound first-sale hypothesis from exact-object Adobe supply proxy and public horticulture education guides; demand, approval, ranking, and sales remain unproven."
+  },
+  "status": "planned",
+  "human_review_required": true,
+  "briefs": [
+    {
+      "brief_id": "seed_starting_tray_propagation--seed-tray",
+      "lane": {
+        "key": "seed_starting_tray_propagation",
+        "name": "Seed-starting tray and indoor propagation illustrations",
+        "tier": "first",
+        "evidence_confidence": "medium",
+        "opportunity_id": "C61",
+        "test_cap": 1,
+        "notes": "Evidence-bound first-sale hypothesis from exact-object Adobe supply proxy and public horticulture education guides; demand, approval, ranking, and sales remain unproven."
+      },
+      "concept": {
+        "key": "seed-tray",
+        "subject": "one recognizable modular seed-starting tray with a few emerging seedlings in separate cells and no labels",
+        "visual_mechanism": "cell geometry and seedling stage make indoor propagation immediately legible",
+        "composition": "single centered object with tight square product framing",
+        "negative_space": "minimal clean surrounding margin; no reserved copy space",
+        "palette": [
+          "recycled tray plastic",
+          "peat-free compost",
+          "terracotta",
+          "soft green"
+        ],
+        "originality_levers": [
+          "cell-tray geometry",
+          "seedling-stage clarity",
+          "propagation-specific silhouette",
+          "moisture-and-compost material relationship"
+        ],
+        "product_kind": "raster_illustration",
+        "delivery_format": "jpeg",
+        "layout_mode": "square",
+        "background_policy": "white",
+        "isolation_policy": "isolated"
+      },
+      "asset_spec": {
+        "asset_id": "seed_starting_tray_propagation--seed-tray",
+        "market_opportunity_id": "C61",
+        "buyer_segment": "gardening_content_teams",
+        "buyer_job": "recognizable seed-starting tray for gardening tutorials, horticulture education, and growing guides",
+        "channel": "web",
+        "asset_family": "organic_motif",
+        "asset_type": "illustration",
+        "micro_niche": "indoor seed-starting tray and early seedling propagation",
+        "subject": "one recognizable modular seed-starting tray with a few emerging seedlings in separate cells and no labels",
+        "visual_language": "recognizable editorial horticultural illustration with material clarity and restrained natural color",
+        "medium": "recycled tray plastic, peat-free compost, terracotta, and soft green seedlings with warm daylight",
+        "product_kind": "raster_illustration",
+        "delivery_format": "jpeg",
+        "layout_mode": "square",
+        "palette": [
+          "recycled tray plastic",
+          "peat-free compost",
+          "terracotta",
+          "soft green"
+        ],
+        "composition": "single centered object with tight square product framing",
+        "negative_space": "minimal clean surrounding margin; no reserved copy space",
+        "background_policy": "white",
+        "isolation_policy": "isolated",
+        "text_policy": "none",
+        "branding_policy": "no_branding",
+        "originality_levers": [
+          "cell-tray geometry",
+          "seedling-stage clarity",
+          "propagation-specific silhouette",
+          "moisture-and-compost material relationship"
+        ],
+        "variation_policy": "retain only materially distinct concepts; seed-only, crop-only, and color-only variants are rejected",
+        "commercial_use_cases": [
+          "gardening tutorial",
+          "horticulture education",
+          "seed supplier article",
+          "seasonal growing guide"
+        ],
+        "quality_gates": [
+          "one complete primary object or controlled system only",
+          "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
+          "no people, hands, faces, bodies, screens, phones, computers, tools, devices, cables, or unrelated props",
+          "no actual compliance, accessibility, environmental, security, medical, or legal guarantee",
+          "marketplace metadata must match visible content",
+          "human review is required before submission"
+        ],
+        "model_preferences": [
+          "resolution>=1024"
+        ],
+        "metadata_hints": [
+          "seed_starting_tray_propagation",
+          "first",
+          "seed-tray",
+          "generative_ai_disclosure_required"
+        ],
+        "extra_constraints": [
+          "Visual mechanism: cell geometry and seedling stage make indoor propagation immediately legible.",
+          "Do not add a scene, frame, border, interface, packaging label, dashboard, infographic, or decorative text.",
+          "Honor the explicit product format and layout contract; do not add copy space unless the asset is sold as a hero or background product."
+        ],
+        "tags": [
+          "seed_starting_tray_propagation",
+          "seed-tray",
+          "first"
+        ],
+        "identity_signature": "recognizable modular propagation tray with a small number of healthy seedlings and visible horticultural material relationships",
+        "identity_lighting": "soft warm window daylight with gentle moisture highlights and no dramatic studio gloss",
+        "identity_framing": "top-front three-quarter isolated tabletop study with the full tray silhouette readable at thumbnail size",
+        "identity_context": "quiet neutral horticultural workspace using peat-free compost tones, terracotta, recycled tray plastic, and restrained green seedlings",
+        "identity_distinctness": [
+          "cell-tray geometry",
+          "seedling-stage clarity",
+          "moisture-and-compost material relationship",
+          "propagation-specific silhouette"
+        ],
+        "identity_prohibited_shorthand": [
+          "brand seed packet",
+          "readable label",
+          "named cultivar",
+          "garden-tool pile",
+          "greenhouse clutter",
+          "certification badge",
+          "eco claim",
+          "botanical pattern",
+          "generic plant pot"
+        ]
+      },
+      "prompt_package": {
+        "prompt": "Premium commercial stock illustration asset. Primary subject, one complete object or fused controlled system only: one recognizable modular seed-starting tray with a few emerging seedlings in separate cells and no labels. Visual mechanism: cell geometry and seedling stage make indoor propagation immediately legible.. Material behavior: recycled tray plastic, peat-free compost, terracotta, and soft green seedlings with warm daylight; surfaces must be physically believable and cleanly resolved. Composition contract: single centered object with tight square product framing. Negative-space contract: minimal clean surrounding margin; no reserved copy space. Use tight square product framing; do not reserve empty copy space unless it is explicitly part of the subject. Deliverable intent: high-quality raster JPEG composition. single standalone asset, fully visible, no overlap with other objects. solid clean white background, extraction-friendly. Palette: recycled tray plastic, peat-free compost, terracotta, soft green. no readable text or typography. Distinctness levers: cell-tray geometry, seedling-stage clarity, propagation-specific silhouette, moisture-and-compost material relationship. Visual language: recognizable editorial horticultural illustration with material clarity and restrained natural color. Niche identity signature: recognizable modular propagation tray with a small number of healthy seedlings and visible horticultural material relationships. Lighting signature: soft warm window daylight with gentle moisture highlights and no dramatic studio gloss. Identity framing rule: top-front three-quarter isolated tabletop study with the full tray silhouette readable at thumbnail size. Identity context: quiet neutral horticultural workspace using peat-free compost tones, terracotta, recycled tray plastic, and restrained green seedlings. Distinctness anchors: cell-tray geometry, seedling-stage clarity, moisture-and-compost material relationship, propagation-specific silhouette. Prioritize a complete readable silhouette, clean geometry, credible material behavior, controlled shadow, professional art direction, and a thumbnail-readable focal idea. Do not add a literal device, interface, business prop, product label, or decorative element unless it is the approved primary subject. Do not turn the asset into a generic decorative image. Do not add a scene, frame, border, interface, packaging label, dashboard, infographic, or decorative text. Honor the explicit product format and layout contract; do not add copy space unless the asset is sold as a hero or background product.",
+        "negative_prompt": "multiple objects when one object is required; collage, scene, environment, frame, border, unnecessary props; people, hands, fingers, faces, bodies, tools, measuring devices, meters, screens, phones, computers, cables; readable text, fake typography, letters, numbers, labels, logos, trademarks, watermarks, signatures, stamps, postmarks; recognizable copyrighted artwork or characters, celebrity likenesses; deformed geometry, malformed object structure, duplicated elements; plastic texture, CGI appearance, generic AI aesthetic; oversaturated colors, excessive HDR, glow, cinematic effects; dirty background, gray background, background contamination; blur, compression artifacts, oversharpening, chromatic aberration; white halo, colored fringe, broken extraction edges; niche-specific shorthand: brand seed packet, readable label, named cultivar, garden-tool pile, greenhouse clutter, certification badge, eco claim, botanical pattern, generic plant pot",
+        "quality_constraints": [
+          "clear primary subject and immediate thumbnail recognition",
+          "physically or visually coherent object geometry",
+          "believable material and medium characteristics",
+          "clean extraction-friendly silhouette where isolation is required",
+          "format-appropriate framing and canvas use",
+          "restrained professional color treatment",
+          "no accidental text, branding, or watermark",
+          "one complete primary object or controlled system only",
+          "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
+          "no people, hands, faces, bodies, screens, phones, computers, tools, devices, cables, or unrelated props",
+          "no actual compliance, accessibility, environmental, security, medical, or legal guarantee",
+          "marketplace metadata must match visible content",
+          "human review is required before submission"
+        ],
+        "legal_constraints": [
+          "Avoid brands, trademarks, logos, copyrighted characters, and celebrity or public-figure likenesses.",
+          "Do not imply endorsement by a real company or person.",
+          "Use only the approved fictional or rights-cleared subject matter; prompt constraints are not legal clearance.",
+          "Final submission still requires human rights and compliance review."
+        ],
+        "metadata_hints": [
+          "organic_motif",
+          "illustration",
+          "indoor seed-starting tray and early seedling propagation",
+          "gardening_content_teams",
+          "recognizable seed-starting tray for gardening tutorials, horticulture education, and growing guides",
+          "web",
+          "gardening tutorial",
+          "horticulture education",
+          "seed supplier article",
+          "seasonal growing guide",
+          "cell-tray geometry",
+          "seedling-stage clarity",
+          "propagation-specific silhouette",
+          "moisture-and-compost material relationship",
+          "seed_starting_tray_propagation",
+          "first",
+          "seed-tray",
+          "generative_ai_disclosure_required"
+        ]
+      },
+      "metadata": {
+        "title": "Indoor Seed-Starting Tray with Emerging Seedlings",
+        "keywords": [
+          "seed starting tray",
+          "indoor seed starting",
+          "seedling tray",
+          "emerging seedlings",
+          "plant propagation",
+          "home gardening",
+          "horticulture",
+          "seed sowing",
+          "garden tutorial",
+          "growing guide",
+          "cell tray",
+          "peat-free compost",
+          "plant nursery",
+          "germination",
+          "gardening education"
+        ],
+        "created_using_generative_ai": true,
+        "people_or_property": "none depicted; human review required to confirm",
+        "status": "human_review_required",
+        "human_review_required": true,
+        "marketplace_transaction_data": "DATA NOT PUBLICLY AVAILABLE",
+        "reviewer_checklist": [
+          "Confirm the title and every retained keyword accurately describe the visible asset.",
+          "Confirm no readable text, brand, logo, watermark, real person, or protected work appears.",
+          "Confirm the visual does not make a legal, compliance, environmental, accessibility, medical, or security guarantee.",
+          "Confirm the asset is materially distinct from already selected portfolio assets.",
+          "Complete the marketplace-specific AI disclosure and any people/property fields truthfully."
+        ]
+      }
+    }
+  ]
+}

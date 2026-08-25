@@ -75,3 +75,14 @@ SVG value-upgrade remains frozen. PNG production remains blocked until a true-al
 ## Evidence and archive rule
 
 Historical screenshot notes, market counts, Adobe guidance, and prior SVG experiments remain evidence with their original limitations. They do not prove sales, ranking, demand, or acceptance. Current decisions belong in `STATUS.md`; implementation history belongs in `CHANGELOG.md`; operational instructions belong here and in `TERMUX_CONTROL_PLANE.md`. Archived documents must not override the active baseline.
+
+
+## New JPEG hypothesis selected — generation still gated
+
+The 2026-08-25 research session selected `seed_starting_tray_propagation` as the next materially distinct JPEG hypothesis. The single candidate is `seed_starting_tray_propagation--seed-tray`: one recognizable modular seed-starting tray with a small number of emerging seedlings, isolated on a clean white square background. The intended buyer job is gardening tutorials, horticulture education, seed-supplier articles, and growing guides.
+
+Evidence is conservative. Public horticulture guides support the recognizability and tutorial context of trays, modules, compost, seedlings, labeling, watering, and indoor propagation. Adobe search returned 6,589 results for `seed starting tray` at the research timestamp; this is only a supply proxy, not demand or sales proof. Adobe and Getty trend guidance supports authentic, specific, useful visual communication but does not prove marketplace conversion.
+
+The lane and JPEG identity are registered in `src/stockforge/portfolio.py` and `src/stockforge/jpeg_niche_identity.py`. The lane has `test_cap=1`, no people/property subject, no labels or brands, and manual category review only. Full regression verification is `298 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings`. The portfolio plan dry-run and readiness report passed locally without a provider call. A direct `portfolio generate --dry-run` was blocked by the sandbox's lack of an enabled remote provider; this does not authorize enabling a provider or running generation.
+
+Next action requires explicit user approval of this exact hypothesis and brief. If approved, synchronize Termux from `main`, confirm the provider path and pre-GPU gates, then execute exactly one ZeroGPU preview. Do not run a retry, batch, Kaggle finalizer, upload preparation, Adobe upload, or submission before the prescribed review and learning-loop gates.

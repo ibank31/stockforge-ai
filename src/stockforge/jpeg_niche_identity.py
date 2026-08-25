@@ -105,6 +105,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("ordered dependency chain", "transparent provenance bridge", "controlled build release"),
         prohibited_shorthand=("padlock", "shield", "hooded hacker", "code screen", "server rack", "certification badge", "dashboard"),
     ),
+    "seed_starting_tray_propagation": JpegNicheIdentity(
+        lane_key="seed_starting_tray_propagation",
+        signature="recognizable modular propagation tray with a small number of healthy seedlings and visible horticultural material relationships",
+        lighting="soft warm window daylight with gentle moisture highlights and no dramatic studio gloss",
+        framing="top-front three-quarter isolated tabletop study with the full tray silhouette readable at thumbnail size",
+        context="quiet neutral horticultural workspace using peat-free compost tones, terracotta, recycled tray plastic, and restrained green seedlings",
+        distinctness=("cell-tray geometry", "seedling-stage clarity", "moisture-and-compost material relationship", "propagation-specific silhouette"),
+        prohibited_shorthand=("brand seed packet", "readable label", "named cultivar", "garden-tool pile", "greenhouse clutter", "certification badge", "eco claim", "botanical pattern", "generic plant pot"),
+    ),
     "technical_mechanical_component_illustrations": JpegNicheIdentity(
         lane_key="technical_mechanical_component_illustrations",
         signature="precision-friendly conceptual mechanical component with readable axial geometry and one clear functional silhouette",

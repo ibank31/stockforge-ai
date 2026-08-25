@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 14
+    assert len(lanes) == 15
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -45,6 +45,23 @@ def test_technical_mechanical_component_lane_is_one_candidate_jpeg_with_specific
     assert "electromechanical" in brief.asset_spec.micro_niche
     assert "axial" in brief.asset_spec.identity_signature.lower()
     assert "dimension" in brief.prompt_package.negative_prompt.lower()
+    assert brief.metadata.created_using_generative_ai is True
+    assert brief.metadata.human_review_required is True
+
+
+def test_seed_starting_tray_lane_is_one_candidate_isolated_jpeg_with_horticultural_identity():
+    brief = build_brief("seed_starting_tray_propagation", "seed-tray")
+
+    assert brief.brief_id == "seed_starting_tray_propagation--seed-tray"
+    assert brief.asset_spec.delivery_format == "jpeg"
+    assert brief.asset_spec.product_kind == "raster_illustration"
+    assert brief.asset_spec.layout_mode == "square"
+    assert brief.asset_spec.background_policy == "white"
+    assert brief.asset_spec.isolation_policy == "isolated"
+    assert "seed-starting tray" in brief.asset_spec.micro_niche
+    assert "propagation tray" in brief.asset_spec.identity_signature
+    assert "brand seed packet" in brief.prompt_package.negative_prompt
+    assert brief.metadata.title == "Indoor Seed-Starting Tray with Emerging Seedlings"
     assert brief.metadata.created_using_generative_ai is True
     assert brief.metadata.human_review_required is True
 

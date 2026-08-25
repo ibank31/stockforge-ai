@@ -1,5 +1,16 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — New JPEG seed-starting hypothesis prepared
+
+### READY — evidence-bound lane and pre-GPU dry-run
+
+- Added the materially distinct `seed_starting_tray_propagation` JPEG lane with one registered concept, `seed-tray`, and `test_cap=1`.
+- Added a niche-specific identity covering modular cell-tray geometry, seedling-stage clarity, moisture/compost material relationship, and propagation-specific silhouette; prohibited brand packets, readable labels, named cultivars, garden-tool piles, greenhouse clutter, certification marks, environmental claims, botanical patterns, and generic plant pots.
+- Added public evidence research under `docs/research/NEW_JPEG_NICHE_RESEARCH_2026-08-25.md`. The selection is a conservative hypothesis, not a demand, ranking, approval, download, conversion, or sales claim.
+- The saved plan dry-run passed with `jpeg` / `square` / `white` / `isolated`, `human_review_required=true`, and one candidate only. Trial readiness passed as `READY_FOR_TRIAL`; no provider call was made.
+- Full regression suite after the lane integration: **298 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+- A direct `portfolio generate --dry-run` was not available in the sandbox because no enabled remote provider was configured. No provider was enabled, and no live generation, finalizer, upload-copy preparation, Adobe upload, or submission occurred.
+
 ## 2026-08-25 — Adobe keyword ceiling corrected
 
 ### FIXED — enforce 49-keyword maximum

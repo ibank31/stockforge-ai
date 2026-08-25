@@ -182,6 +182,26 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
         "title": "Modular Component Chain With Transparent Path",
         "keywords": ("modular components", "transparent path", "graphite ceramic", "clear acrylic", "matte paper", "connected modules", "horizontal object", "isolated object", "white background", "copy space", "minimal 3d"),
     },
+    ("seed_starting_tray_propagation", "seed-tray"): {
+        "title": "Indoor Seed-Starting Tray with Emerging Seedlings",
+        "keywords": (
+            "seed starting tray",
+            "indoor seed starting",
+            "seedling tray",
+            "emerging seedlings",
+            "plant propagation",
+            "home gardening",
+            "horticulture",
+            "seed sowing",
+            "garden tutorial",
+            "growing guide",
+            "cell tray",
+            "peat-free compost",
+            "plant nursery",
+            "germination",
+            "gardening education",
+        ),
+    },
     ("technical_mechanical_component_illustrations", "rotor-armature"): {
         "title": "Conceptual Electromechanical Rotor Armature Component Illustration",
         "keywords": ("electromechanical component", "rotor armature", "mechanical component", "technical illustration", "industrial technology", "engineering documentation", "conceptual machine part", "copper metal", "graphite housing", "isolated object", "white background", "clean silhouette"),
@@ -279,6 +299,36 @@ PALETTES = {
 
 
 PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
+    PortfolioLane(
+        key="seed_starting_tray_propagation",
+        name="Seed-starting tray and indoor propagation illustrations",
+        tier="first",
+        evidence_confidence="medium",
+        opportunity_id="C61",
+        buyer_segment="gardening_content_teams",
+        buyer_job="recognizable seed-starting tray for gardening tutorials, horticulture education, and growing guides",
+        channel="web",
+        asset_family="organic_motif",
+        asset_type="illustration",
+        micro_niche="indoor seed-starting tray and early seedling propagation",
+        visual_language="recognizable editorial horticultural illustration with material clarity and restrained natural color",
+        medium="recycled tray plastic, peat-free compost, terracotta, and soft green seedlings with warm daylight",
+        commercial_use_cases=("gardening tutorial", "horticulture education", "seed supplier article", "seasonal growing guide"),
+        keywords=("seed starting tray", "indoor seed starting", "seedling tray", "emerging seedlings", "plant propagation", "home gardening", "horticulture", "seed sowing", "garden tutorial", "growing guide", "cell tray", "peat-free compost", "plant nursery", "germination", "gardening education"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "seed-tray",
+                "one recognizable modular seed-starting tray with a few emerging seedlings in separate cells and no labels",
+                "cell geometry and seedling stage make indoor propagation immediately legible",
+                "single three-quarter isolated tray study with full silhouette readable at thumbnail size",
+                "minimal clean surrounding margin; no reserved copy space",
+                ("recycled tray plastic", "peat-free compost", "terracotta", "soft green"),
+                ("cell-tray geometry", "seedling-stage clarity", "propagation-specific silhouette", "moisture-and-compost material relationship"),
+            ),
+        ),
+        notes="Evidence-bound first-sale hypothesis from exact-object Adobe supply proxy and public horticulture education guides; demand, approval, ranking, and sales remain unproven.",
+    ),
     PortfolioLane(
         key="technical_mechanical_component_illustrations",
         name="Technical mechanical component illustrations",

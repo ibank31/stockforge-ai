@@ -1,0 +1,15 @@
+{
+  "asset_type": "scene",
+  "delivery_format": "jpeg",
+  "readiness": "READY_FOR_TRIAL",
+  "hypothesis": "Test one recognizable indoor seed-starting tray JPEG for gardening tutorial and horticulture education use; demand remains unproven.",
+  "purpose": "Obtain one bounded internal visual experiment without a provider call, then review object clarity, buyer fit, rights safety, and technical readiness.",
+  "single_candidate_only": true,
+  "trial_allowed": true,
+  "provider_call_allowed": true,
+  "blockers": [
+    "full-size visual review is required after generation",
+    "final marketplace acceptance is not automatic"
+  ],
+  "next_step": "Run exactly one remote candidate only after the human confirms this hypothesis and the selected brief preflight passes."
+}

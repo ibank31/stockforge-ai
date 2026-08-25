@@ -93,3 +93,12 @@ Never run blind seed retries, large batches, automatic upload, automatic submiss
 | Architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | History | [`CHANGELOG.md`](CHANGELOG.md) |
 | Archived context | [`archive/2026-08-25/README.md`](archive/2026-08-25/README.md) |
+
+
+## New JPEG hypothesis — pending explicit generation approval
+
+On 2026-08-25, StockForge researched and selected `seed_starting_tray_propagation` as a materially distinct JPEG hypothesis from the technical mechanical component lane. The product is one isolated square raster illustration of a recognizable modular seed-starting tray with a small number of emerging seedlings, white background, no text, no label, no packet, no brand, and no people or property release requirement expected when those elements are absent.
+
+The buyer job is gardening tutorials, horticulture education, seed-supplier articles, and growing guides. Evidence supports the clarity of this job and the recognizability of tray-based propagation workflows, but does not prove demand, ranking, approval, downloads, conversion, or sales. Adobe Stock supply search for `seed starting tray` returned 6,589 results at the research timestamp and is treated only as a supply proxy.
+
+The new lane is registered in code with one concept and `test_cap=1`. The plan dry-run returned `seed_starting_tray_propagation--seed-tray`, delivery `jpeg`, layout `square`, background `white`, isolation `isolated`, and `human_review_required=true`. The non-provider readiness report is `READY_FOR_TRIAL` with `single_candidate_only=true`. No live generation, finalizer, upload-copy preparation, Adobe upload, or submission has occurred for this lane. A direct `portfolio generate --dry-run` invocation was not available because the sandbox has no enabled remote provider; the saved portfolio plan and pre-GPU readiness checks completed successfully without a provider call.
