@@ -71,3 +71,12 @@ For a reviewed finalized master, StockForge owns the deterministic preparation o
 The user-facing manual boundary begins after the bundle is prepared. The user must inspect the final JPEG and checklist, verify the generative-AI declaration and any portal-provided category suggestion, complete Adobe terms and CAPTCHA personally, and explicitly decide whether to submit. StockForge never claims that a technical pass guarantees moderation acceptance or sales, and never submits a portal form automatically.
 
 For the current technical mechanical component lane, the automatic category is Adobe category 10 — Industry because Adobe defines Industry around work and manufacturing content. This is a reviewed lane mapping, not a general rule for every mechanical-looking image. If the final visible subject or buyer job changes materially, the mapping must be re-audited rather than reused silently.
+
+
+## 8. Android folder contract
+
+The only user-visible StockForge export root is `/storage/emulated/0/Download/MACHINE STOCKFORGE/`. It contains exactly two branches: `PREVIEW_TO_MANUS/` for review images and `READY_UPLOAD_ADOBE/` for explicitly approved upload images. The engine must never export JSON, CSV, ZIP, Markdown, logs, request files, database files, model weights, intermediate PNGs, or provider outputs into that visual root.
+
+All technical lineage remains in the Termux-private workspace whenever the project is migrated there. The project workspace may contain artifacts, plans, evaluations, master-finalizer requests, Kaggle outputs, databases, and release packages; these are not user-facing deliverables. A final JPEG is copied into `READY_UPLOAD_ADOBE/` only after the master passes the technical/visual gates and the user explicitly approves preparation of an upload bundle.
+
+A cleanup or migration command must show a dry-run inventory first, require a separate explicit confirmation before deletion, never delete the two visual branches, and preserve the current master, preview, and learning ledger until the user confirms the retention policy.

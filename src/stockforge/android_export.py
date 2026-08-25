@@ -16,6 +16,7 @@ class AndroidExportError(ValueError):
     """Raised when a user-facing mobile export would be unsafe or ambiguous."""
 
 
+USER_VISIBLE_ROOT = "MACHINE STOCKFORGE"
 PREVIEW_BRANCH = "PREVIEW_TO_MANUS"
 UPLOAD_BRANCH = "READY_UPLOAD_ADOBE"
 _ALLOWED_PREVIEW_SUFFIXES = frozenset({".webp", ".jpg", ".jpeg", ".png"})
@@ -49,7 +50,7 @@ def default_downloads_root() -> Path | None:
 
 
 def machine_root(downloads_root: str | Path) -> Path:
-    return Path(downloads_root).expanduser().resolve() / "MACHINE STOCKFORGE"
+    return Path(downloads_root).expanduser().resolve() / USER_VISIBLE_ROOT
 
 
 def _name(value: str) -> str:

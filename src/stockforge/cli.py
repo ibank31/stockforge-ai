@@ -721,9 +721,10 @@ def portfolio_prepare_adobe_upload(
             execution_ids = tuple(execution)
         if destination is not None:
             destination_root = Path(destination).expanduser().resolve()
-        elif str(project_root).startswith("/storage/emulated/0/"):
-            destination_root = Path("/storage/emulated/0/Download/AdobeStock/READY_TO_UPLOAD")
         else:
+            # Keep CSV/XMP/checklist/bundle files in the technical project workspace.
+            # Only _export_ready_uploads_to_android() may copy the final JPEG into
+            # Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE.
             destination_root = project_root / "adobe-upload-bundles"
         bundle = prepare_adobe_upload_bundle(
             database=database,

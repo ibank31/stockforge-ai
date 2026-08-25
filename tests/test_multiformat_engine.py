@@ -214,7 +214,7 @@ def test_local_native_vector_build_persists_no_gpu_execution(tmp_path: Path) -> 
 
 
 def test_android_export_copies_only_one_visual_file_to_minimal_branch(tmp_path: Path) -> None:
-    from stockforge.android_export import PREVIEW_BRANCH, UPLOAD_BRANCH, export_preview, export_ready_upload
+    from stockforge.android_export import PREVIEW_BRANCH, UPLOAD_BRANCH, USER_VISIBLE_ROOT, export_preview, export_ready_upload
 
     preview = tmp_path / "source.webp"
     preview.write_bytes(b"preview")
@@ -225,6 +225,8 @@ def test_android_export_copies_only_one_visual_file_to_minimal_branch(tmp_path: 
     review_export = export_preview(source=preview, downloads_root=downloads, asset_name="Woven Loop")
     upload_export = export_ready_upload(source=final, downloads_root=downloads, asset_name="Woven Loop")
 
+    assert review_export.destination.parents[1].name == USER_VISIBLE_ROOT
+    assert upload_export.destination.parents[1].name == USER_VISIBLE_ROOT
     assert review_export.destination.parent.name == PREVIEW_BRANCH
     assert upload_export.destination.parent.name == UPLOAD_BRANCH
     assert review_export.destination.name == "woven-loop__preview.webp"
