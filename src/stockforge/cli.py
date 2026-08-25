@@ -24,6 +24,7 @@ from .database import Database
 from .doctor import run_doctor
 from .generation import GenerationRequest
 from .generation_evaluation import EvaluationError, append_evaluation, new_evaluation, summarize_evaluations
+from .niche_learning import summarize_niche_learning
 from .job import JobError
 from .job_database import JobDatabase
 from .job_manager import JobManager
@@ -854,9 +855,17 @@ def portfolio_evaluate(
         if not isinstance(portfolio, dict):
             raise PortfolioError("Evaluation requires a portfolio context with buyer job and format data.")
         asset_spec = portfolio.get("asset_spec")
-        if not isinstance(asset_spec, dict):
-            raise PortfolioError("Portfolio context has no immutable asset specification.")
         route = portfolio.get("format_route")
+        if not isinstance(asset_spec, dict):
+            plan_file = portfolio.get("plan_file")
+            brief_id = portfolio.get("brief_id")
+            if not isinstance(plan_file, str) or not isinstance(brief_id, str):
+                raise PortfolioError("Portfolio context has no immutable asset specification or recoverable plan reference.")
+            _plan_path, historical_plan = load_project_plan(project_root, plan_file)
+            historical_brief = select_brief(historical_plan, brief_id)
+            asset_spec = historical_brief.get("asset_spec")
+            if not isinstance(asset_spec, dict):
+                raise PortfolioError("Historical portfolio brief has no immutable asset specification.")
         if not isinstance(route, dict):
             route = {}
         evaluation = new_evaluation(
@@ -864,7 +873,7 @@ def portfolio_evaluate(
             artifact_id=artifact_id,
             lane_key=str(portfolio.get("lane_key", "")),
             buyer_job=str(portfolio.get("buyer_job", asset_spec.get("buyer_job", ""))),
-            product_kind=str(asset_spec.get("product_kind", "")),
+            product_kind=str(asset_spec.get("product_kind", route.get("product_kind", ""))),
             delivery_format=str(asset_spec.get("delivery_format", route.get("delivery_format", ""))),
             provider_id=str(execution_record.provider_id or "local"),
             model_id=str(execution_record.model_id or "deterministic"),
@@ -893,6 +902,19 @@ def portfolio_evaluation_summary(
     try:
         _record, project_root = _portfolio_project(project)
         summary = summarize_evaluations(project_root)
+    except (EvaluationError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(summary, indent=2))
+
+
+@portfolio_app.command("learning-summary")
+def portfolio_learning_summary(
+    project: str = typer.Option(..., "--project"),
+) -> None:
+    """Summarize reviewed generation evidence by niche without triggering work."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        summary = summarize_niche_learning(str(project_root))
     except (EvaluationError, PortfolioError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(json.dumps(summary, indent=2))

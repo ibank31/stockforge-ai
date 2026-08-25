@@ -202,6 +202,10 @@ def test_portfolio_snapshot_freezes_selected_brief_context(tmp_path: Path, monke
     snapshot = portfolio_snapshot(plan, selected, path)
 
     assert snapshot["batch_id"] == batch["batch_id"]
+    assert snapshot["schema_version"] == 2
+    assert snapshot["buyer_job"]
+    assert snapshot["asset_spec"]["delivery_format"] == "jpeg"
+    assert snapshot["format_route"]["delivery_format"] == "jpeg"
     assert snapshot["metadata"]["created_using_generative_ai"] is True
     assert snapshot["human_review_required"] is True
 

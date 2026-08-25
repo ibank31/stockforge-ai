@@ -1,5 +1,16 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Evidence-to-learning operating contract
+
+### DONE — user-simple feedback, engine-owned decisions
+
+- Added `src/stockforge/niche_learning.py` and `portfolio learning-summary` to aggregate reviewed generation records by niche and buyer job.
+- The learning layer emits conservative actions such as `INSUFFICIENT_EVIDENCE`, `REFINE_BRIEF`, `PAUSE_AND_RESEARCH`, and `KEEP_AND_VALIDATE`; it never predicts sales, ranking, or marketplace approval and never triggers generation.
+- Upgraded `portfolio_snapshot` to schema version 2 so future executions persist buyer job, asset specification, and format route with immutable lineage.
+- Added historical-plan fallback to `portfolio evaluate`, allowing older executions with minimal snapshots to be evaluated from their saved plan instead of failing closed unnecessarily.
+- Added regression tests for one-record uncertainty, repeated review refinement, append-only learning summaries, and the real snapshot structure. Full suite: **294 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+- Added `docs/LEARNING_LOOP_POLICY.md` to define the operating model: StockForge chooses product decisions; the user supplies simple visual feedback; the agent explains and records the evaluation; the next decision cites the ledger.
+
 ## 2026-08-25 — Rotor-armature trial completed end-to-end
 
 ### LIVE — review package created; visual review pending

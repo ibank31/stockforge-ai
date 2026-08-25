@@ -360,11 +360,15 @@ def jpeg_metadata_preflight(
 
 
 def portfolio_snapshot(plan: dict[str, Any], brief: dict[str, Any], plan_path: Path) -> dict[str, Any]:
-    """Return the minimal immutable portfolio context persisted with one execution."""
+    """Return an immutable portfolio context persisted with one execution."""
     lane = plan["lane"]
     metadata = brief["metadata"]
+    asset_spec = brief.get("asset_spec")
+    if not isinstance(asset_spec, dict):
+        raise PortfolioPlanError("Portfolio brief has no asset specification for immutable snapshot.")
+    route = route_from_dict(asset_spec)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "batch_id": plan["batch_id"],
         "plan_file": plan_path.name,
         "brief_id": brief["brief_id"],
@@ -372,6 +376,9 @@ def portfolio_snapshot(plan: dict[str, Any], brief: dict[str, Any], plan_path: P
         "lane_name": lane.get("name", lane["key"]),
         "tier": lane.get("tier", "experimental"),
         "evidence_confidence": lane.get("evidence_confidence", "low"),
+        "buyer_job": asset_spec.get("buyer_job", ""),
+        "asset_spec": asset_spec,
+        "format_route": route.to_dict(),
         "metadata": metadata,
         "reviewer_checklist": metadata.get("reviewer_checklist", []),
         "human_review_required": True,
