@@ -81,3 +81,24 @@ Generation belum dilakukan dan tetap menunggu persetujuan trial eksplisit dari p
 [11]: https://business.adobe.com/resources/creative-trends-report.html "Innovation and authenticity — Adobe’s 2026 Creative Trends forecast"
 [12]: https://creativemarket.com/blog/garden-vector-graphics-images "A Collection of Garden-themed Vector Graphics and Images — Creative Market"
 [13]: https://elements.envato.com/graphics/clipart "Clipart Vector & Layered Graphics — Envato Elements"
+
+## First-sale scorecard internal
+
+Scorecard ini hanya membantu memilih eksperimen berikutnya. Nilainya bukan purchase likelihood dan tidak boleh dipublikasikan sebagai prediksi revenue.
+
+| Candidate | Official need signal | Repeated screenshot signal | Supply burden | Buyer clarity | Low-cost readiness | Compliance burden | Decision |
+|---|---|---|---|---|---|---|---|
+| Technical mechanical component | Moderate–strong: STEM/science/technology design assets disebut Adobe | Moderate: rotor dan threaded fitting muncul berulang dalam notes | Moderate: `electric actuator` sekitar 73,632 hasil | Strong | Strong untuk satu isolated JPEG illustration | Moderate: technical accuracy and overclaim risk | **Priority hypothesis** |
+| Recognizable craft/hobby cluster | Moderate–strong: creative components, craft elements, cartoon styles | Moderate: tools cluster berulang di notes, termasuk satu creator account dengan $1,276 | High: `craft supplies` sekitar 1,374,478 hasil | Strong | Strong | Moderate: deformation and generic/IP style risk | Candidate 2 |
+| Natural food/foliage macro JPEG | Moderate–strong: Adobe in-demand guidance menyebut food/nature/wildlife | Moderate: foliage macro muncul lebih dari sekali dalam recovered notes | High: `nature foliage copy space` sekitar 3,020,266 hasil | Strong | Weak–moderate until photo-capable runtime is proven | Low–moderate: realism and factual naming | Candidate 3, not cheapest |
+| Recognizable food object illustration | Moderate: food is an Adobe category and broad in-demand topic | Moderate: ham/roast, tomatoes, strawberries, produce recur | High in broad object/food searches | Strong | Strong | Moderate: species/food claim ambiguity | Candidate 3B, split by object |
+| Decorative botanical motif | Moderate–strong: creative elements and garden toolkits | Strong recurrence in notes and current screenshots | Very high: `botanical patterns` about 7,784,639 results | Strong | Moderate | Moderate: format/product-system mismatch | Defer as single JPEG |
+| Seasonal topical artwork | Moderate when timing matches; Adobe advises mixing seasonal and evergreen | Moderate: 2026 horse and Christmas examples | Time-sensitive | Moderate–strong | Strong | High: expiry, text, cultural/IP | Defer unless seasonal timing is intentional |
+| Character group | Moderate: Adobe supports inclusive/cartoon illustration guidance | Moderate: animal groups recur in notes | Very high: `animal character illustration` about 7,735,364 results | Moderate | Moderate | High: originality/IP/resemblance | Defer |
+| Surreal conceptual landscape | Moderate: Adobe 2026 Surreal Silliness style signal | Strong: multiple surreal/urban-fantasy notes | Moderate: `surreal desert landscape illustration` about 72,610 results | Moderate | Strong | Moderate: genericness and buyer intent | Defer behind clearer utility |
+
+### Metadata relevance algorithm
+
+The correct optimization target is not “top ranking at any cost”. It is **query-to-visual relevance**: the title names the visible subject and intended use without overclaiming; the first ten keywords contain the strongest accurate subject/use terms; remaining keywords add only visible attributes, context, style, or medium; category follows primary subject/context/intent and remains manual-review-required; and GenAI disclosure/release decisions reflect the actual production path. Duplicate, irrelevant, trademarked, speculative, or high-volume stuffing terms are rejected. This aligns with Adobe guidance that search prioritizes the first ten keywords and that titles/keywords must be descriptive and accurate.
+
+For the technical component hypothesis, a safe metadata draft would use a conservative title such as **“Conceptual electromechanical component illustration for engineering documentation”** only if the generated visual truly supports that description. Candidate keywords could include `electromechanical component`, `motor component`, `rotor` or `connector` only when visibly justified; `CAD`, `industrial standard`, a manufacturer, a model number, `engineering diagram`, `photo`, or a dimension should not be added unless factually true and visually present. Category must be reviewed manually as `Technology`, `Science`, or `Industry` depending on the final visual’s primary intent.
