@@ -1,0 +1,282 @@
+--- portfolio readiness --asset-type icon_set ---
+{
+  "key": "icon_set",
+  "label": "Editable utility icon set",
+  "product_kind": "native_vector",
+  "delivery_format": "svg",
+  "execution_mode": "local_native_vector_build",
+  "readiness": "READY_FOR_TRIAL",
+  "candidate_niches": [
+    "document review and delivery workflow icon set",
+    "software onboarding action icons",
+    "documentation workflow icons"
+  ],
+  "blockers": [
+    "visual buyer-fit and set coherence still require human review",
+    "portal upload validation is still pending"
+  ],
+  "next_step": "Use the monochrome document-lifecycle diagram-kit concept, run local geometry QA and visual review, then consider one manual upload validation only after the redesigned trial is accepted.",
+  "recommended_lane_keys": [
+    "native_vector_workflow_diagram_kits"
+  ],
+  "recommended_concept_keys": [
+    "document-lifecycle-diagram-kit"
+  ]
+}
+--- portfolio plan-type --asset-type icon_set ---
+{
+  "kind": "stockforge.asset_type_plan",
+  "status": "planned_no_generation",
+  "selector": {
+    "key": "icon_set",
+    "label": "Editable utility icon set",
+    "product_kind": "native_vector",
+    "delivery_format": "svg",
+    "execution_mode": "local_native_vector_build",
+    "readiness": "READY_FOR_TRIAL",
+    "candidate_niches": [
+      "document review and delivery workflow icon set",
+      "software onboarding action icons",
+      "documentation workflow icons"
+    ],
+    "blockers": [
+      "visual buyer-fit and set coherence still require human review",
+      "portal upload validation is still pending"
+    ],
+    "next_step": "Use the monochrome document-lifecycle diagram-kit concept, run local geometry QA and visual review, then consider one manual upload validation only after the redesigned trial is accepted.",
+    "recommended_lane_keys": [
+      "native_vector_workflow_diagram_kits"
+    ],
+    "recommended_concept_keys": [
+      "document-lifecycle-diagram-kit"
+    ]
+  },
+  "lane_key": "native_vector_workflow_diagram_kits",
+  "concept_key": "document-lifecycle-diagram-kit",
+  "format_route": {
+    "product_kind": "native_vector",
+    "delivery_format": "svg",
+    "layout_mode": "square",
+    "canvas": "vector-artboard",
+    "background_policy": "transparent",
+    "execution_mode": "local_native_vector_build",
+    "requires_remote_gpu": false,
+    "requires_true_alpha": true,
+    "verified_for_production": true,
+    "user_export_branch": "READY_UPLOAD_ADOBE",
+    "reason": "Editable SVG paths are built locally; no raster image trace or GPU generation is used."
+  },
+  "brief": {
+    "brief_id": "native_vector_workflow_diagram_kits--document-lifecycle-diagram-kit",
+    "lane": {
+      "key": "native_vector_workflow_diagram_kits",
+      "name": "Native vector monochrome workflow diagram kits",
+      "tier": "secondary",
+      "evidence_confidence": "medium",
+      "opportunity_id": "V04",
+      "test_cap": 1,
+      "notes": "Material redesign after two rejected icon trials: diagram-kit architecture replaces circular badges and equal-grid micro-icons; geometry QA must pass before any visual trial approval."
+    },
+    "concept": {
+      "key": "document-lifecycle-diagram-kit",
+      "subject": "a six-module editable document lifecycle diagram: intake, organize, review, approve, archive, and deliver",
+      "visual_mechanism": "monochrome-first document forms with one restrained functional accent and five controlled connector lanes; no decorative circular badges",
+      "composition": "large independent cards arranged on a square loop with generous safe zones, clear hierarchy, and no crossing lines",
+      "negative_space": "transparent negative space around each module and connector lane; no text inside the native artwork",
+      "palette": [
+        "#111827",
+        "#F8FAFC",
+        "#64748B"
+      ],
+      "originality_levers": [
+        "specific document lifecycle use case",
+        "six reusable workflow modules",
+        "monochrome recolorability",
+        "stroke-aware safe zones",
+        "named editable groups",
+        "thumbnail readability",
+        "non-crossing connector system"
+      ],
+      "product_kind": "native_vector",
+      "delivery_format": "svg",
+      "layout_mode": "square",
+      "background_policy": "transparent",
+      "isolation_policy": "cluster"
+    },
+    "asset_spec": {
+      "asset_id": "native_vector_workflow_diagram_kits--document-lifecycle-diagram-kit",
+      "market_opportunity_id": "V04",
+      "buyer_segment": "web_product_teams",
+      "buyer_job": "editable document lifecycle diagram components for software documentation, onboarding, presentations, and process explainers",
+      "channel": "web",
+      "asset_family": "generic",
+      "asset_type": "icon_set",
+      "micro_niche": "monochrome document lifecycle workflow diagram kit",
+      "subject": "a six-module editable document lifecycle diagram: intake, organize, review, approve, archive, and deliver",
+      "visual_language": "monochrome-first editorial utility system with six independent document modules, controlled connector lanes, and restrained status accents",
+      "medium": "editable SVG groups, compound paths, solid document forms, and separated connector geometry in one organized diagram kit",
+      "product_kind": "native_vector",
+      "delivery_format": "svg",
+      "layout_mode": "square",
+      "palette": [
+        "#111827",
+        "#F8FAFC",
+        "#64748B"
+      ],
+      "composition": "large independent cards arranged on a square loop with generous safe zones, clear hierarchy, and no crossing lines",
+      "negative_space": "transparent negative space around each module and connector lane; no text inside the native artwork",
+      "background_policy": "transparent",
+      "isolation_policy": "cluster",
+      "text_policy": "none",
+      "branding_policy": "no_branding",
+      "originality_levers": [
+        "specific document lifecycle use case",
+        "six reusable workflow modules",
+        "monochrome recolorability",
+        "stroke-aware safe zones",
+        "named editable groups",
+        "thumbnail readability",
+        "non-crossing connector system"
+      ],
+      "variation_policy": "retain only materially distinct concepts; seed-only, crop-only, and color-only variants are rejected",
+      "commercial_use_cases": [
+        "software documentation",
+        "product onboarding",
+        "business process explanation",
+        "web and mobile UI",
+        "presentation diagram system"
+      ],
+      "quality_gates": [
+        "one complete primary object or controlled system only",
+        "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
+        "no people, hands, faces, bodies, screens, phones, computers, tools, devices, cables, or unrelated props",
+        "no actual compliance, accessibility, environmental, security, medical, or legal guarantee",
+        "marketplace metadata must match visible content",
+        "human review is required before submission"
+      ],
+      "model_preferences": [
+        "resolution>=1024"
+      ],
+      "metadata_hints": [
+        "native_vector_workflow_diagram_kits",
+        "secondary",
+        "document-lifecycle-diagram-kit",
+        "generative_ai_disclosure_required"
+      ],
+      "extra_constraints": [
+        "Visual mechanism: monochrome-first document forms with one restrained functional accent and five controlled connector lanes; no decorative circular badges.",
+        "Do not add a scene, frame, border, interface, packaging label, dashboard, infographic, or decorative text.",
+        "Honor the explicit product format and layout contract; do not add copy space unless the asset is sold as a hero or background product."
+      ],
+      "tags": [
+        "native_vector_workflow_diagram_kits",
+        "document-lifecycle-diagram-kit",
+        "secondary"
+      ],
+      "identity_signature": "",
+      "identity_lighting": "",
+      "identity_framing": "",
+      "identity_context": "",
+      "identity_distinctness": [],
+      "identity_prohibited_shorthand": []
+    },
+    "prompt_package": {
+      "prompt": "Premium commercial stock icon_set asset. Primary subject, one complete object or fused controlled system only: a six-module editable document lifecycle diagram: intake, organize, review, approve, archive, and deliver. Visual mechanism: monochrome-first document forms with one restrained functional accent and five controlled connector lanes; no decorative circular badges.. Material behavior: editable SVG groups, compound paths, solid document forms, and separated connector geometry in one organized diagram kit; surfaces must be physically believable and cleanly resolved. Composition contract: large independent cards arranged on a square loop with generous safe zones, clear hierarchy, and no crossing lines. Negative-space contract: transparent negative space around each module and connector lane; no text inside the native artwork. Use tight square product framing; do not reserve empty copy space unless it is explicitly part of the subject. Deliverable intent: editable native SVG geometry, not a raster image trace. small controlled cluster of related objects with clear separation. transparent-background intent with clean object edges. Palette: #111827, #F8FAFC, #64748B. no readable text or typography. Distinctness levers: specific document lifecycle use case, six reusable workflow modules, monochrome recolorability, stroke-aware safe zones, named editable groups, thumbnail readability, non-crossing connector system. Visual language: monochrome-first editorial utility system with six independent document modules, controlled connector lanes, and restrained status accents.  Prioritize a complete readable silhouette, clean geometry, credible material behavior, controlled shadow, professional art direction, and a thumbnail-readable focal idea. Do not add a literal device, interface, business prop, product label, or decorative element unless it is the approved primary subject. Do not turn the asset into a generic decorative image. Do not add a scene, frame, border, interface, packaging label, dashboard, infographic, or decorative text. Honor the explicit product format and layout contract; do not add copy space unless the asset is sold as a hero or background product.",
+      "negative_prompt": "multiple objects when one object is required; collage, scene, environment, frame, border, unnecessary props; people, hands, fingers, faces, bodies, tools, measuring devices, meters, screens, phones, computers, cables; readable text, fake typography, letters, numbers, labels, logos, trademarks, watermarks, signatures, stamps, postmarks; recognizable copyrighted artwork or characters, celebrity likenesses; deformed geometry, malformed object structure, duplicated elements; plastic texture, CGI appearance, generic AI aesthetic; oversaturated colors, excessive HDR, glow, cinematic effects; dirty background, gray background, background contamination; blur, compression artifacts, oversharpening, chromatic aberration; white halo, colored fringe, broken extraction edges",
+      "quality_constraints": [
+        "clear primary subject and immediate thumbnail recognition",
+        "physically or visually coherent object geometry",
+        "believable material and medium characteristics",
+        "clean extraction-friendly silhouette where isolation is required",
+        "format-appropriate framing and canvas use",
+        "restrained professional color treatment",
+        "no accidental text, branding, or watermark",
+        "one complete primary object or controlled system only",
+        "no readable text, letters, numbers, labels, logos, trademarks, watermarks, stamps, or postmarks",
+        "no people, hands, faces, bodies, screens, phones, computers, tools, devices, cables, or unrelated props",
+        "no actual compliance, accessibility, environmental, security, medical, or legal guarantee",
+        "marketplace metadata must match visible content",
+        "human review is required before submission"
+      ],
+      "legal_constraints": [
+        "Avoid brands, trademarks, logos, copyrighted characters, and celebrity or public-figure likenesses.",
+        "Do not imply endorsement by a real company or person.",
+        "Use only the approved fictional or rights-cleared subject matter; prompt constraints are not legal clearance.",
+        "Final submission still requires human rights and compliance review."
+      ],
+      "metadata_hints": [
+        "generic",
+        "icon_set",
+        "monochrome document lifecycle workflow diagram kit",
+        "web_product_teams",
+        "editable document lifecycle diagram components for software documentation, onboarding, presentations, and process explainers",
+        "web",
+        "software documentation",
+        "product onboarding",
+        "business process explanation",
+        "web and mobile UI",
+        "presentation diagram system",
+        "specific document lifecycle use case",
+        "six reusable workflow modules",
+        "monochrome recolorability",
+        "stroke-aware safe zones",
+        "named editable groups",
+        "thumbnail readability",
+        "non-crossing connector system",
+        "native_vector_workflow_diagram_kits",
+        "secondary",
+        "document-lifecycle-diagram-kit",
+        "generative_ai_disclosure_required"
+      ]
+    },
+    "metadata": {
+      "title": "Monochrome Document Lifecycle Workflow Diagram Kit",
+      "keywords": [
+        "document lifecycle diagram",
+        "document workflow diagram",
+        "monochrome workflow icons",
+        "intake organize review approve archive deliver",
+        "editable SVG diagram",
+        "process flow components",
+        "document management workflow",
+        "software documentation",
+        "product onboarding",
+        "business process diagram",
+        "recolorable vector",
+        "native vector shapes",
+        "workflow presentation graphic",
+        "UI component system",
+        "editable infographic"
+      ],
+      "created_using_generative_ai": true,
+      "people_or_property": "none depicted; human review required to confirm",
+      "status": "human_review_required",
+      "human_review_required": true,
+      "marketplace_transaction_data": "DATA NOT PUBLICLY AVAILABLE",
+      "reviewer_checklist": [
+        "Confirm the title and every retained keyword accurately describe the visible asset.",
+        "Confirm no readable text, brand, logo, watermark, real person, or protected work appears.",
+        "Confirm the visual does not make a legal, compliance, environmental, accessibility, medical, or security guarantee.",
+        "Confirm the asset is materially distinct from already selected portfolio assets.",
+        "Complete the marketplace-specific AI disclosure and any people/property fields truthfully."
+      ]
+    }
+  },
+  "notice": "No provider or GPU was called. Human review is required before any trial."
+}
+--- portfolio trial-readiness --asset-type icon_set ---
+{
+  "asset_type": "icon_set",
+  "delivery_format": "svg",
+  "readiness": "READY_FOR_TRIAL",
+  "hypothesis": "A monochrome editable document lifecycle diagram kit may serve software documentation and onboarding buyers.",
+  "purpose": "Validate one redesigned native SVG against buyer utility, geometry clearance, editability, and thumbnail readability before any portal action.",
+  "single_candidate_only": true,
+  "trial_allowed": true,
+  "provider_call_allowed": false,
+  "blockers": [
+    "visual buyer-fit and set coherence still require human review",
+    "portal upload validation is still pending"
+  ],
+  "next_step": "Build exactly one local candidate only after the human confirms this hypothesis and the selected brief preflight passes."
+}
