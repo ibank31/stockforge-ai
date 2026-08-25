@@ -1,5 +1,16 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Seed-starting tray master finalized and audited
+
+### REVIEW_READY — one approved preview, one private finalizer, no upload
+
+- Recorded the user's `keep` verdict for `seed_starting_tray_propagation--seed-tray` with conservative scores: visual 4/5, technical 3/5, buyer fit 4/5, metadata accuracy 4/5, overall 3.75/5.
+- `portfolio learning-summary` returned `INSUFFICIENT_EVIDENCE`; one review does not establish demand, ranking, approval, downloads, conversion, or sales.
+- Submitted exactly one private Kaggle finalizer job on `iqbalteguh/stockforge-finalizer` using `RealESRGAN_x4plus` at 4×. Imported master artifact `20032d2f-3ef2-43a2-a103-cb2707fe10ed` with execution `83709936-fae9-4643-bd07-bb332b3ba455`.
+- Master passed deterministic Adobe checks: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, 1,451,346 bytes, quality 95, and 4:4:4 subsampling.
+- Added `docs/research/SEED_STARTING_TRAY_MASTER_AUDIT_2026-08-25.md` with nine-tile full-resolution review. One apparently empty cell is recorded as a non-blocking natural variation; minor bright plastic specks and smooth leaf texture remain human review notes.
+- Master remains `review_ready` / `visual_review_required`. No retry, second finalizer, upload-copy, Android export, Adobe upload, or marketplace submission occurred. Separate explicit approval is required before `portfolio prepare-adobe-upload`.
+
 ## 2026-08-25 — New JPEG seed-starting hypothesis prepared
 
 ### READY — evidence-bound lane and pre-GPU dry-run
