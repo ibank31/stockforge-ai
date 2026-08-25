@@ -1,5 +1,13 @@
 # StockForge AI — Changelog
 
+## 2026-08-25 — Adobe keyword ceiling corrected
+
+### FIXED — enforce 49-keyword maximum
+
+- Corrected the upload bundle ceiling from 50 to **49 keywords** to match Adobe's current contributor guidance.
+- Added boundary regression coverage for exactly 49 keywords and rejection at 50.
+- Full suite after the correction: **297 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+
 ## 2026-08-25 — Automatic category and upload metadata path
 
 ### DONE — engine-owned metadata, manual-only portal boundary

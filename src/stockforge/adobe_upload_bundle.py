@@ -30,7 +30,7 @@ ADOBE_CATEGORY_BY_LANE = {
 CSV_HEADER = ("Filename", "Title", "Keywords", "Category", "Releases")
 MAX_FILENAME_CHARS = 30
 MAX_TITLE_CHARS = 70
-MAX_KEYWORDS = 50
+MAX_KEYWORDS = 49
 MANUAL_FILE_TYPE = "MANUAL_REVIEW_REQUIRED"
 
 # These phrases describe workflow, buyer use, or the generation method rather

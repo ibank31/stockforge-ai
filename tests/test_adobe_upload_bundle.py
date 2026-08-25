@@ -125,6 +125,18 @@ def test_prepare_adobe_upload_bundle_requires_explicit_review_approval(tmp_path:
         )
 
 
+def test_upload_metadata_allows_adobe_maximum_49_keywords() -> None:
+    from stockforge.adobe_upload_bundle import _validated_metadata
+
+    metadata = _metadata()
+    metadata["keywords"] = [f"visible term {index}" for index in range(49)]
+    assert len(_validated_metadata(metadata)["keywords"]) == 49
+
+    metadata["keywords"] = [f"visible term {index}" for index in range(50)]
+    with pytest.raises(AdobeUploadBundleError, match="50-keyword limit"):
+        _validated_metadata(metadata)
+
+
 def test_validated_upload_metadata_removes_nonvisual_keywords():
     from stockforge.adobe_upload_bundle import _validated_metadata
 
