@@ -105,6 +105,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("ordered dependency chain", "transparent provenance bridge", "controlled build release"),
         prohibited_shorthand=("padlock", "shield", "hooded hacker", "code screen", "server rack", "certification badge", "dashboard"),
     ),
+    "technical_mechanical_component_illustrations": JpegNicheIdentity(
+        lane_key="technical_mechanical_component_illustrations",
+        signature="precision-friendly conceptual mechanical component with readable axial geometry and one clear functional silhouette",
+        lighting="controlled studio key light with restrained copper, brass, graphite, and steel separation; no glossy product-ad spectacle",
+        framing="three-quarter or orthographic-like isolated component study, large enough for thumbnail recognition with quiet surrounding margin",
+        context="clean neutral technical illustration studio; conceptual engineering language without CAD screens, workshop clutter, or false specification",
+        distinctness=("axial construction", "material relationship", "recognizable component silhouette", "purposeful edge hierarchy"),
+        prohibited_shorthand=("CAD screenshot", "blueprint", "dimension line", "model number", "manufacturer mark", "logo", "brand-specific housing", "certification symbol", "spark plug", "motorcycle engine", "tool cluster"),
+    ),
 }
 
 

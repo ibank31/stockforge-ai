@@ -182,6 +182,10 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
         "title": "Modular Component Chain With Transparent Path",
         "keywords": ("modular components", "transparent path", "graphite ceramic", "clear acrylic", "matte paper", "connected modules", "horizontal object", "isolated object", "white background", "copy space", "minimal 3d"),
     },
+    ("technical_mechanical_component_illustrations", "rotor-armature"): {
+        "title": "Conceptual Electromechanical Rotor Armature Component Illustration",
+        "keywords": ("electromechanical component", "rotor armature", "mechanical component", "technical illustration", "industrial technology", "engineering documentation", "conceptual machine part", "copper metal", "graphite housing", "isolated object", "white background", "clean silhouette"),
+    },
     ("native_vector_elements", "modular-ribbon"): {
         "title": "Editable Modular Ribbon Vector Element",
         "keywords": ("editable vector", "modular ribbon", "SVG paths", "geometric element", "connected shapes", "flat illustration", "isolated graphic", "transparent background", "design component", "abstract vector"),
@@ -275,6 +279,36 @@ PALETTES = {
 
 
 PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
+    PortfolioLane(
+        key="technical_mechanical_component_illustrations",
+        name="Technical mechanical component illustrations",
+        tier="first",
+        evidence_confidence="medium",
+        opportunity_id="C60",
+        buyer_segment="editorial_content_teams",
+        buyer_job="conceptual electromechanical component for engineering documentation and industrial explainer content",
+        channel="web",
+        asset_family="technical_component_illustration",
+        asset_type="illustration",
+        micro_niche="conceptual electromechanical rotor armature component",
+        visual_language="precision-friendly stylized technical illustration with readable axial geometry",
+        medium="copper, brass, graphite, and muted steel with controlled dimensional shading",
+        commercial_use_cases=("engineering documentation", "repair and maintenance explainer", "technical education", "industrial technology article"),
+        keywords=("electromechanical component", "rotor armature", "mechanical component", "technical illustration", "industrial technology", "engineering documentation", "conceptual machine part", "copper metal", "graphite housing", "isolated object", "white background", "clean silhouette"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "rotor-armature",
+                "one conceptual electromechanical rotor-armature component with copper winding, graphite housing, and a clear axial shaft",
+                "recognizable axial construction and material relationship communicate a mechanical component without false technical specification",
+                "single three-quarter isolated component study, large enough for thumbnail recognition with a quiet neutral margin",
+                "clean neutral surrounding space; no reserved copy field or unrelated props",
+                ("copper", "brass", "graphite", "muted steel"),
+                ("axial construction", "recognizable component silhouette", "material relationship", "purposeful edge hierarchy"),
+            ),
+        ),
+        notes="Evidence-bound first-sale hypothesis from recurring historical mechanical-component screenshots and Adobe STEM/technology content guidance; not proven demand or engineering accuracy.",
+    ),
     PortfolioLane(
         key="ai_governance",
         name="AI governance visual systems",

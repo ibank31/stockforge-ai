@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 13
+    assert len(lanes) == 14
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -33,6 +33,20 @@ def test_all_priority_lanes_build_a_safe_seed_brief():
         assert brief.metadata.marketplace_transaction_data == "DATA NOT PUBLICLY AVAILABLE"
         assert "readable text" in brief.prompt_package.negative_prompt
         assert "human review" in " ".join(brief.asset_spec.quality_gates).lower()
+
+
+def test_technical_mechanical_component_lane_is_one_candidate_jpeg_with_specific_identity():
+    brief = build_brief("technical_mechanical_component_illustrations", "rotor-armature")
+
+    assert brief.brief_id == "technical_mechanical_component_illustrations--rotor-armature"
+    assert brief.asset_spec.delivery_format == "jpeg"
+    assert brief.asset_spec.product_kind == "raster_illustration"
+    assert brief.asset_spec.isolation_policy == "isolated"
+    assert "electromechanical" in brief.asset_spec.micro_niche
+    assert "axial" in brief.asset_spec.identity_signature.lower()
+    assert "dimension" in brief.prompt_package.negative_prompt.lower()
+    assert brief.metadata.created_using_generative_ai is True
+    assert brief.metadata.human_review_required is True
 
 
 def test_explicit_layout_mode_selects_hero_landscape_while_other_products_stay_square():
