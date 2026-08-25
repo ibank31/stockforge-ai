@@ -221,8 +221,9 @@ def test_portfolio_release_package_keeps_webp_preview_review_only(tmp_path: Path
     artifact = Artifact.from_file(project_id, "artifacts/preview.webp", project_root, kind="generated-image")
     database.create_artifact(artifact)
     portfolio = _portfolio_context()
-    portfolio["asset_spec"] = {"delivery_format": "jpeg"}
-    portfolio["format_route"] = {"delivery_format": "jpeg"}
+    portfolio["pre_gpu_gate"] = {
+        "format_route": {"delivery_format": "jpeg"},
+    }
     execution = GenerationExecutionRecord.create(
         project_id,
         state="succeeded",

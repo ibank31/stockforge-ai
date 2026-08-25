@@ -51,14 +51,17 @@ def _technical_report_for(
 
 def _portfolio_delivery_format(portfolio: dict[str, object]) -> str | None:
     """Read the immutable intended delivery format from a portfolio snapshot."""
-    asset_spec = portfolio.get("asset_spec")
-    if isinstance(asset_spec, dict):
-        value = asset_spec.get("delivery_format")
-        if isinstance(value, str) and value.strip():
-            return value.strip().casefold()
-    route = portfolio.get("format_route")
-    if isinstance(route, dict):
-        value = route.get("delivery_format")
+    candidates: list[object] = [
+        portfolio.get("asset_spec"),
+        portfolio.get("format_route"),
+    ]
+    pre_gpu_gate = portfolio.get("pre_gpu_gate")
+    if isinstance(pre_gpu_gate, dict):
+        candidates.append(pre_gpu_gate.get("format_route"))
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        value = candidate.get("delivery_format")
         if isinstance(value, str) and value.strip():
             return value.strip().casefold()
     return None

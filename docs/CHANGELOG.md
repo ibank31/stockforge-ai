@@ -2,6 +2,16 @@
 
 All meaningful implementation milestones, live validations, architectural decisions, and verified fixes are recorded here. This is intentionally separate from Git commit history so a future session can understand **what was actually proven** rather than merely what files changed.
 
+## 2026-08-25 — Second controlled trial exposed incomplete WebP context routing
+
+### BLOCKED — no release package returned; no further retry
+
+- The second authorized `technical_mechanical_component_illustrations--rotor-armature` request again passed plan discovery, brief inspection, dry-run, and reached the remote worker.
+- The Termux command again stopped at `No technical gate is registered for delivery format: .webp`.
+- Diagnosis: the first WebP-preview patch looked for `asset_spec` or top-level `format_route`, but the real `portfolio_snapshot` intentionally stores minimal context and carries the intended delivery format under `pre_gpu_gate.format_route`. The earlier regression fixture was too complete and therefore failed to reproduce the real context.
+- The corrected patch now reads `pre_gpu_gate.format_route`, and the regression fixture mirrors the actual snapshot structure. Full verification passes: **291 passed, 1 skipped, 49 non-blocking Pillow deprecation warnings**.
+- No third request, retry, upscale, Kaggle run, XMP export, upload, or submission is allowed until this corrected patch is committed, synchronized to Termux, and verified in the actual run path.
+
 ## 2026-08-25 — Controlled rotor-armature trial reached inference; packaging fix required
 
 ### REVIEW_REQUIRED — no release package returned
