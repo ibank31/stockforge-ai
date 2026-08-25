@@ -147,3 +147,21 @@ The new lane and JPEG identity were registered with `test_cap=1`; no new asset f
 The inherited sandbox needed a project-local wrapper config at `/home/ubuntu/stockforge-live/cli-inherited-config/config.json` because the active database is `/home/ubuntu/stockforge-live/stockforge.db` while the workspace config database had no project record. This wrapper contains no credentials and does not alter Android output paths. The old stray `Download/MACHINE STOCKFORGE/PACKAGES` possibility was not inspected or deleted; any cleanup still requires dry-run inventory and explicit user confirmation.
 
 **Next action:** present the exact cable-gland brief and ask for explicit approval for one ZeroGPU preview only. If approved, use the saved batch and execute exactly one preview; then require user visual verdict followed by `portfolio evaluate` and `portfolio learning-summary`. Do not retry, batch, finalize, prepare upload-copy, upload, or submit before the later gates and separate approvals.
+
+
+## Cable-gland preview executed — human review pending
+
+The user explicitly approved the exact cable-gland brief. StockForge executed exactly one ZeroGPU preview for batch `technical_cable_entry_fitting_illustrations-20260825T085859Z-db437604` using `huggingface-zerogpu`, profile `z-image-turbo`, square 1024×1024, 8 steps, batch size 1. Execution `0485db26-571c-50bb-8fca-469ef84f0817`; artifact `b846ec0c-4017-4221-a803-822b8d3264f0`; release package `deliveries/stockforge-0485db26-571c-50bb-8fca-469ef84f0817.zip`. Android preview export was unavailable in this sandbox, so no Android visual folder was changed. No retry, second generation, finalizer, upload-copy preparation, or submission has occurred.
+
+The rendered preview is one isolated metallic threaded fitting with a dark elastomer ring, faceted central body, upper opening, and lower external thread. The short cable stub is not visually obvious, so the user should judge whether it reads as a cable-entry strain-relief fitting rather than a generic threaded adapter. Do not mutate the prompt or retry based on this note. After the user gives a simple verdict, record it with `portfolio evaluate`, then run `portfolio learning-summary` before any master/finalizer decision.
+
+
+## Cable-gland finalizer completed after queue delay — upload-copy still gated
+
+The user asked to diagnose the long Kaggle delay. Read-only checks showed the same private kernel `iqbalteguh/stockforge-finalizer` moved from `QUEUED` to `RUNNING`, with latest run timestamp `2026-08-25 09:42:55 UTC`. The output download contained the expected `result.json`, `master.jpg`, `master.upscaled.png`, and log. No retry, second submission, or additional finalizer job was made.
+
+The result matched the original request ID, source lineage, target, and checksums. It was imported as master artifact `7976851d-acfb-4b96-8a9f-3720694296c2` with master execution `9b01c985-d2dd-42a4-a142-42e1118dcca6`. Master path: `masters/b846ec0c-4017-4221-a803-822b8d3264f0-master.jpg`. Deterministic gate: JPEG, 4096×4096, 16.777216 MP, RGB, embedded/assumed sRGB, decodable, quality 95, 4:4:4 subsampling, 723,102 bytes.
+
+The master was inspected in all 9 ordered overlapping full-resolution tiles. It is one centered, fully contained metallic threaded fitting with dark elastomer ring and clean white background. No readable text, label, logo, watermark, person, hand, tool, protected character, severe crop loss, major halo, colored fringe, or duplicated geometry was observed. Non-blocking notes are irregular stippled/speckled metal texture on the central body and the continued absence of an obvious short cable stub; the object may read as a generic threaded adapter rather than an unmistakable cable gland. Do not mutate the prompt or retry.
+
+Audit report: `docs/research/CABLE_GLAND_MASTER_AUDIT_2026-08-25.md`. Master remains `review_ready` / `visual_review_required`. No upload-copy, Android export, Adobe upload, or submission has occurred. The next gate is a separate explicit user approval for `portfolio prepare-adobe-upload`; Adobe submission remains manual.

@@ -156,3 +156,28 @@ The selected object is one generic unbranded cable-entry strain-relief fitting w
 A new lane and JPEG identity were registered with `test_cap=1`. Targeted tests passed 19/19. Batch `technical_cable_entry_fitting_illustrations-20260825T085859Z-db437604` was created in the project-local `portfolio-plans/` directory. `portfolio show` and `portfolio generate --dry-run` pass the seven pre-GPU checks with `gpu_eligible=true`, zero blockers, remote provider route `huggingface-zerogpu`, profile `z-image-turbo`, square 1024×1024 preview, 8 steps, batch size 1, and estimated 55 GPU seconds. No provider call, generation, finalizer, upload-copy preparation, or submission has occurred. Explicit user approval is required for exactly one preview of this exact cable-gland brief.
 
 The project-local wrapper config used for this inherited sandbox session is `/home/ubuntu/stockforge-live/cli-inherited-config/config.json`; it points to the active database and project root without changing Android output folders or credentials. The earlier stray `Download/MACHINE STOCKFORGE/PACKAGES` instruction remains subject to the documented dry-run inventory and explicit cleanup confirmation; no cleanup was performed in this milestone.
+
+
+## Cable-gland preview generated — human review pending
+
+After the user explicitly approved `SETUJU PREVIEW CABLE GLAND`, StockForge executed exactly one ZeroGPU preview for batch `technical_cable_entry_fitting_illustrations-20260825T085859Z-db437604`. Provider route was `huggingface-zerogpu`, profile `z-image-turbo`, square 1024×1024, 8 steps, batch size 1. Execution `0485db26-571c-50bb-8fca-469ef84f0817`, artifact `b846ec0c-4017-4221-a803-822b8d3264f0`, and project-local release package `deliveries/stockforge-0485db26-571c-50bb-8fca-469ef84f0817.zip`. The preview is `review_ready`; Android preview export was not available in this sandbox. No retry, second generation, finalizer, upload-copy preparation, or submission has occurred.
+
+At first visual glance, the rendered object is a single isolated metallic threaded fitting with a dark elastomer ring, faceted central body, upper opening, and lower external thread. The cable stub is not visually obvious in this preview, so human review must specifically assess whether the object reads as a cable-entry strain-relief fitting rather than a generic threaded adapter. This note does not authorize prompt mutation or a retry; the user verdict must be recorded through `portfolio evaluate` and followed by `portfolio learning-summary`.
+
+
+## Cable-gland finalizer queued — no retry
+
+After the user approved finalization, KEEP was recorded with conservative scores: visual 4/5, technical 3/5, buyer fit 3/5, metadata accuracy 4/5, overall 3.5/5, marketplace outcome `not_submitted`. `portfolio learning-summary` returned `INSUFFICIENT_EVIDENCE` for the cable-gland lane, correctly stating that one review cannot establish a niche policy or market demand.
+
+One private Kaggle finalizer submission was made for request `master-b846ec0c-4017-4221-a803-822b8d3264f0-af74b4a5.json` using the existing `iqbalteguh/stockforge-finalizer` kernel and `RealESRGAN_x4plus` route. Kaggle accepted the push as kernel version 12. Repeated read-only status checks report `KernelWorkerStatus.QUEUED`; no second submission or retry is allowed. The public browser page did not expose the private kernel page, so CLI status remains the source for job state. Master import and audit must wait for a completed output.
+
+
+## Cable-gland finalizer completed and master audited
+
+The earlier long delay was a Kaggle queue delay, not a failed submission. Read-only checks showed the same private kernel `iqbalteguh/stockforge-finalizer` moving from `QUEUED` to `RUNNING`; the latest run timestamp was `2026-08-25 09:42:55 UTC`. The output download then contained `result.json`, `master.jpg`, `master.upscaled.png`, and the run log. No retry or second finalizer was submitted.
+
+The output passed lineage/checksum validation and was imported. Master artifact is `7976851d-acfb-4b96-8a9f-3720694296c2`, master execution `9b01c985-d2dd-42a4-a142-42e1118dcca6`, and file `masters/b846ec0c-4017-4221-a803-822b8d3264f0-master.jpg`. Deterministic gate passed: JPEG, 4096×4096, 16.777216 MP, RGB, embedded/assumed sRGB, decodable, quality 95, 4:4:4 subsampling, 723,102 bytes. The master was inspected in all 9 ordered overlapping full-resolution tiles; no readable text, branding, watermark, people, hands, tools, protected characters, severe crop loss, halo, colored fringe, or duplicated geometry was observed.
+
+Non-blocking visual notes: the central metal body has irregular stippled/speckled surface texture at 100%, and the short cable stub remains not visually obvious, so the object may read as a generic threaded adapter rather than an unmistakable cable gland. These are recorded for truthful human review; no prompt mutation or retry is allowed. Master status remains `review_ready` / `visual_review_required`.
+
+The project-local audit report is `docs/research/CABLE_GLAND_MASTER_AUDIT_2026-08-25.md`. No upload-copy, Android export, Adobe upload, or submission has occurred for cable-gland. A separate explicit approval is required before `portfolio prepare-adobe-upload` creates the JPEG upload-copy/package; Adobe portal action remains manual.
