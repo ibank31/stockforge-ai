@@ -1,6 +1,6 @@
 # StockForge Active Architecture
 
-**Updated:** 2026-08-24
+**Updated:** 2026-08-25
 **Branch:** `main`
 
 StockForge adalah control plane ringan berbasis Android/Termux yang mengubah market signal menjadi asset package yang dapat ditinjau. Generator bukan produk akhir; produk akhirnya adalah asset dengan buyer hypothesis, provenance, QC, metadata, dan submission state.
@@ -80,7 +80,7 @@ Technical checks cover dimensions, file integrity, RGB/sRGB, alpha, decodability
 
 A successful generation is not automatically treated as a good result. After human review, `portfolio evaluate` records the execution/artifact identity, buyer job, product kind, delivery format, provider, model, workflow hash, four bounded quality scores, decision, rejection reasons, and marketplace outcome. Records are append-only in `evaluations/generation_evaluations.jsonl` so later engine changes can be compared with the exact production context that created the evidence.
 
-`portfolio evaluation-summary` produces descriptive aggregates for reviewed records. It never changes prompts, selects a new provider, predicts sales, or launches generation. Any future learning rule must be proposed and tested against this ledger before it can influence routing.
+`portfolio learning-summary` produces conservative niche/buyer-job aggregates for reviewed records; `portfolio evaluation-summary` remains a legacy descriptive aggregate. Neither command changes prompts, selects a new provider, predicts sales, or launches generation. Any future learning rule must be proposed and tested against this ledger before it can influence routing.
 
 ## Current compute policy
 
@@ -95,7 +95,8 @@ GPU quota is opportunistic capacity. A GPU call requires a specific buyer hypoth
 - `src/stockforge/png_alpha_finalize.py` — conservative true-alpha normalization; opaque RGB sources are rejected and production routing remains blocked.
 - `src/stockforge/remote_gradio.py` — remote worker adapter.
 - `src/stockforge/recovery_orchestrator.py` — durable execution and artifact ingestion.
-- `src/stockforge/generation_evaluation.py` — append-only human evaluation ledger and summary.
+- `src/stockforge/generation_evaluation.py` — append-only human evaluation ledger and legacy summary.
+- `src/stockforge/niche_learning.py` — conservative niche/buyer-job learning summary.
 - `src/stockforge/android_export.py` — minimal review/upload visual export to Android.
 - `deploy/zerogpu/remote_api.py` — machine generation endpoint.
 
@@ -103,6 +104,6 @@ GPU quota is opportunistic capacity. A GPU call requires a specific buyer hypoth
 
 - Current state: [`STATUS.md`](STATUS.md)
 - Feature state: [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md)
-- Format decision: [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md)
+- Active JPEG decision: [`research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md`](research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md)
 - Marketplace standard: [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md)
 - Provider backend contract: [`provider-backends.md`](provider-backends.md)

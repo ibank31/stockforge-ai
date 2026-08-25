@@ -8,7 +8,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 |---|---|
 | Memahami kondisi terbaru dan batasan proyek | [`STATUS.md`](STATUS.md) |
 | Melanjutkan sesi berikutnya | [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) |
-| Melihat rencana pematangan mesin | [`ENGINE_MATURATION_PLAN.md`](ENGINE_MATURATION_PLAN.md) |
+| Memahami kontrak learning loop dan folder output | [`LEARNING_LOOP_POLICY.md`](LEARNING_LOOP_POLICY.md) |
 | Memahami arsitektur dan alur asset factory | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | Melihat pekerjaan selesai dan berikutnya | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
 | Membaca sejarah keputusan dan verifikasi | [`CHANGELOG.md`](CHANGELOG.md) |
@@ -16,7 +16,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 ## Produk dan format
 
 - [`MULTIFORMAT_ENGINE_V1.md`](MULTIFORMAT_ENGINE_V1.md) — kontrak routing JPEG, native SVG, dan PNG alpha.
-- [`FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) — keputusan niche/format berbasis evidence terbaru.
+- [`FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md`](research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md) — keputusan hipotesis niche JPEG dan batas evidence aktif.
 - [`ADOBE_MULTIFORMAT_EVIDENCE_2026-08-24.md`](ADOBE_MULTIFORMAT_EVIDENCE_2026-08-24.md) — bukti marketplace dan scope inferensi.
 - [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) — standar teknis, policy, metadata, dan human review sebelum upload.
 - [`ADOBE_STOCK_READINESS.md`](ADOBE_STOCK_READINESS.md) — gate kesiapan Adobe Stock.
@@ -24,8 +24,8 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 ## Operasi dan delivery
 
 - [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) — workflow Android/Termux.
-- [`PORTFOLIO_PRODUCTION_ENGINE.md`](PORTFOLIO_PRODUCTION_ENGINE.md) — perencanaan portfolio dan brief.
-- [`PORTFOLIO_DELIVERY_PIPELINE.md`](PORTFOLIO_DELIVERY_PIPELINE.md) — review package dan delivery.
+- [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) — feature state dan pekerjaan aktif.
+- [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) — baseline workflow dan continuation contract.
 - `portfolio metadata-preflight --project ... --plan ... --brief ...` — laporan metadata JPEG lintas platform; hanya validasi dan reorder keyword existing, tanpa provider call, upload, atau submit.
 - [`GPU_QUOTA_RUNBOOK.md`](GPU_QUOTA_RUNBOOK.md) — aturan penggunaan quota.
 - [`GPU_WASTE_PREVENTION_2026-08-24.md`](GPU_WASTE_PREVENTION_2026-08-24.md) — pre-GPU guard.
@@ -61,23 +61,23 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 - [`VISION_PROVIDER_BENCHMARK.md`](VISION_PROVIDER_BENCHMARK.md)
 - [`PORTFOLIO_STANDALONE_RESEARCH_2026.md`](PORTFOLIO_STANDALONE_RESEARCH_2026.md)
 - [`FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md`](FREE_MODEL_PROVIDER_STRATEGY_2026-08-24.md)
-- [`SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) — deep research SVG market, buyer jobs, competition proxies, trends, and first folder-upload hypothesis.
-- [`svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) — raw source notes and caveats for the SVG research.
-- [`FOLDER_UPLOAD_PRETRIAL_SPEC_2026-08-24.md`](research/FOLDER_UPLOAD_PRETRIAL_SPEC_2026-08-24.md) — approved single-object hypothesis, metadata boundary, deterministic gates, and human review questions before the next SVG trial.
-- [`svg_global_discoverability_notes_2026-08-24.md`](research/svg_global_discoverability_notes_2026-08-24.md) — global platform metadata/discoverability evidence and anti-spam constraints.
-- [`SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md`](research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md) — micro-set value hypothesis, buyer test, platform projections, and safe learning loop.
+SVG market research, folder-upload pretrial, and SVG value-upgrade notes are retained in [`archive/2026-08-25/`](archive/2026-08-25/) because SVG is frozen while JPEG is the active track. They remain evidence, not active production instructions.
 
 ## Riset terarsip tetapi masih menjadi bukti
 
-Direktori [`research/`](research/) berisi catatan sumber dan audit. Dokumen riset tidak otomatis menjadi keputusan produksi; keputusan aktif harus diringkas di `STATUS.md` atau `FORMAT_AND_NICHE_DECISION_2026-08-24.md`.
+Direktori [`research/`](research/) berisi catatan sumber dan audit. Dokumen riset tidak otomatis menjadi keputusan produksi; keputusan aktif harus diringkas di `STATUS.md`, `SESSION_HANDOVER.md`, atau dokumen riset aktif yang masih berada di `research/`.
 
 ## Output dan evaluasi
 
-- `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` — satu visual untuk review manusia setelah generation masa depan.
-- `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/` — satu salinan JPEG yang sudah disetujui dan diberi XMP title/keywords bila formatnya mendukung.
+- `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` — satu visual untuk review manusia.
+- `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/` — satu salinan JPEG yang sudah disetujui dan diberi XMP title/keywords.
 - `evaluations/generation_evaluations.jsonl` — ledger append-only untuk skor, keputusan, rejection reason, format, provider, model, dan buyer job.
 
-Perintah `portfolio evaluate` hanya mencatat review; perintah `portfolio evaluation-summary` hanya merangkum data yang sudah direview. Keduanya tidak menjalankan GPU, upload, submit, atau perubahan prompt otomatis.
+Perintah `portfolio evaluate` hanya mencatat review; `portfolio learning-summary` merangkum evidence per niche dan buyer job. Keduanya tidak menjalankan GPU, upload, submit, atau perubahan prompt otomatis.
+
+## Arsip
+
+Dokumen historis yang telah digantikan atau dibekukan berada di [`archive/2026-08-25/`](archive/2026-08-25/). Arsip tidak dihapus karena mempertahankan provenance, tetapi tidak boleh dipakai sebagai instruksi operasi aktif.
 
 ## Aturan pemeliharaan
 

@@ -1,99 +1,95 @@
-# StockForge Development Status
+# StockForge Development Status — Active Snapshot
 
 **Updated:** 2026-08-25
 **Branch:** `main`
-**Latest verified commit:** `5c5364e` (Adobe keyword ceiling correction); single visual-root routing prepared locally; deployed Space commit: `935faa5`
+**Latest verified commit:** `64e5216`
+**Deployed HF Space:** `935faa5` — runtime `RUNNING`, domain `READY`
 
-**Current state:** The endpoint deployment is healthy: Space runtime is `RUNNING`, domain is `READY`, and Gradio metadata exposes `/generate_remote`. The authorized rotor-armature trial now completed end-to-end through Termux: execution `d3c2c121-77c7-590c-97b1-3da15ff26dcc`, artifact `d419cdcf-da49-49f8-98c4-5ef4c8415920`, and review package status `review_ready`. The preview was exported to `PREVIEW_TO_MANUS` as `technical-mechanical-component-illustrations-rotor-armature__preview.webp`. This proves technical execution and packaging only; the preview and finalized master have now been visually and market-audited, with the lane retained as a promising hypothesis rather than accepted for upload. A finalized 4096×4096 JPEG master now exists after one private Kaggle RealESRGAN run and import; no upload copy or marketplace submission was performed.
+## Current decision
 
-## Current milestone
+StockForge is currently operating the **JPEG technical mechanical component** track as a controlled first-sale hypothesis. The active reference brief is `technical_mechanical_component_illustrations--rotor-armature`. The niche is promising but unproven: market evidence supports recognizable technical/industrial buyer jobs, but no screenshot, catalog count, internal score, upload, approval, download, or sale is treated as demand proof.
 
-**Evidence-backed multi-format asset factory for Android/Termux and Adobe Stock.**
+The user is a first-time microstock contributor and should not be asked to choose the niche, buyer job, prompt, negative prompt, format, provider, category, keywords, or finalizer. StockForge owns those decisions from evidence, buyer utility, technical readiness, compliance risk, cost, and prior reviewed outcomes. The user’s role is limited to simple visual review, portal declarations, CAPTCHA, Terms, and manual submission.
 
-StockForge treats generation as one step inside an asset package containing a buyer hypothesis, typed asset specification, prompt, provider execution, visual/technical QA, provenance, metadata, and human-review state. The system must not turn a market signal or a clean file into a claim of sales or marketplace acceptance.
+## Verified JPEG workflow
 
-## Verified production paths
+```text
+market evidence and buyer job
+  → one portfolio brief
+  → dry-run and pre-GPU gates
+  → one ZeroGPU preview
+  → artifact/provenance/review package
+  → visual and technical review
+  → portfolio evaluate
+  → portfolio learning-summary
+  → prepare-master
+  → one private Kaggle finalizer job
+  → import-kaggle-master
+  → 4096×4096 RGB/sRGB master audit
+  → prepare-adobe-upload --latest-master --approved
+  → JPEG upload-copy with embedded metadata
+  → manual Adobe upload and submission
+```
 
-| Path | Format | Execution | Status |
-|---|---|---|---|
-| Conceptual scene / raster illustration | JPEG | Remote ZeroGPU preview, optional finalizer, XMP upload copy | **Verified workflow** |
-| Native geometric object/icon/pattern | SVG | Local deterministic builder, no GPU | **Locally verified; portal not yet verified** |
-| Transparent cutout / overlay | PNG with real alpha | Alpha producer and PNG finalizer | **Blocked until alpha path is validated** |
-| Seamless raster pattern | PNG/JPEG candidate | Local edge-continuity gate | **Gate implemented; commercial review still required** |
+This workflow is verified end-to-end for the rotor-armature reference. The preview execution is `d3c2c121-77c7-590c-97b1-3da15ff26dcc`; the preview artifact is `d419cdcf-da49-49f8-98c4-5ef4c8415920`. The remote ZeroGPU worker completed inference and returned a review package. One private Kaggle RealESRGAN finalizer job completed, was imported, and produced a 4096×4096 JPEG master with 16.777216 MP, RGB, embedded sRGB, quality 95, and 4:4:4 subsampling. The master passed the deterministic technical gate and a four-tile full-resolution audit.
 
-The JPEG path is the only generative route with a recorded live preview and completed master workflow. Native SVG is a genuine local geometry route, not a raster trace. The research-backed folder-upload SVG trial has now been built locally: structural status PASS, visual status REVIEW_REQUIRED pending user review, and no portal validation. Native geometric pattern retains its local repeatability gate. PNG now has a conservative offline true-alpha normalizer that refuses opaque RGB sources and preserves the source, but PNG must never use a white or checkerboard background as a substitute for actual transparency and remains blocked from production.
+The master is a conceptual electromechanical illustration. It must not be described as CAD, blueprint, certified engineering documentation, dimensionally accurate reference, standard-compliant equipment, or manufacturer-specific content. Its strongest honest buyer use is an industrial technology article, presentation, general education visual, or conceptual manufacturing communication.
 
-## Completed foundation
+## Current production routes
 
-The repository contains the CLI, SQLite project and asset registries, persistent job queue, plugin/pipeline contracts, provenance and lineage records, provider routing, remote Gradio adapter, portfolio planning, asset-type selection, prompt compilation, technical image gates, deduplication controls, review packages, Android export separation, Adobe metadata upload-copy workflow, deterministic native SVG presets for the research-backed folder-upload baseline, a new eight-action file-flow micro-set, modular ribbons, technical badges, and geometric patterns, plus dedicated native-vector element, utility-set, and pattern lanes.
-
-`portfolio asset-types` lists the supported asset categories. `portfolio readiness --asset-type <type>` explains the chosen format, readiness state, blockers, candidate niches, and next step without calling a provider. `portfolio plan-type --asset-type <type>` turns a supported choice into one evidence-aligned brief with niche, prompt, format route, and no-generation notice; `native_object` now defaults to the research-backed `folder-upload` icon hypothesis. `portfolio trial-readiness` requires a written hypothesis and purpose before a future provider call, and enforces one candidate per trial. The selector fails closed rather than silently converting an unsupported type into JPEG.
-
-The remote worker contract uses a durable `stockforge_job_id`, bounded single-image requests, terminal-state polling, and output ingestion. The public Space currently runs `app.py`; its previous deployment did not register `generate_remote`, even though `remote_api.py` did. The local worker patch now registers the remote endpoint directly in the active demo and retains job-ID result caching. It must be deployed and smoke-checked before another live trial.
-
-## Current research conclusion
-
-The preserved social/marketplace evidence supports three buyer jobs rather than one universal format:
-
-| Buyer job | Recommended lane | Evidence interpretation |
+| Route | Status | Boundary |
 |---|---|---|
-| Cinematic, surreal, seasonal, workplace, nature, and conceptual scenes | JPEG raster | Motif signal; not proof of sales or format. |
-| Isolated objects, technical clip-art, icons, badges, food/produce, and geometric elements | Native SVG first; PNG later when alpha is real | Utility-asset signal; thumbnail background does not prove transparency. |
-| Patterns, backgrounds, and decorative elements | SVG or raster according to material | Requires an explicit seamless test for seamless claims. |
+| JPEG raster | **LIVE / verified** | One preview, one learning record, selected finalizer, master audit, metadata upload-copy, manual portal action |
+| Native SVG | **FROZEN** | Local editable route and evidence retained; no active expansion during JPEG track |
+| PNG with real alpha | **BLOCKED** | Requires true-alpha producer, anti-fringe/trim gates, and portal validation |
+| Seamless pattern | **GATED** | Edge continuity is testable; commercial review remains separate |
 
-Adobe’s public guidance supports transparent PNG utility assets and genuine editable vectors, while its 2026 trend report supports tactile/material, surreal, local-specific, and emotionally useful creative hypotheses. These sources guide experiments; they do not predict revenue.[1] [2] [3]
+## Learning loop
 
-## Current priorities
+Every completed or rejected generation must be reviewed and recorded in the append-only project ledger with `portfolio evaluate`. `portfolio learning-summary` aggregates the evidence by niche and buyer job and returns conservative actions such as `INSUFFICIENT_EVIDENCE`, `REFINE_BRIEF`, `PAUSE_AND_RESEARCH`, or `KEEP_AND_VALIDATE`. These actions are decision support only. They do not predict sales, ranking, approval, or automatically trigger a new generation.
 
-1. Keep user interaction simple: receive the user's visual verdict when needed, while StockForge performs the technical, buyer, metadata, and market audit and records its explanation.
-2. Use `portfolio learning-summary` after each recorded review; treat one generation as evidence, not policy proof, and require materially distinct concepts before changing a niche decision.
-3. Mature the JPEG route before any routine generation: evaluate the new `Technical Mechanical Component Illustrations` hypothesis against the existing nine lanes, select one globally researched buyer job, strengthen the scene prompt/layout contract, and keep one-candidate evidence rules.
-4. Benchmark the prepared Kaggle Real-ESRGAN finalizer once the target runtime is available, comparing source/master at 100% for artifacts, texture, edges, color, dimensions, and sRGB.
-5. Strengthen semantic/commercial QA for JPEG; the no-provider path must remain review/blocking rather than pretending anatomy, realism, or buyer usefulness passed.
-6. Use the non-upload JPEG metadata preflight across supported platforms and the new nine-lane identity profiles; expand reviewed lane/category mappings only when the visual category is unambiguous, and keep title/keyword handling visual-first, platform-specific, and anti-spam.
-7. Keep SVG value-upgrade and PNG alpha work frozen until the JPEG maturation checkpoint is complete; do not generate or upload them in this phase.
-8. Keep model/provider registry, health, quota, and failover contracts explicit before adding more GPU providers.
+Execution snapshots retain the buyer job, asset specification, and format route. Historical Android absolute plan paths are normalized safely to the basename and reloaded only from the current project-local `portfolio-plans/` directory. The learning layer must never overwrite the original master or silently mutate a prompt.
 
-## Non-negotiable safety rules
+## Android output contract
 
-- Do not generate blindly, retry only by changing seed, or run large batches without a documented buyer hypothesis.
-- Do not treat a preview, upscaled image, local SVG, or technical pass as marketplace acceptance.
-- Do not upload or submit to Adobe automatically; declarations, CAPTCHA, releases, and final submission remain human-controlled.
-- Do not duplicate the same visual as JPEG, PNG, and SVG merely to multiply formats.
-- Do not put credentials in files, commits, logs, or user-facing output.
-- Use the user-approved Android output folders only for visual files; keep technical files in the project workspace.
+The only user-facing StockForge folder is:
 
-## Verification
+```text
+/storage/emulated/0/Download/MACHINE STOCKFORGE/
+├── PREVIEW_TO_MANUS/       # review images only
+└── READY_UPLOAD_ADOBE/     # explicitly approved JPEG upload copies only
+```
 
-The current main branch has passed **297 tests with 1 skipped** in the sandbox after Adobe keyword ceiling correction and single visual-root routing, with 49 non-blocking Pillow deprecation warnings. Syntax compilation and whitespace checks pass. The active ZeroGPU `app.py` regression passes, the endpoint patch is deployed to Space commit `935faa5`, and runtime `RUNNING`/domain `READY` plus `/gradio_api/info` exposure of `/generate_remote` with seven parameters were verified. The final authorized trial completed with exit code 0 and produced a durable execution, artifact, review package, and Android preview export. The visual/market audit and master-finalization audit are documented; final JPEG dimensions/RGB/sRGB passed the deterministic gate and four-tile audit, while metadata/category, originality, and marketplace submission remain manual review gates. The learning-loop foundation now stores richer immutable snapshot context, recovers historical brief context for older executions, and summarizes reviewed evidence by niche without mutating policy or triggering generation. Android user-facing exports are contractually limited to `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` and `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/`; default CSV/XMP/checklist bundles remain in the technical project workspace.
- JPEG market/Adobe research and the frozen SVG plan are durable. JPEG scene prompt safety now distinguishes controlled human-centered scene stories from isolated-object negative prompting while retaining anatomy, text, artifact, and IP safeguards. The JPEG route has a verified historical preview→finalizer→XMP workflow, but the actual target-runtime Real-ESRGAN benchmark and a provider-backed semantic QA pass remain incomplete. Platform-specific metadata relevance safeguards validate limits, duplicate/spam patterns, category requirements, and visual-first keyword ordering without inventing demand. A new JPEG metadata preflight report now projects reviewed metadata to supported platforms without upload, category guessing, or ranking prediction. A nine-lane JPEG identity registry now adds explicit signature, lighting, framing, context, distinctness, and prohibited-shorthand constraints to persisted briefs and compiled prompts; this improves prompt consistency but does not prove market demand or output quality. New screenshot research classifies ten user-provided Adobe Stock examples into multiple product families and identifies Technical Mechanical Component Illustrations as the next research hypothesis, not an approved generation lane. A recovery ledger reconstructs 31 historical screenshot records from the prior Git handover; raw files are unavailable in the current sandbox, so those rows remain historical notes and not re-verified imagery. The screenshot report and recovery ledger are evidence-bound and do not treat earnings as demand proof. The first-sale shortlist requires official content-need signals, supply observation, buyer-job clarity, low-cost production, and one controlled human-reviewed trial. The nine-lane JPEG identity framework is committed and pushed; the working tree must be rechecked after this status synchronization.
+The user removed old Download export folders. The process workspace `/storage/emulated/0/StockForge/` remains intact because it contains the database, plans, artifacts, evaluations, master lineage, Kaggle requests/results, and technical bundles. The code repository is `$HOME/stockforge-ai`. HF Space and Kaggle remote services are unchanged.
 
-The test suite includes the remote generation contract, provider quota routing, asset specification, format routing, PNG alpha gate and conservative normalizer, native SVG builder, seam gate, provenance, portfolio delivery, deduplication, evaluation ledger, and existing core behavior. Pillow deprecation warnings remain non-blocking cleanup items.
+Source code defines `USER_VISIBLE_ROOT = "MACHINE STOCKFORGE"`. Preview export copies one visual to `PREVIEW_TO_MANUS`. Approved upload preparation copies one JPEG per asset to `READY_UPLOAD_ADOBE`. CSV, XMP sidecars, ZIP, JSON, JSONL, Markdown, logs, request files, model weights, PNG intermediates, and database files remain in the technical project workspace. The default Adobe technical bundle destination is project-local `adobe-upload-bundles/`; it must not recreate `Download/AdobeStock/` or old review/final folders.
 
-## Output and learning contract
+## Upload readiness
 
-A future successful generation may export one visual preview to `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` when an Android Download mount is available. An approved final JPEG may be copied as a separate upload copy to `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/`; the original master and project records remain unchanged. Project packages, JSON, CSV, logs, and review records stay inside the project workspace.
+The upload bundle automatically creates a safe filename, title, visual-first keywords capped at 49, embedded XMP title/keywords, official CSV, reviewed Adobe category mapping, technical report, GenAI marker, and manual checklist. The category mapping for the technical mechanical component lane is Adobe **Industry**. A bundle is not marketplace approval.
 
-Every reviewed generation can be recorded in the project-local append-only ledger at `evaluations/generation_evaluations.jsonl`. The ledger ties human scores and rejection reasons to execution, artifact, buyer job, format, provider, model, and workflow hash. `portfolio learning-summary` aggregates those records by niche and buyer job, and returns conservative actions such as `INSUFFICIENT_EVIDENCE`, `REFINE_BRIEF`, `PAUSE_AND_RESEARCH`, or `KEEP_AND_VALIDATE`. The summary is descriptive decision support only: it does not predict sales, silently mutate a brief, or trigger a new generation. Legacy evaluations with Android absolute plan paths are normalized to a basename and reloaded only from the current project-local `portfolio-plans/` directory. See [`LEARNING_LOOP_POLICY.md`](LEARNING_LOOP_POLICY.md) for the new user/engine responsibility contract.
+The user must still inspect the JPEG at full resolution, confirm that metadata matches the visible subject, select the generative-AI disclosure, confirm rights/releases as applicable, accept Terms, pass CAPTCHA, and press Submit manually. StockForge never submits to Adobe.
+
+## Evidence and archive
+
+Active evidence includes the JPEG niche shortlist, niche knowledge audit, screenshot analysis, legacy screenshot recovery, technical-component pretrial specification, rotor-armature visual/market audit, and rotor-armature master finalization audit under `docs/research/`. Superseded SVG research, old pretrial notes, old portal interaction notes, and replaced operational runbooks are preserved under `docs/archive/2026-08-25/` and are not active instructions.
+
+## Verification and safety
+
+The source tree has passed **297 tests, 1 skipped**, with 49 non-blocking Pillow deprecation warnings; `compileall`, `git diff --check`, and the remote endpoint contract checks pass. The HF Space endpoint patch is deployed and `/gradio_api/info` exposes `generate_remote` with the seven-field contract. Do not use endpoint metadata as inference proof; the rotor-armature inference and finalizer results are separately recorded above.
+
+Never run blind seed retries, large batches, automatic upload, automatic submission, or a new finalizer job solely because a document says “next step.” Preserve the project workspace, code repository, learning ledger, master lineage, and remote service configuration when cleaning user-facing Download folders.
 
 ## Source of truth
 
 | Purpose | Document |
 |---|---|
-| Navigation | [`docs/README.md`](README.md) |
-| Current status | This file |
-| Current architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
-| Feature state and next work | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
-| Product/format decision | [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md) |
-| SVG market research | [`research/SVG_MARKET_RESEARCH_2026-08-24.md`](research/SVG_MARKET_RESEARCH_2026-08-24.md) and [`research/svg_market_2026-08-24.md`](research/svg_market_2026-08-24.md) |
-| Global discoverability and SVG value plan | [`research/svg_global_discoverability_notes_2026-08-24.md`](research/svg_global_discoverability_notes_2026-08-24.md) and [`research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md`](research/SVG_VALUE_AND_MARKET_ALGORITHM_PLAN_2026-08-24.md) |
-| JPEG maturation and market research | [`research/JPEG_MATURATION_PLAN_2026-08-24.md`](research/JPEG_MATURATION_PLAN_2026-08-24.md) and [`research/jpeg_market_2026-08-24.md`](research/jpeg_market_2026-08-24.md) |
-| Marketplace readiness | [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md) |
-| Android operation | [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) |
+| Navigation | [`README.md`](README.md) |
+| Current snapshot | This file |
+| Continuation | [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) |
+| User/engine and folder contract | [`LEARNING_LOOP_POLICY.md`](LEARNING_LOOP_POLICY.md) |
+| Termux commands | [`TERMUX_CONTROL_PLANE.md`](TERMUX_CONTROL_PLANE.md) |
+| Active roadmap | [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) |
+| Architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | History | [`CHANGELOG.md`](CHANGELOG.md) |
-
-## References
-
-[1]: https://helpx.adobe.com/ie/stock/contributor/help/png-with-transparency.html "Adobe Stock — PNG files with transparency"
-[2]: https://helpx.adobe.com/ie/stock/contributor/help/vector-requirements.html "Adobe Stock — Content Guidelines: Vectors"
-[3]: https://blog.adobe.com/en/publish/2026/01/08/how-creators-leveraging-adobe-2026-creative-trends "Adobe — 2026 Creative Trends"
+| Archived context | [`archive/2026-08-25/README.md`](archive/2026-08-25/README.md) |

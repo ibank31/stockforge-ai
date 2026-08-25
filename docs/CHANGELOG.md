@@ -479,3 +479,16 @@ Every future completed feature must add a dated entry here containing:
 5. known limitations or follow-up work
 
 If a feature is implemented but not verified, record it as `IN PROGRESS`, not `DONE`.
+
+
+## 2026-08-25 — Cross-agent baseline and documentation consolidation
+
+### DONE — verified JPEG workflow and one Android visual root
+
+- Consolidated the active lifecycle as market evidence → one brief → one ZeroGPU preview → learning record → one selected Kaggle finalizer → master audit → metadata upload-copy → manual Adobe upload.
+- Rewrote `STATUS.md`, `SESSION_HANDOVER.md`, `TERMUX_CONTROL_PLANE.md`, and `FEATURE_ROADMAP.md` as the active baseline so future agents do not restart historical audits.
+- Archived superseded SVG research, old pretrial notes, historical portal notes, and replaced portfolio runbooks under `docs/archive/2026-08-25/` without deleting their evidence.
+- Locked user-visible Android output to `Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/` and `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/`.
+- Moved the default Adobe technical bundle destination to the project-local `adobe-upload-bundles/`; only the approved JPEG visual is copied to Android.
+- Fixed active documentation links and command terminology so `portfolio learning-summary` is the current niche-learning command and legacy `evaluation-summary` is not the primary continuation path.
+- No generation, finalizer, upload, or marketplace submission was triggered by this consolidation.

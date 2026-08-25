@@ -1,71 +1,55 @@
-# StockForge Feature Roadmap
+# StockForge Feature Roadmap — Active
 
-**Updated:** 2026-08-24
+**Updated:** 2026-08-25
 **Branch:** `main`
 **Status vocabulary:** `DONE` berarti teruji lokal atau live sesuai klaim; `LIVE` berarti exercised di runtime target; `IN PROGRESS` berarti implementasi ada tetapi belum lengkap; `BLOCKED` berarti route sengaja ditahan; `PLANNED` berarti belum diimplementasikan.
 
-## Product flow
+## Active product flow
 
 ```text
-market evidence → buyer job → AssetSpec → concept/prompt
-→ pre-GPU gate → provider/local route → generation/build
-→ artifact/provenance → technical/semantic/commercial QA
-→ enhancement/alpha → deduplication → metadata/compliance
-→ human review → marketplace package → feedback
+market evidence → buyer job → AssetSpec → prompt contract
+→ pre-GPU gate → one provider request → artifact/provenance
+→ preview review → learning ledger → selected finalizer
+→ master technical/visual audit → metadata upload-copy
+→ manual marketplace upload
 ```
 
-## Current ledger
+## Current implementation ledger
 
-| Area | Feature | Status | Evidence / next proof |
+| Area | Feature | Status | Evidence / boundary |
 |---|---|---|---|
 | Core | CLI, project init, SQLite, manifest, rollback | DONE | Core test suite |
-| Core | Asset registry and lineage | DONE | Registry/provenance tests |
-| Core | Persistent job queue and execution records | DONE | Queue/orchestration tests |
-| Core | Plugin and pipeline contracts | DONE | Contract tests |
-| Intelligence | Market evidence and buyer taxonomy | DONE | Deterministic module tests; evidence remains human/public-source bounded |
-| Intelligence | JPEG metadata preflight across marketplaces | DONE | Non-upload report validates Adobe/Shutterstock/Freepik/Creative Market/Etsy limits, reorders existing visual terms only, and leaves category selection/manual upload to the user |
-| Intelligence | JPEG niche identity registry | DONE | Nine JPEG lanes persist signature, lighting, framing, context, distinctness anchors, and prohibited shorthand into prompt contracts; this is art-direction infrastructure, not demand proof |
-| Intelligence | Concept planner and prompt compiler | DONE | Concept/prompt tests |
-| Intelligence | Asset-type selector and format readiness report | DONE | `portfolio asset-types`, `portfolio readiness`, and `portfolio plan-type` dry-run; includes recommended research lanes and never calls a provider |
-| Intelligence | Native vector utility lane | DONE | Research-backed `folder-upload` single icon remains baseline; separate `file-flow-micro-set` hypothesis targets higher buyer value; legacy modular ribbon and technical badge remain history briefs |
-| Intelligence | Native vector pattern lane | DONE | One controlled repeatable geometric tile brief; local SVG route with structural repeatability gate and one-trial readiness |
-| Generation | Provider-neutral GenerationRequest/Result | DONE | Generation contract tests |
-| Generation | Provider capability/quota router | DONE | Router tests, including exhausted quota |
-| Generation | Remote Gradio durable adapter | DONE | `generate_remote` contract tests; live endpoint remains runtime-dependent |
-| Generation | Hugging Face ZeroGPU preview route | LIVE | Recorded Z-Image Turbo benchmark and selected preview workflow |
-| Generation | Kaggle finalizer route | LIVE | RealESRGAN master workflow and technical validation |
-| Format | JPEG raster route | LIVE | Preview → finalizer → RGB/sRGB/XMP upload-copy workflow; maturation plan now active |
-| Format | Native SVG deterministic route | IN PROGRESS | Single folder-upload and new eight-action file-flow micro-set presets pass local native-structure tests; micro-set is design-ready but has not been generated or commercially validated; human review and Adobe portal validation remain pending |
-| Format | PNG true-alpha route | BLOCKED | Conservative alpha normalizer exists; production route still needs anti-fringe, trim policy, and one portal validation |
-| Format | Raster seamless-pattern edge gate | DONE | Deterministic horizontal/vertical edge tests |
-| QA | Adobe technical gate/finalizer | DONE | JPEG/RGB/sRGB/dimension/file-size tests |
-| QA | Deduplication and similarity controls | DONE | Exact/perceptual pipeline tests |
-| QA | Semantic/anatomy/OCR/logo/watermark ensemble | IN PROGRESS | Provider boundary exists; production benchmark and policy gates remain; this is the main JPEG maturation gap |
-| Delivery | Review-ready package and Android export separation | LIVE | Package/export tests and handoff workflow |
-| Delivery | Adobe metadata XMP upload copy | LIVE | Portal field auto-population observed; final submit remains manual |
-| Delivery | Android preview export | DONE | Future successful generation exports one visual to `PREVIEW_TO_MANUS` when the mount exists |
-| Delivery | Android ready-upload export | DONE | Approved JPEG upload copy exports to `READY_UPLOAD_ADOBE`; no internal files are copied |
-| Learning | Append-only generation evaluation ledger | DONE | `portfolio evaluate` records human scores/reasons without generation |
-| Learning | Evaluation summary for future decisions | DONE | `portfolio evaluation-summary` reports reviewed records only; no automatic generation |
-| Architecture | Model registry and provider cache abstraction | IN PROGRESS | Contract exists in parts; unify model identity, cache, and delivery evidence |
-| Architecture | Provider health, failover, and recovery | IN PROGRESS | Durable identity exists; live failover and worker persistence remain |
-| Intelligence | Acceptance/sales feedback loop | PLANNED | Requires trustworthy marketplace outcome data; JPEG market research and metadata safeguards are now documented |
-| Runtime | Kaggle Qwen-Image end-to-end generation | BLOCKED | Previous experiment exhausted disk before image output |
-| Runtime | Live Qwen Image benchmark on ZeroGPU | PLANNED | Must be run once with controlled quota and recorded evidence |
+| Core | Asset registry, execution lineage, provenance | DONE | Registry/provenance tests and rotor-armature lineage |
+| Intelligence | Market evidence and buyer taxonomy | DONE | Evidence-bound research; signals are not sales proof |
+| Intelligence | Niche identity and buyer-job briefs | DONE | Nine JPEG identity profiles plus technical component lane |
+| Intelligence | Prompt/negative policy compiler | DONE | Rights-safe, format-aware, pre-GPU contracts |
+| Intelligence | Asset-type selector and readiness report | DONE | Selector fails closed for unsupported routes |
+| Intelligence | JPEG metadata preflight | DONE | Visual-first platform limits and duplicate checks without upload |
+| Intelligence | Niche learning summary | DONE | `portfolio learning-summary`; descriptive decision support only |
+| Generation | Remote Gradio durable adapter | LIVE | ZeroGPU `generate_remote`, durable job ID, terminal polling |
+| Generation | Hugging Face ZeroGPU preview | LIVE | Space commit `935faa5`; one rotor-armature preview completed |
+| Format | JPEG raster route | LIVE | Preview → learning → Kaggle finalizer → master → upload-copy path |
+| Format | Native SVG route | IN PROGRESS | Local editable builders and gates; SVG production frozen |
+| Format | PNG true-alpha route | BLOCKED | True-alpha/anti-fringe/trim and portal validation still required |
+| QA | JPEG technical gate | DONE | Dimensions, decodability, RGB/sRGB, quality and file integrity |
+| QA | Full-resolution master audit | LIVE | Rotor-armature audited in four overlapping tiles |
+| QA | Semantic/commercial review | IN PROGRESS | Agent audit plus user visual verdict; no automatic approval claim |
+| Delivery | Android single visual root | DONE | Only `MACHINE STOCKFORGE/PREVIEW_TO_MANUS` and `READY_UPLOAD_ADOBE` |
+| Delivery | JPEG XMP/CSV/checklist bundle | DONE | Technical files remain project-local; JPEG copy only reaches Android |
+| Delivery | Adobe submission | MANUAL | User verifies portal, AI disclosure, rights/releases, CAPTCHA, Terms, Submit |
+
+## Verified reference asset
+
+`technical_mechanical_component_illustrations--rotor-armature` is the current end-to-end reference. Its preview execution is `d3c2c121-77c7-590c-97b1-3da15ff26dcc`; preview artifact is `d419cdcf-da49-49f8-98c4-5ef4c8415920`. One private Kaggle finalizer job produced and imported a 4096×4096 RGB/sRGB JPEG master. The master passed the deterministic technical gate and full-resolution tile audit. The niche remains a promising but unproven hypothesis. It must be described as a conceptual electromechanical illustration, not as CAD, a blueprint, a certified drawing, a dimensional reference, or a manufacturer-specific component.
 
 ## Active priorities
 
-1. Mature JPEG before routine generation: use the nine-lane identity profiles with global buyer-job research, distinct scene hypotheses, prompt/layout gates, and one-candidate evidence rules.
-2. Benchmark the prepared Kaggle Real-ESRGAN finalizer at runtime and inspect source/master at 100% before treating it as production-ready.
-3. Strengthen provider-backed semantic/commercial QA for JPEG while preserving fail-closed behavior when no provider is configured; identity profiles do not replace visual review.
-4. Use the new non-upload JPEG metadata preflight before any future upload; expand reviewed lane/category mappings only where the visual category is unambiguous, without keyword stuffing or ranking guarantees.
-5. Keep SVG value-upgrade and PNG alpha work frozen until the JPEG maturation checkpoint is complete.
-6. Strengthen provider health, quota, retry, and failover without duplicating logical jobs.
+The first priority is to preserve this workflow as the canonical baseline and make every future generation produce a preview, an evaluation record, a niche-learning record, and a clear technical/market decision. The second priority is to keep Android output clean and stable across agents by allowing only the two visual branches under `Download/MACHINE STOCKFORGE/`. The third priority is to strengthen provider-backed semantic/commercial QA without allowing it to replace human visual review. SVG value upgrades and PNG production remain frozen until their separate gates and evidence are complete.
 
-## Safety gates
+## Non-negotiable boundaries
 
-No generation route may be activated merely because a format extension exists. No preview, upscale, local SVG, or technical pass is equivalent to marketplace acceptance. Every GPU call needs a documented buyer hypothesis. Upload, disclosure, release decisions, CAPTCHA, and final submission remain human-controlled.
+A preview or technical pass is not marketplace acceptance. A clean master is not a sales forecast. One generation is not proof of demand. The system must not run blind seed retries, large batches, automatic uploads, or automatic submissions. The code repository, project database, learning ledger, master lineage, HF Space, and Kaggle remote worker must be preserved when cleaning user-facing Download folders.
 
 ## Source of truth
 
-The current snapshot is [`STATUS.md`](STATUS.md). The system design is [`ARCHITECTURE.md`](ARCHITECTURE.md). The current niche/format decision is [`research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](research/FORMAT_AND_NICHE_DECISION_2026-08-24.md). JPEG maturation is tracked in [`research/JPEG_MATURATION_PLAN_2026-08-24.md`](research/JPEG_MATURATION_PLAN_2026-08-24.md). Historical milestones belong in [`CHANGELOG.md`](CHANGELOG.md).
+Use `STATUS.md` for the current snapshot, `SESSION_HANDOVER.md` for continuation, `LEARNING_LOOP_POLICY.md` for user/engine responsibility and output folders, `TERMUX_CONTROL_PLANE.md` for commands, `ARCHITECTURE.md` for system design, and `CHANGELOG.md` for history. Older plans and superseded runbooks are in `archive/2026-08-25/`.
