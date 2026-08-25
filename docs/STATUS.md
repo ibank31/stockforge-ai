@@ -247,3 +247,14 @@ No new vector lane, batch, SVG, preview, or upload was created in this milestone
 
 [VECTOR_ROUTE_EVIDENCE-1]: https://helpx.adobe.com/in/stock/contributor/help/vector-requirements.html
 [VECTOR_ROUTE_EVIDENCE-2]: https://helpx.adobe.com/stock/contributor/submit-your-content/submit-generative-ai-content/generative-ai-vector-submission-guidelines.html
+
+
+## Higher-value native vector workflow milestone — dry-run only
+
+Following the user's request for a more valuable vector than prior generic work, StockForge implemented a new buyer-specific native SVG lane: `native_vector_workflow_sets` / `document-review-delivery-micro-set`. The lane defines one eight-symbol workflow set for intake, organize, review, approve, archive, restore, sync, and share. It uses organized circular containers, document motifs, and consistent action arrows; it is not a recolor/rotation retry of the old `file-flow-micro-set`.
+
+The local builder now supports preset `document_review_delivery_micro_set`, routes the lane by explicit tag, and validates native SVG geometry without GPU/provider calls. Adobe category mapping is prepared as 8 (Graphic Resources), pending portal verification if a future upload is authorized. `icon_set` selector now recommends this workflow-specific lane instead of the generic file-flow lane.
+
+One project-local batch was created: `native_vector_workflow_sets-20260825T130127Z-411eacf7`; brief ID `native_vector_workflow_sets--document-review-delivery-micro-set`. The incorrect remote `portfolio generate --dry-run` command was intentionally rejected by the route because this product is local-native-vector, not remote-raster. Correct readiness reports pass: `icon_set` is `READY_FOR_TRIAL`, `single_candidate_only=true`, `trial_allowed=true`, `provider_call_allowed=false`; the only blockers are human visual buyer-fit/set review and future portal validation. No SVG artifact was built and no provider/GPU call was made.
+
+Targeted tests passed 42; full suite passed 304 with 1 skipped and 49 existing Pillow deprecation warnings. Compileall and `git diff --check` passed. Awaiting explicit user approval before building exactly one local SVG candidate for visual review. No marketplace acceptance, demand, ranking, download, conversion, revenue, or sales is inferred.

@@ -1,7 +1,7 @@
 # Rekomendasi workflow vector native StockForge
 
 **Tanggal:** 25 Agustus 2026  
-**Status:** Rekomendasi dan dry-run policy; belum ada generation vector atau upload.
+**Status:** Preset dan batch sudah diimplementasikan; dry-run readiness lulus; belum ada SVG final atau upload.
 
 ## Kesimpulan eksekutif
 
@@ -45,7 +45,7 @@ Rekomendasi saya adalah **themed file-workflow utility icon micro-set**, bukan g
 
 Untuk membedakan dari generic pack, satu trial sebaiknya mempunyai **satu workflow yang utuh**, misalnya `document review and delivery`: intake, organize, review, approve, archive, restore, sync, dan share. Ini adalah hipotesis desain, bukan jaminan pasar. Setiap icon harus memakai grid, stroke weight, corner logic, dan palette yang konsisten; tidak memakai text, brand, app logo, trademark, atau simbol yang dapat terbaca sebagai produk tertentu.
 
-Namun, preset aktif `file_flow_micro_set` saat ini masih memakai konsep dasar folder/upload/download/cloud/sync/archive/file/share. Sebelum trial komersial, StockForge sebaiknya menambahkan atau mengunci preset bertema `document_review_delivery_micro_set` dengan delapan simbol yang benar-benar merepresentasikan workflow tersebut, lalu menjalankan QA SVG dan thumbnail. **Jangan membuat candidate baru hanya dengan recolor atau rotasi.**
+Preset baru `document_review_delivery_micro_set` sekarang sudah ditambahkan untuk merepresentasikan workflow tersebut dengan delapan simbol yang benar-benar berbeda dari folder/upload/download/cloud/file-flow generic. Preset ini tetap perlu QA SVG dan thumbnail setelah satu local trial disetujui. **Tidak boleh membuat candidate baru hanya dengan recolor atau rotasi.**
 
 ## Workflow yang disarankan
 
@@ -72,7 +72,7 @@ Dengan demikian, route yang paling aman untuk mesin ini adalah **local determini
 
 ## Keputusan dan langkah berikutnya
 
-Belum ada lane baru, batch, atau generation untuk vector pada milestone ini. Langkah berikutnya yang aman adalah mendaftarkan satu concept `document-review-delivery-micro-set`, menulis preset SVG native yang lebih buyer-specific daripada preset generic saat ini, menjalankan full tests dan dry-run, kemudian meminta approval untuk **satu local SVG trial**. Trial tersebut tidak memakai GPU, tidak memakai Kaggle, tidak memerlukan credential, dan tidak boleh dikirim ke Adobe sebelum human review.
+Lane `native_vector_workflow_sets`, concept `document-review-delivery-micro-set`, dan preset SVG native sudah terdaftar. Batch project-local sudah dibuat, full tests lulus, dan readiness dry-run mengizinkan satu local trial dengan `provider_call_allowed=false`. Langkah berikutnya adalah meminta approval untuk **satu local SVG trial**. Trial tersebut tidak memakai GPU, tidak memakai Kaggle, tidak memerlukan credential, dan tidak boleh dikirim ke Adobe sebelum human review.
 
 ## References
 

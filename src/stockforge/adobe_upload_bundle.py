@@ -25,6 +25,7 @@ ADOBE_CATEGORY_BY_LANE = {
     "tactile_material_atmospheres": 8,  # Graphic resources
     "playful_surreal_product_metaphors": 8,  # Graphic resources
     "technical_mechanical_component_illustrations": 10,  # Industry
+    "native_vector_workflow_sets": 8,  # Graphic resources
     "animal_adoption_foster_helper_characters": 1,  # Animals
     "animal_adoption_foster_story_vignettes": 1,  # Animals
 }

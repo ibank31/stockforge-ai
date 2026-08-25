@@ -212,3 +212,12 @@ StockForge has verified deterministic SVG presets `folder_upload`, `file_flow_mi
 Recommended first vector hypothesis: `document_review_delivery_micro_set`, eight coherent utility symbols for intake, organize, review, approve, archive, restore, sync, and share. This is a buyer-job hypothesis for UI, documentation, marketing, presentations, and animation—not a sales promise. Adobe supply proxies on 2026-08-25 were 604,515 for `utility icons`, 384,106 for `file management icon`, 25,018 for `"tech icons"`, 86,903 for `"icon pack"`, and 6,279,918 for `seamless geometric pattern`; these counts do not establish demand, approval, ranking, conversion, revenue, or sales.
 
 No vector lane, batch, SVG, preview, or upload was created. Await user approval before implementing one buyer-specific preset and dry-run. Research report: `docs/research/VECTOR_NATIVE_WORKFLOW_RECOMMENDATION_2026-08-25.md`; evidence: `docs/research/VECTOR_ROUTE_EVIDENCE_2026-08-25.md`.
+
+
+## Higher-value native vector workflow — trial approval pending
+
+User requested a more valuable native vector than previous generic work. Implemented lane `native_vector_workflow_sets` with concept `document-review-delivery-micro-set`: one coherent eight-symbol SVG micro-set for intake, organize, review, approve, archive, restore, sync, and share. This is materially different from `file-flow-micro-set`, not a recolor/rotation retry. Visual system: circular containers, document motifs, consistent action arrows, transparent spacing, editable shapes/groups, no text or branding.
+
+Added native builder preset `document_review_delivery_micro_set`, local tag routing, selector recommendation, Adobe category mapping 8 (Graphic Resources), and regression coverage. Batch `native_vector_workflow_sets-20260825T130127Z-411eacf7` and brief `native_vector_workflow_sets--document-review-delivery-micro-set` were created project-local. The remote `portfolio generate --dry-run` command correctly failed closed because this lane is local-native-vector; the correct readiness report passed with `trial_allowed=true`, `provider_call_allowed=false`, and `single_candidate_only=true`. No SVG file was built, no provider/GPU call was made, and no upload occurred.
+
+Targeted tests: 42 passed. Full suite: 304 passed, 1 skipped, 49 existing Pillow deprecation warnings. Compileall and whitespace check passed. Awaiting explicit user approval for exactly one local SVG build and visual review. No marketplace outcome may be inferred.

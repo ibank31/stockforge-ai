@@ -53,6 +53,8 @@ def build_local_native_vector(
     tags = tuple(str(item).casefold() for item in spec.tags)
     if any("pattern" in item for item in tags):
         preset = "geometric_pattern"
+    elif any("document-review-delivery" in item or "document_review_delivery" in item for item in tags):
+        preset = "document_review_delivery_micro_set"
     elif any("file-flow-micro-set" in item or "icon_set" in item for item in tags):
         preset = "file_flow_micro_set"
     elif any("folder" in item and "upload" in item for item in tags):

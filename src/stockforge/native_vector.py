@@ -278,6 +278,87 @@ def build_file_flow_micro_set_svg(spec: AssetSpec, destination: str | Path) -> N
     return report
 
 
+def build_document_review_delivery_micro_set_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
+    """Build an editable eight-icon document review and delivery workflow set."""
+    route = require_production_route(spec)
+    if route.product_kind != "native_vector":
+        raise NativeVectorError("Native SVG construction requires product_kind='native_vector'.")
+    if spec.background_policy not in {"transparent", "white"}:
+        raise NativeVectorError("Native SVG products require a transparent or white background policy.")
+    if spec.text_policy != "none":
+        raise NativeVectorError("Native SVG preset does not support text-bearing products.")
+    if spec.isolation_policy != "cluster" or spec.layout_mode != "square":
+        raise NativeVectorError("Document-review-delivery micro-set requires a separated square icon-sheet framing.")
+
+    width = height = 2048
+    primary, secondary, accent = _palette(spec)
+    root = ET.Element(f"{{{SVG_NS}}}svg", {
+        "width": str(width),
+        "height": str(height),
+        "viewBox": f"0 0 {width} {height}",
+        "version": "1.1",
+        "data-stockforge": "native-vector-document-review-delivery-v1",
+        "aria-label": "document review delivery utility icon set",
+    })
+    if spec.background_policy == "white":
+        _append(root, "rect", x="0", y="0", width=str(width), height=str(height), fill="#FFFFFF")
+
+    sheet = _append(root, "g", fill="none", stroke_linecap="round", stroke_linejoin="round")
+    positions = ((300, 560), (790, 560), (1280, 560), (1770, 560), (300, 1450), (790, 1450), (1280, 1450), (1770, 1450))
+    for index, (cx, cy) in enumerate(positions):
+        group = _append(sheet, "g", id=f"document-review-delivery-icon-{index + 1}", transform=f"translate({cx} {cy})")
+        _append(group, "circle", cx="0", cy="0", r="210", fill=secondary, stroke=primary, stroke_width="24")
+        if index == 0:  # intake
+            _append(group, "rect", x="-125", y="-70", width="250", height="160", rx="24", fill=accent, stroke=primary, stroke_width="26")
+            _append(group, "path", d="M 0 -230 L 0 -100 M -70 -165 L 0 -230 L 70 -165", stroke=primary, stroke_width="28")
+        elif index == 1:  # organize
+            _append(group, "rect", x="-125", y="-105", width="250", height="90", rx="16", fill=accent, stroke=primary, stroke_width="24")
+            _append(group, "rect", x="-70", y="20", width="250", height="90", rx="16", fill="#FFFFFF", stroke=primary, stroke_width="24")
+            _append(group, "path", d="M -165 35 L -115 35 M -165 35 L -145 15 M -165 35 L -145 55", stroke=primary, stroke_width="24")
+        elif index == 2:  # review
+            _append(group, "path", d="M -120 -135 L 40 -135 L 105 -70 L 105 135 L -120 135 Z", fill=accent, stroke=primary, stroke_width="24")
+            _append(group, "path", d="M 40 -135 L 40 -70 L 105 -70", stroke=primary, stroke_width="24")
+            _append(group, "circle", cx="-5", cy="10", r="58", fill="#FFFFFF", stroke=primary, stroke_width="22")
+            _append(group, "path", d="M 38 52 L 95 108", stroke=primary, stroke_width="22")
+        elif index == 3:  # approve
+            _append(group, "path", d="M -120 -135 L 40 -135 L 105 -70 L 105 135 L -120 135 Z", fill="#FFFFFF", stroke=primary, stroke_width="24")
+            _append(group, "path", d="M 40 -135 L 40 -70 L 105 -70", stroke=primary, stroke_width="24")
+            _append(group, "polyline", points="-65,20 -15,70 75,-35", fill="none", stroke=accent, stroke_width="34")
+        elif index == 4:  # archive
+            _append(group, "path", d="M -150 -80 L 150 -80 L 120 125 L -120 125 Z", fill=accent, stroke=primary, stroke_width="24")
+            _append(group, "path", d="M -150 -80 L -115 -130 L 115 -130 L 150 -80", fill="#FFFFFF", stroke=primary, stroke_width="24")
+            _append(group, "path", d="M 0 -35 L 0 72 M -45 28 L 0 72 L 45 28", stroke=primary, stroke_width="26")
+        elif index == 5:  # restore
+            _append(group, "path", d="M 80 -80 A 118 118 0 1 0 85 85", stroke=primary, stroke_width="30")
+            _append(group, "polygon", points="75,-135 145,-92 82,-55", fill=accent, stroke=primary, stroke_width="18")
+            _append(group, "path", d="M -65 -90 L 35 -90 L 70 -55 L 70 80 L -65 80 Z", fill="#FFFFFF", stroke=primary, stroke_width="22")
+            _append(group, "path", d="M 35 -90 L 35 -55 L 70 -55", stroke=primary, stroke_width="22")
+        elif index == 6:  # sync
+            _append(group, "path", d="M -120 -20 A 120 120 0 0 1 90 -80", stroke=primary, stroke_width="28")
+            _append(group, "polygon", points="88,-125 150,-78 82,-52", fill=accent, stroke=primary, stroke_width="18")
+            _append(group, "path", d="M 120 20 A 120 120 0 0 1 -90 80", stroke=primary, stroke_width="28")
+            _append(group, "polygon", points="-88,125 -150,78 -82,52", fill=accent, stroke=primary, stroke_width="18")
+            _append(group, "rect", x="-55", y="-55", width="110", height="110", rx="16", fill="#FFFFFF", stroke=primary, stroke_width="20")
+        else:  # share
+            _append(group, "line", x1="-70", y1="0", x2="60", y2="-75", stroke=primary, stroke_width="24")
+            _append(group, "line", x1="-70", y1="0", x2="60", y2="75", stroke=primary, stroke_width="24")
+            for x, y, fill in ((-100, 0, accent), (92, -92, "#FFFFFF"), (92, 92, accent)):
+                _append(group, "circle", cx=str(x), cy=str(y), r="46", fill=fill, stroke=primary, stroke_width="24")
+
+    raw = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    path = Path(destination).expanduser().resolve()
+    if path.suffix.lower() != ".svg":
+        raise NativeVectorError("Native vector destination must use the .svg extension.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+    report = inspect_native_svg(path)
+    if not report.ready:
+        path.unlink(missing_ok=True)
+        details = "; ".join(f"{name}: {detail}" for name, detail in report.checks)
+        raise NativeVectorError(f"Generated SVG failed its own native-vector gate: {details}")
+    return report
+
+
 def build_technical_badge_svg(spec: AssetSpec, destination: str | Path) -> NativeVectorReport:
     """Build one editable technical badge without text, logos, or raster embeds."""
     route = require_production_route(spec)
@@ -380,6 +461,8 @@ def build_svg_for_preset(spec: AssetSpec, destination: str | Path, preset: str =
         return build_folder_upload_svg(spec, destination)
     if normalized == "file_flow_micro_set":
         return build_file_flow_micro_set_svg(spec, destination)
+    if normalized == "document_review_delivery_micro_set":
+        return build_document_review_delivery_micro_set_svg(spec, destination)
     if normalized == "technical_badge":
         return build_technical_badge_svg(spec, destination)
     if normalized == "geometric_pattern":
