@@ -2,11 +2,11 @@
 
 **Updated:** 2026-08-25
 **Branch:** `main`
-**Latest GitHub commit:** `64e5216`
+**Baseline documentation commit:** `6d663ec`
 **Deployed HF Space:** `935faa5` — runtime `RUNNING`, domain `READY`
 **Current product track:** JPEG technical mechanical component
 **Current asset:** rotor-armature
-**Submission state:** upload-copy preparation is available; Adobe upload remains manual and has not been submitted
+**Submission state:** upload-copy preparation is authorized/available but not yet verified in `READY_UPLOAD_ADOBE`; Adobe upload remains manual and has not been submitted
 
 ## Start here
 
@@ -42,7 +42,7 @@ market evidence and buyer job
 
 The rotor-armature trial is the verified reference. Preview execution: `d3c2c121-77c7-590c-97b1-3da15ff26dcc`. Preview artifact: `d419cdcf-da49-49f8-98c4-5ef4c8415920`. The preview reached remote inference and completed sampling. The imported master is 4096×4096, 16.777216 MP, RGB, embedded sRGB, JPEG quality 95, and 4:4:4. It passed the deterministic technical gate and four-tile 100% audit. Its positioning is a conceptual electromechanical rotor/armature illustration, not CAD, blueprint, dimensionally accurate engineering documentation, certified equipment, or manufacturer-specific content.
 
-The private Kaggle finalizer job completed successfully. Do not submit another finalizer job for this asset. The current remaining operation is to prepare the upload copy using the finalized-master execution selected by `--latest-master`; do not pass the preview execution ID to `prepare-adobe-upload`.
+The private Kaggle finalizer job completed successfully. Do not submit another finalizer job for this asset. The remaining authorized operation is to prepare the upload copy using the finalized-master execution selected by `--latest-master`; this copy has not been verified in `READY_UPLOAD_ADOBE` yet. Never pass the preview execution ID to `prepare-adobe-upload`.
 
 ## Android folder contract
 

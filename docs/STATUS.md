@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-25
 **Branch:** `main`
-**Latest verified commit:** `64e5216`
+**Baseline documentation commit:** `6d663ec`
 **Deployed HF Space:** `935faa5` — runtime `RUNNING`, domain `READY`
 
 ## Current decision
