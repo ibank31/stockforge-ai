@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -225,10 +226,19 @@ class RemoteGradioProvider(GenerationProvider):
             method=method,
         )
         self._add_auth(request)
-        with urllib.request.urlopen(
-            request, timeout=self.timeout_seconds
-        ) as response:
-            value = json.loads(response.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(
+                request, timeout=self.timeout_seconds
+            ) as response:
+                value = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace").strip()
+            if len(detail) > 2000:
+                detail = detail[:2000] + "..."
+            suffix = f": {detail}" if detail else ""
+            raise RemoteGradioError(f"HTTP {exc.code} from remote worker{suffix}") from exc
+        except urllib.error.URLError as exc:
+            raise RemoteGradioError(f"Remote worker connection failed: {exc.reason}") from exc
         if not isinstance(value, dict):
             raise RemoteGradioError("Remote worker returned a non-object response")
         return value

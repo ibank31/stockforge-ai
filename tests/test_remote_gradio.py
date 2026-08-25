@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from io import BytesIO
+from urllib.error import HTTPError
+
 import pytest
 
 from stockforge.generation import GenerationRequest, GenerationResult
@@ -82,6 +85,28 @@ def test_remote_provider_uses_live_generate_remote_contract(
             ]
         },
     }
+
+
+def test_remote_provider_surfaces_http_error_body(tmp_path: Path, monkeypatch):
+    provider = RemoteGradioProvider(
+        provider_id="huggingface-zerogpu",
+        base_url="https://example.invalid",
+        output_dir=tmp_path,
+    )
+
+    def fail(*_args, **_kwargs):
+        raise HTTPError(
+            "https://example.invalid/gradio_api/call/generate_remote",
+            500,
+            "Internal Server Error",
+            hdrs=None,
+            fp=BytesIO(b"worker model load failed"),
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fail)
+
+    with pytest.raises(RemoteGradioError, match="HTTP 500.*worker model load failed"):
+        provider._request_json("POST", "/gradio_api/call/generate_remote", {"data": []})
 
 
 def test_remote_provider_wait_returns_completed_job(tmp_path: Path, monkeypatch):
