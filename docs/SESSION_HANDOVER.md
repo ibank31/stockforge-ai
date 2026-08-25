@@ -192,3 +192,12 @@ The user rejected the first animal-helper preview as too standard/template-like.
 The materially revised lane is `animal_adoption_foster_story_vignettes`, concept `first-day-home`, with one small original fictional puppy-like focal animal stepping out from an open unbranded soft pet carrier, flanked by a cat-like helper and rabbit-like helper in plain color-block volunteer vests and simple bandanas; a folded blanket and blank circular tag are the only approved care props. The visual identity is a story vignette with visible transition action, triangular/diagonal focal hierarchy, three-species contrast, tactile care-prop storytelling, and no superhero/IP shorthand.
 
 Registry category mapping is Animals (1), subject to portal verification. Full suite after revision: **303 passed, 1 skipped, 49 non-blocking Pillow warnings**; compileall and `git diff --check` passed. New batch `animal_adoption_foster_story_vignettes-20260825T114431Z-7152b2fd` and brief `animal_adoption_foster_story_vignettes--first-day-home` are project-local. Dry-run: **7/7 pre-GPU checks pass, 0 blockers**, `z-image-turbo`, 1024×1024 square, 8 steps, batch size 1, estimated 55 GPU seconds. No provider call or generation has occurred for the revision. Await explicit approval for exactly one preview.
+
+
+## Animal adoption story-vignette — finalized, package ready
+
+User KEEP recorded for execution `a20f3fca-9903-5fc3-afee-fc97fe6a2317`; evaluation accepted with overall 4.0/5 and marketplace outcome `not_submitted`. Learning summary is `INSUFFICIENT_EVIDENCE`; do not infer demand or sales.
+
+Exactly one private Kaggle RealESRGAN_x4plus finalizer was submitted for this preview as kernel version 13 and completed. Imported master execution: `d27d373c-33d1-4785-8505-5e1462530148`; artifact: `a37740f9-c5a0-4629-8749-6689240362d3`. Full-resolution 9-tile audit completed. Master is JPEG 4096×4096, 16.777216 MP, RGB, assumed sRGB, quality 95, 4:4:4, decodable; no obvious text/logo/watermark/human/tool/IP issue observed. Minor note: painterly/stipple texture and a blank heart-shaped collar tag.
+
+User requested finalization through ready-upload status. Bundle: `/home/ubuntu/stockforge-live/workspace/projects/stock-assets/adobe-upload-bundles/adobe-20260825T120521Z-d27d373c`; category 1 Animals; status `manual_portal_upload_prepared_not_submitted`. Only JPEG upload-copy was uploaded to temporary storage for Termux retrieval; Adobe submission remains manual and no marketplace outcome is known.
