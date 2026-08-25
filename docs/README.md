@@ -50,6 +50,8 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 - [`MARKET_INTELLIGENCE.md`](MARKET_INTELLIGENCE.md)
 - [`JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md`](research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md) — audit kedalaman knowledge, overlap framing, dan identity framework sembilan niche JPEG.
 - [`ADOBE_STOCK_BEST_SELLER_SCREENSHOT_ANALYSIS_2026-08-25.md`](research/ADOBE_STOCK_BEST_SELLER_SCREENSHOT_ANALYSIS_2026-08-25.md) — klasifikasi sepuluh screenshot, cross-check Adobe/marketplace, product families, dan batas anecdotal earnings evidence.
+- [`LEGACY_BEST_SELLER_EVIDENCE_RECOVERY_2026-08-25.md`](research/LEGACY_BEST_SELLER_EVIDENCE_RECOVERY_2026-08-25.md) — recovery 31 catatan screenshot lama dari handover Git, fakta versus inference, dan provenance limitations.
+- [`FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md`](research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md) — shortlist niche JPEG low-cost dengan evidence hierarchy dan rekomendasi hypothesis pertama.
 - [`BUYER_SEGMENTS.md`](BUYER_SEGMENTS.md)
 - [`BUYER_MARKET_MATRIX.md`](BUYER_MARKET_MATRIX.md)
 - [`CONCEPT_ENGINE_V4.md`](CONCEPT_ENGINE_V4.md)
