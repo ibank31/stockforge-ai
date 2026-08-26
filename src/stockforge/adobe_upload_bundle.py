@@ -29,6 +29,7 @@ ADOBE_CATEGORY_BY_LANE = {
     "animal_adoption_foster_helper_characters": 1,  # Animals
     "animal_adoption_foster_story_vignettes": 1,  # Animals
     "traditional_food_tomyum_kung": 7,  # Food
+    "traditional_food_mango_sticky_rice_png": 7,  # Food
 }
 
 CSV_HEADER = ("Filename", "Title", "Keywords", "Category", "Releases")

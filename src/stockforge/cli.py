@@ -17,6 +17,7 @@ from .adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master
 from .asset_selector import AssetSelectionError, list_asset_type_policies, select_asset_type
 from .adobe_gate import inspect_image
 from .adobe_png_gate import inspect_transparent_png
+from .png_metadata import PngMetadataError, embed_png_metadata, read_embedded_png_metadata
 from .asset import ASSET_TYPES, AssetError
 from .asset_manager import AssetManager
 from .config import ConfigManager
@@ -1076,6 +1077,32 @@ def adobe_check_png(path: str = typer.Argument(...), json_output: bool = typer.O
     else:
         typer.echo(json.dumps(report.to_dict(), indent=2))
     raise typer.Exit(code=0 if report.ready else 1)
+
+
+@adobe_app.command("embed-png-metadata")
+def adobe_embed_png_metadata(
+    source: str = typer.Argument(...),
+    destination: str = typer.Option(..., "--destination", "-d"),
+    title: str = typer.Option(..., "--title"),
+    keywords: str = typer.Option(..., "--keywords", help="Comma-separated keyword list."),
+    category: str = typer.Option("Food", "--category"),
+    ai_disclosure: bool = typer.Option(True, "--ai-disclosure/--no-ai-disclosure"),
+) -> None:
+    """Embed title/keywords into a PNG without changing decoded pixels or alpha."""
+    try:
+        keyword_list = tuple(item.strip() for item in keywords.split(","))
+        output = embed_png_metadata(
+            source=source,
+            destination=destination,
+            title=title,
+            keywords=keyword_list,
+            category=category,
+            ai_disclosure="required" if ai_disclosure else "not_declared",
+        )
+        embedded = read_embedded_png_metadata(output)
+    except PngMetadataError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({"path": str(output), "embedded_metadata": embedded}, indent=2))
 
 
 @adobe_app.command("finalize")

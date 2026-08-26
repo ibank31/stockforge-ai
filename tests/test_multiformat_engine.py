@@ -62,7 +62,7 @@ def test_transparent_cutout_requires_true_alpha_contract() -> None:
         )
 
 
-def test_transparent_route_is_blocked_until_alpha_pipeline_is_verified() -> None:
+def test_transparent_route_is_trial_ready_but_not_production_verified() -> None:
     spec = _spec(
         product_kind="transparent_cutout",
         delivery_format="png",
@@ -70,8 +70,9 @@ def test_transparent_route_is_blocked_until_alpha_pipeline_is_verified() -> None
     )
     route = route_asset_spec(spec)
     assert route.requires_true_alpha is True
+    assert route.trial_ready is True
     assert route.verified_for_production is False
-    with pytest.raises(FormatRoutingError, match="alpha producer"):
+    with pytest.raises(FormatRoutingError, match="real candidate"):
         require_production_route(spec)
 
 

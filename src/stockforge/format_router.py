@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from .asset_spec import AssetSpec
+from .format_strategy import FormatStrategyError, recommend_format, validate_format_decision
 
 
 class FormatRoutingError(ValueError):
@@ -31,6 +32,8 @@ class FormatRoute:
     verified_for_production: bool
     user_export_branch: str
     reason: str
+    strategy_key: str = ""
+    trial_ready: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -50,6 +53,22 @@ def route_asset_spec(spec: AssetSpec) -> FormatRoute:
                 "do not spend GPU on an unsupported canvas."
             )
         canvas = "hero-landscape" if spec.layout_mode == "hero_landscape" else "square"
+        decision = recommend_format(
+            asset_type=spec.asset_type,
+            buyer_job=spec.buyer_job,
+            scene_required=spec.layout_mode == "hero_landscape",
+            infer_from_text=False,
+        )
+        try:
+            validate_format_decision(
+                decision,
+                delivery_format=spec.delivery_format,
+                product_kind=spec.product_kind,
+                background_policy=spec.background_policy,
+                isolation_policy=spec.isolation_policy,
+            )
+        except FormatStrategyError as exc:
+            raise FormatRoutingError(str(exc)) from exc
         return FormatRoute(
             product_kind=spec.product_kind,
             delivery_format=spec.delivery_format,
@@ -61,10 +80,28 @@ def route_asset_spec(spec: AssetSpec) -> FormatRoute:
             requires_true_alpha=False,
             verified_for_production=True,
             user_export_branch="READY_UPLOAD_ADOBE",
-            reason="Textured, tonal, material, or compositional artwork is delivered as JPEG raster.",
+            reason=decision.selection_reason,
+            strategy_key=decision.strategy_key,
+            trial_ready=True,
         )
 
     if spec.product_kind == "transparent_cutout":
+        decision = recommend_format(
+            asset_type=spec.asset_type,
+            buyer_job=spec.buyer_job,
+            compositing_required=True,
+            infer_from_text=False,
+        )
+        try:
+            validate_format_decision(
+                decision,
+                delivery_format=spec.delivery_format,
+                product_kind=spec.product_kind,
+                background_policy=spec.background_policy,
+                isolation_policy=spec.isolation_policy,
+            )
+        except FormatStrategyError as exc:
+            raise FormatRoutingError(str(exc)) from exc
         return FormatRoute(
             product_kind=spec.product_kind,
             delivery_format=spec.delivery_format,
@@ -76,15 +113,30 @@ def route_asset_spec(spec: AssetSpec) -> FormatRoute:
             requires_true_alpha=True,
             verified_for_production=False,
             user_export_branch="READY_UPLOAD_ADOBE",
-            reason=(
-                "PNG cutouts require a proven alpha producer and alpha-edge review. "
-                "The active raster worker can be planned but is blocked from production until that path exists."
-            ),
+            reason=decision.selection_reason + " Synthetic and runtime alpha preflight are passed; one real candidate and human edge review remain before production verification.",
+            strategy_key=decision.strategy_key,
+            trial_ready=True,
         )
 
     if spec.product_kind == "native_vector":
         if spec.layout_mode == "portrait":
             raise FormatRoutingError("Portrait native-vector templates are not implemented yet.")
+        decision = recommend_format(
+            asset_type=spec.asset_type,
+            buyer_job=spec.buyer_job,
+            editable_paths_required=True,
+            infer_from_text=False,
+        )
+        try:
+            validate_format_decision(
+                decision,
+                delivery_format=spec.delivery_format,
+                product_kind=spec.product_kind,
+                background_policy=spec.background_policy,
+                isolation_policy=spec.isolation_policy,
+            )
+        except FormatStrategyError as exc:
+            raise FormatRoutingError(str(exc)) from exc
         return FormatRoute(
             product_kind=spec.product_kind,
             delivery_format=spec.delivery_format,
@@ -96,7 +148,9 @@ def route_asset_spec(spec: AssetSpec) -> FormatRoute:
             requires_true_alpha=spec.background_policy == "transparent",
             verified_for_production=True,
             user_export_branch="READY_UPLOAD_ADOBE",
-            reason="Editable SVG paths are built locally; no raster image trace or GPU generation is used.",
+            reason=decision.selection_reason,
+            strategy_key=decision.strategy_key,
+            trial_ready=True,
         )
 
     raise FormatRoutingError(f"No route is registered for product kind: {spec.product_kind!r}")

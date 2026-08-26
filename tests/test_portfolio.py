@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 23
+    assert len(lanes) == 24
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)
@@ -218,8 +218,8 @@ def test_priority_lane_seeds_only_send_verified_raster_products_to_gpu():
 
         assert report["recommended_canvas"] in {"square", "hero-landscape", "vector-artboard"}
         if lane.key == "human_made_collage_elements":
-            assert report["gpu_eligible"] is False
-            assert any("alpha producer" in blocker for blocker in report["blockers"])
+            assert report["gpu_eligible"] is True
+            assert any("trial route" in item["detail"] for item in report["checks"] if item["name"] == "format-route")
         elif lane.key in {"native_vector_elements", "native_vector_patterns", "native_vector_utility_sets", "native_vector_workflow_sets", "native_vector_workflow_diagram_kits"}:
             assert report["gpu_eligible"] is False
             assert any("local native-vector" in blocker for blocker in report["blockers"])

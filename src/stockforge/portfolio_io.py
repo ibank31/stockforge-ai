@@ -280,15 +280,16 @@ def preview_preflight(plan: dict[str, Any], brief: dict[str, Any]) -> dict[str, 
         route_error = str(exc)
     if route_error:
         blockers.append(route_error)
-    elif route is not None and not route.verified_for_production:
+    elif route is not None and not (route.verified_for_production or route.trial_ready):
         blockers.append(route.reason)
     elif route is not None and not route.requires_remote_gpu:
         blockers.append("This product uses the local native-vector build route; do not call the remote image generator.")
     checks.append({
         "name": "format-route",
-        "status": "pass" if route is not None and route.verified_for_production and route.requires_remote_gpu else "fail",
+        "status": "pass" if route is not None and (route.verified_for_production or route.trial_ready) and route.requires_remote_gpu else "fail",
         "detail": (
             "Verified remote raster route." if route is not None and route.verified_for_production and route.requires_remote_gpu
+            else "Remote raster trial route; production verification still requires a real candidate and human review." if route is not None and route.trial_ready and route.requires_remote_gpu
             else route_error or (route.reason if route is not None else "No valid format route.")
         ),
     })

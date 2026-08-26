@@ -17,6 +17,7 @@ from .jpeg_niche_identity import identity_for
 from .asset_spec import AssetSpec
 from .prompt_compiler import PromptPackage
 from .metadata_policy import filter_visual_keywords
+from .format_strategy import FormatDecision, recommend_format, validate_format_decision
 
 
 Tier = Literal["first", "secondary", "experimental"]
@@ -96,6 +97,7 @@ class PortfolioBrief:
     asset_spec: AssetSpec
     prompt_package: PromptPackage
     metadata: PortfolioMetadataDraft
+    format_decision: FormatDecision
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -113,6 +115,7 @@ class PortfolioBrief:
             "asset_spec": self.asset_spec.to_dict(),
             "prompt_package": self.prompt_package.to_dict(),
             "metadata": self.metadata.to_dict(),
+            "format_decision": self.format_decision.to_dict(),
         }
 
 
@@ -220,6 +223,26 @@ REVIEWED_CONCEPT_METADATA: dict[tuple[str, str], dict[str, object]] = {
             "Thai cuisine",
             "food editorial",
             "isolated bowl",
+        ),
+    },
+    ("traditional_food_mango_sticky_rice_png", "mango-sticky-rice-cutout"): {
+        "title": "Thai Mango Sticky Rice Dessert with Ripe Mango and Coconut Sauce",
+        "keywords": (
+            "mango sticky rice",
+            "khao niew mamuang",
+            "Thai dessert",
+            "Thai food",
+            "sticky rice",
+            "ripe mango",
+            "coconut sauce",
+            "mango dessert",
+            "traditional food",
+            "Central Thai cuisine",
+            "food ingredient",
+            "isolated food",
+            "transparent PNG",
+            "food overlay",
+            "recipe asset",
         ),
     },
     ("sewing_craft_tool_clipart", "beginner-kit"): {
@@ -519,6 +542,41 @@ PORTFOLIO_LANES: tuple[PortfolioLane, ...] = (
             ),
         ),
         notes="Evidence-bound P0 global food candidate selected from the traditional-food research branch: UNESCO records Tomyum Kung as a traditional prawn soup from Thailand and describes its herbs, recognizable aroma, vibrant colours, and Central Plains riverside context. This is a controlled visual hypothesis, not proof of demand, authenticity, approval, or sales.",
+    ),
+    PortfolioLane(
+        key="traditional_food_mango_sticky_rice_png",
+        name="Thai mango sticky rice transparent food utility assets",
+        tier="first",
+        evidence_confidence="medium",
+        opportunity_id="C68",
+        buyer_segment="food_content_and_design_teams",
+        buyer_job="drop-in Thai mango sticky rice food element for recipe cards, menu layouts, travel articles, packaging concepts, and social compositions",
+        channel="web",
+        asset_family="product_illustration",
+        asset_type="illustration",
+        micro_niche="Thai mango sticky rice dessert as one compact hard-edge compositing object",
+        visual_language="appetizing editorial food illustration with clean product silhouette, restrained natural color, and culturally specific dessert components",
+        medium="ripe yellow mango slices, compact white glutinous rice mound, restrained coconut sauce, and one folded banana-leaf accent on a white source background",
+        commercial_use_cases=("recipe card overlay", "menu layout element", "culinary tourism article", "food packaging concept", "social food composition"),
+        keywords=("mango sticky rice", "khao niew mamuang", "Thai dessert", "Thai food", "sticky rice", "ripe mango", "coconut sauce", "mango dessert", "traditional food", "Central Thai cuisine", "food ingredient", "isolated food", "transparent PNG", "food overlay", "recipe asset"),
+        test_cap=1,
+        concepts=(
+            _concept(
+                "mango-sticky-rice-cutout",
+                "one compact, fully visible Thai mango sticky rice dessert object: a neat mound of white glutinous rice beside three clean ripe-mango slices with a small controlled coconut-sauce portion and one folded banana-leaf accent",
+                "yellow mango, white sticky rice, restrained coconut sauce, and the banana-leaf accent create immediate dessert recognition while remaining a drop-in compositing object",
+                "single centered hard-edge utility object with tight square framing, complete silhouette, no table, no utensils, no steam, no pouring liquid, and no decorative background",
+                "minimal clean margin around the complete object for alpha extraction; no copy space",
+                ("ripe mango yellow", "coconut white", "banana-leaf green", "warm rice white"),
+                ("mango-and-rice color contrast", "compact cutout silhouette", "Thai dessert identity", "compositing-friendly separation"),
+                product_kind="transparent_cutout",
+                delivery_format="png",
+                layout_mode="square",
+                background_policy="transparent",
+                isolation_policy="isolated",
+            ),
+        ),
+        notes="Evidence-bound PNG utility hypothesis. Thailand Foundation identifies khao niew mamuang as a famous Central Thai dish and describes mango sticky rice as a seasonal Thai dessert; Adobe positions transparent PNGs as composable utility assets. This is not proof of demand, approval, ranking, or sales. The first trial is intentionally hard-edge and single-object to test alpha quality.",
     ),
     PortfolioLane(
         key="sewing_craft_tool_clipart",
@@ -1326,6 +1384,20 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         identity_distinctness=identity.distinctness if identity else (),
         identity_prohibited_shorthand=identity.prohibited_shorthand if identity else (),
     )
+    format_decision = recommend_format(
+        asset_type=asset_spec.asset_type,
+        buyer_job=asset_spec.buyer_job,
+        compositing_required=asset_spec.product_kind == "transparent_cutout",
+        editable_paths_required=asset_spec.product_kind == "native_vector",
+        scene_required=asset_spec.layout_mode == "hero_landscape",
+    )
+    validate_format_decision(
+        format_decision,
+        delivery_format=asset_spec.delivery_format,
+        product_kind=asset_spec.product_kind,
+        background_policy=asset_spec.background_policy,
+        isolation_policy=asset_spec.isolation_policy,
+    )
     prompt_package = compile_asset_prompt(asset_spec)
     metadata = _metadata_for(lane, concept)
     return PortfolioBrief(
@@ -1335,6 +1407,7 @@ def build_brief(lane_key: str, concept_key: str) -> PortfolioBrief:
         asset_spec=asset_spec,
         prompt_package=prompt_package,
         metadata=metadata,
+        format_decision=format_decision,
     )
 
 

@@ -27,12 +27,12 @@ def test_scene_is_ready_for_a_controlled_trial_but_not_marketplace_acceptance() 
     assert any("review" in item.casefold() for item in policy.blockers)
 
 
-def test_transparent_cutout_stays_blocked() -> None:
+def test_transparent_cutout_is_ready_for_trial_but_not_submission() -> None:
     policy = select_asset_type("transparent_cutout")
 
     assert policy.delivery_format == "png"
-    assert policy.readiness == "BLOCKED"
-    assert any("alpha" in item.casefold() for item in policy.blockers)
+    assert policy.readiness == "READY_FOR_TRIAL"
+    assert any("review" in item.casefold() for item in policy.blockers)
 
 
 def test_unknown_asset_type_fails_closed() -> None:
@@ -100,7 +100,7 @@ def test_trial_readiness_allows_only_explicit_single_candidate_scene() -> None:
     assert readiness.single_candidate_only is True
 
 
-def test_trial_readiness_keeps_png_blocked() -> None:
+def test_trial_readiness_allows_png_trial_but_requires_review() -> None:
     from stockforge.trial_gate import assess_trial_readiness
 
     readiness = assess_trial_readiness(
@@ -109,10 +109,10 @@ def test_trial_readiness_keeps_png_blocked() -> None:
         purpose="Validate the alpha pipeline only after its technical gates exist.",
     )
 
-    assert readiness.readiness == "BLOCKED"
-    assert readiness.trial_allowed is False
-    assert readiness.provider_call_allowed is False
-    assert any("alpha" in item.casefold() for item in readiness.blockers)
+    assert readiness.readiness == "READY_FOR_TRIAL"
+    assert readiness.trial_allowed is True
+    assert readiness.provider_call_allowed is True
+    assert any("review" in item.casefold() for item in readiness.blockers)
 
 
 def test_trial_readiness_allows_local_svg_but_not_provider_call() -> None:

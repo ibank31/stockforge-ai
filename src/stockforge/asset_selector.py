@@ -110,10 +110,12 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         product_kind="transparent_cutout",
         delivery_format="png",
         execution_mode="remote_raster_then_alpha_finalize",
-        readiness="BLOCKED",
-        candidate_niches=("isolated object overlay", "sticker-like element", "transparent decorative asset"),
-        blockers=("true alpha producer is not connected", "anti-fringe and trim gates are not complete", "portal validation is pending"),
-        next_step="Implement and test the real alpha pipeline; no PNG production trial is authorized before the blockers clear.",
+        readiness="READY_FOR_TRIAL",
+        candidate_niches=("isolated ingredient object", "food component overlay", "hard-edge sticker-like element"),
+        blockers=("anti-fringe and trim gates still require per-asset review", "portal validation is pending", "human edge review remains mandatory"),
+        next_step="Use one evidence-backed hard-edge utility asset, generate one white-background source, finalize through the remote alpha worker, then review the RGBA result before any manual upload.",
+        recommended_lane_keys=("traditional_food_mango_sticky_rice_png",),
+        recommended_concept_keys=("mango-sticky-rice-cutout",),
     ),
 )
 

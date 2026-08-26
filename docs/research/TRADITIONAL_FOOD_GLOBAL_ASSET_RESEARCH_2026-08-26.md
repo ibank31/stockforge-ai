@@ -3,8 +3,8 @@
 **Tanggal riset:** 26 Agustus 2026 (GMT+7)
 **Penulis:** Manus AI
 **Repository:** `ibank31/stockforge-ai`
-**Branch:** `research/traditional-food-niches-2026`
-**Status:** Riset operasional dan backlog prioritas; belum mengotorisasi generation, upload, submission, atau klaim penjualan.
+**Branch:** `main` (merged from `research/traditional-food-niches-2026`)
+**Status:** Riset operasional dan backlog prioritas yang sudah merged; katalog tidak otomatis mengotorisasi generation, upload, submission, atau klaim penjualan.
 
 ## Ringkasan eksekutif
 
@@ -176,7 +176,7 @@ UNESCO menyediakan nomination files, consent of communities, inventories, dan de
 
 ## 7. Workflow agent lanjutan
 
-Agent berikutnya harus memulai dengan membaca file ini, dua CSV, `food_catalog_summary.json`, `docs/MARKET_INTELLIGENCE.md`, `docs/BUYER_MARKET_MATRIX.md`, dan `docs/ADOBE_STOCK_READINESS.md`. Ia tidak boleh langsung melakukan generation hanya karena kandidat memiliki tier P0.
+Agent berikutnya harus memulai dari `docs/README.md` dan `docs/STATUS.md`. File ini dipakai bila memilih candidate makanan; katalog, sumber, dan risk notes harus dibaca untuk candidate tersebut. Agent tidak boleh langsung melakukan generation hanya karena kandidat memiliki tier P0.
 
 | Fase | Input | Output wajib | Gate |
 |---|---|---|---|
@@ -199,7 +199,7 @@ Pertama, selesaikan source validation untuk 12 P0 global dan 8 P0 Indonesia, ter
 | File | Fungsi |
 |---|---|
 | `docs/research/TRADITIONAL_FOOD_GLOBAL_ASSET_RESEARCH_2026-08-26.md` | Dokumen utama, methodology, priorities, prompt/metadata/policy guardrails, handoff |
-| `docs/research/WORKING_NOTES_TRADITIONAL_FOOD_NICHES_2026-08-26.md` | Provenance notes dan temuan awal selama riset |
+| `docs/archive/2026-08-26/research/WORKING_NOTES_TRADITIONAL_FOOD_NICHES_2026-08-26.md` | Provenance notes dan temuan awal selama riset; archive only |
 | `data/research/global_traditional_food_asset_catalog.csv` | 63 global anchor candidates dengan tier dan risk notes |
 | `data/research/indonesia_regional_food_asset_candidates.csv` | 32 Indonesian regional candidates |
 | `data/research/food_catalog_summary.json` | Ringkasan row count, tier, confidence hasil validasi |
