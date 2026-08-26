@@ -1,5 +1,14 @@
 # StockForge AI — Changelog
 
+## 2026-08-26 — Traditional food global asset research
+
+### DONE — country-based catalog, priority tiers, and agent handoff
+
+- Added the operational research handoff for producing traditional-food assets by country with P0/P1/P2 sequencing; this is a production-priority framework, not a sales forecast or cross-country cultural ranking.
+- Added a 63-row global seed catalog, a 32-row Indonesia regional catalog, reproducible catalog summary JSON, and CSV/document validation scripts.
+- Added evidence-bound guidance for food identity, regional context, metadata, generative-AI disclosure, cultural-risk controls, standalone JPEG pilots, and continuation workflow.
+- Work is isolated on branch `research/traditional-food-niches-2026`; no generation, upload, submission, or modification to `main` was performed.
+
 ## 2026-08-25 — Seed-starting tray master finalized and audited
 
 ### REVIEW_READY — one approved preview, one private finalizer, no upload

@@ -48,6 +48,7 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 ## Intelligence and research
 
 - [`MARKET_INTELLIGENCE.md`](MARKET_INTELLIGENCE.md)
+- [`TRADITIONAL_FOOD_GLOBAL_ASSET_RESEARCH_2026-08-26.md`](research/TRADITIONAL_FOOD_GLOBAL_ASSET_RESEARCH_2026-08-26.md) — sistem katalog asset makanan tradisional per negara, tier prioritas, katalog CSV, metadata, guardrails, dan handoff agent.
 - [`JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md`](research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md) — audit kedalaman knowledge, overlap framing, dan identity framework sembilan niche JPEG.
 - [`ADOBE_STOCK_BEST_SELLER_SCREENSHOT_ANALYSIS_2026-08-25.md`](research/ADOBE_STOCK_BEST_SELLER_SCREENSHOT_ANALYSIS_2026-08-25.md) — klasifikasi sepuluh screenshot, cross-check Adobe/marketplace, product families, dan batas anecdotal earnings evidence.
 - [`LEGACY_BEST_SELLER_EVIDENCE_RECOVERY_2026-08-25.md`](research/LEGACY_BEST_SELLER_EVIDENCE_RECOVERY_2026-08-25.md) — recovery 31 catatan screenshot lama dari handover Git, fakta versus inference, dan provenance limitations.
