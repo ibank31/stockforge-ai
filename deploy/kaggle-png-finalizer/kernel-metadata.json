@@ -1,0 +1,11 @@
+{
+  "id": "iqbalteguh/stockforge-png-finalizer",
+  "title": "stockforge-png-finalizer",
+  "code_file": "worker.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": ["iqbalteguh/stockforge-birefnet-cache"]
+}

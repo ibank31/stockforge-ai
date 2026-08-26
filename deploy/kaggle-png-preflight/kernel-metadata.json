@@ -1,0 +1,11 @@
+{
+  "id": "iqbalteguh/stockforge-png-preflight",
+  "title": "stockforge-png-preflight",
+  "code_file": "preflight_worker.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": ["iqbalteguh/stockforge-birefnet-cache"]
+}

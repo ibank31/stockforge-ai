@@ -556,3 +556,15 @@ The user accepted the sewing/craft clip-art preview as keep. One evaluation reco
 Exactly one private Kaggle finalizer completed for the accepted preview. Master artifact `45a2279b-b72e-46c0-b53c-8c381f2fa50c` was registered from master execution `4d85705f-987d-4cc0-a51a-d3c02ca0d730`. Adobe deterministic technical gate returned `ready=true`: JPEG, 4096×4096, 16.777216 MP, RGB, embedded sRGB, decodable, and 1,164,873 bytes. Full audit is stored in `docs/research/SEWING_CRAFT_MASTER_AUDIT_2026-08-25.md`.
 
 No upload-copy, Adobe upload, or submission occurred. Upload preparation remains a separate explicit user gate.
+
+
+## 2026-08-26 — PNG transparent-alpha remote preflight
+
+### DONE — isolated BiRefNet runtime; production candidate still gated
+
+- Diagnosed PNG preflight v1 as a P100 `sm_60` versus Kaggle Torch `2.10.0+cu128` incompatibility: the default build supports `sm_70+`, so CUDA inference failed with `no kernel image is available for execution on the device`. This was not a VRAM, storage, model-cache, alpha, or JPEG failure.
+- Added capability-aware CPU fallback to the isolated PNG worker and synthetic preflight. Kaggle preflight v2 completed with offline BiRefNet model load, CPU inference on the remote kernel, RGBA output, alpha range 0–255, elapsed 97.426 seconds, `hf_token_used=false`, and `jpeg_pipeline_touched=false`.
+- Added `kaggle-png-finalizer prepare` and a request builder that validates `.png/.webp` square 1024×1024 sources and declares 4096×4096 RGBA/sRGB/true-alpha output with deterministic and human edge gates.
+- Added controller and bundle isolation guards: private/offline metadata, BiRefNet cache-only dataset, JPEG source rejection, protected JPEG finalizer rejection, path/checksum/size validation, and no RealESRGAN route.
+- Focused PNG/multiformat/selector tests passed 35/35. Full regression suite passed **327 tests, 1 skipped**; compileall, `git diff --check`, PNG CLI test/doctor, and protected JPEG doctor passed.
+- Production status remains `BLOCKED` / `visual_review_required`. No real asset, Android export, Adobe upload, or marketplace submission was performed in this milestone.

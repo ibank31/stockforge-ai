@@ -30,6 +30,8 @@ from .job_database import JobDatabase
 from .job_manager import JobManager
 from .kaggle_worker import KaggleWorkerError, doctor as kaggle_doctor, list_kernels, push as kaggle_push, quota as kaggle_quota, remote as kaggle_remote, validate_local
 from .kaggle_finalizer import doctor as kaggle_finalizer_doctor, remote as kaggle_finalizer_remote, submit as kaggle_finalizer_submit, validate_local as validate_kaggle_finalizer
+from .kaggle_png_finalizer import doctor as kaggle_png_finalizer_doctor, prepare_request as prepare_kaggle_png_request, remote as kaggle_png_finalizer_remote, submit as kaggle_png_finalizer_submit, validate_local as validate_kaggle_png_finalizer
+from .kaggle_vector_worker import KaggleVectorWorkerError, doctor as kaggle_vector_doctor, remote as kaggle_vector_remote, submit as kaggle_vector_submit, validate_local as validate_kaggle_vector
 from .project import ProjectManager
 from .provider_config import ProviderConfigError
 from .provider_orchestration import ProviderRoutingError
@@ -60,6 +62,8 @@ job_app = typer.Typer(help="Create and operate persistent jobs.")
 adobe_app = typer.Typer(help="Adobe Stock readiness checks.")
 kaggle_app = typer.Typer(help="Control the Kaggle GPU worker without a browser.")
 kaggle_finalizer_app = typer.Typer(help="Control the private Kaggle AI-upscale finalizer without a browser.")
+kaggle_png_finalizer_app = typer.Typer(help="Control the isolated private Kaggle PNG alpha finalizer without a browser.")
+kaggle_vector_app = typer.Typer(help="Control the isolated Kaggle StarVector SVG worker without a browser.")
 provider_app = typer.Typer(help="Configure remote GPU workers for Termux-controlled generation.")
 portfolio_app = typer.Typer(help="Plan evidence-aligned, human-review-required portfolio batches.")
 app.add_typer(project_app, name="project")
@@ -68,6 +72,8 @@ app.add_typer(job_app, name="job")
 app.add_typer(adobe_app, name="adobe")
 app.add_typer(kaggle_app, name="kaggle")
 app.add_typer(kaggle_finalizer_app, name="kaggle-finalizer")
+app.add_typer(kaggle_png_finalizer_app, name="kaggle-png-finalizer")
+app.add_typer(kaggle_vector_app, name="kaggle-vector")
 app.add_typer(provider_app, name="provider")
 app.add_typer(portfolio_app, name="portfolio")
 
@@ -1291,6 +1297,154 @@ def kaggle_finalizer_output(
             raise PortfolioError("Finalizer output destination must remain inside the project workspace.") from exc
         code = kaggle_finalizer_remote("output", kernel, output_dir, force=force)
     except (KaggleWorkerError, PortfolioError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
+
+
+@kaggle_png_finalizer_app.command("test")
+def kaggle_png_finalizer_test() -> None:
+    """Validate isolated PNG alpha finalizer bundle locally; never pushes or uses GPU."""
+    try:
+        info = validate_kaggle_png_finalizer()
+    except KaggleWorkerError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo("KAGGLE PNG FINALIZER TEST: PASS")
+    typer.echo(f"Worker: {info['worker_dir']}")
+    typer.echo(f"Kernel: {info['metadata']['id']}")
+    typer.echo("Mode: private one-shot 4x BiRefNet alpha finalize")
+
+
+@kaggle_png_finalizer_app.command("doctor")
+def kaggle_png_finalizer_doctor_cmd() -> None:
+    """Check Kaggle CLI/auth/PNG finalizer files; never pushes or uses GPU."""
+    checks = kaggle_png_finalizer_doctor()
+    failed = False
+    for name, ok, detail in checks:
+        typer.echo(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
+        failed |= not ok
+    raise typer.Exit(code=1 if failed else 0)
+
+
+@kaggle_png_finalizer_app.command("prepare")
+def kaggle_png_finalizer_prepare_cmd(
+    project: str = typer.Option(..., "--project", "-p"),
+    source: str = typer.Option(..., "--source", "-s", help="PNG/WebP source relative to the project workspace."),
+    destination: str | None = typer.Option(None, "--destination", "-d"),
+) -> None:
+    """Prepare one PNG alpha request; never calls a provider or GPU."""
+    try:
+        record, project_root = _portfolio_project(project)
+        request_path, payload = prepare_kaggle_png_request(
+            source=source,
+            project_root=project_root,
+            project_id=str(record["id"]),
+            destination=destination,
+        )
+    except (KaggleWorkerError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({"path": str(request_path), **payload}, indent=2))
+
+
+@kaggle_png_finalizer_app.command("submit")
+def kaggle_png_finalizer_submit_cmd(
+    project: str = typer.Option(..., "--project", "-p"),
+    request: str = typer.Option(..., "--request"),
+    accelerator: str = typer.Option("NvidiaTeslaT4", "--accelerator", "-a"),
+) -> None:
+    """Push one prepared PNG alpha request to the private PNG worker."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        code = kaggle_png_finalizer_submit(request=request, project_root=project_root, accelerator=accelerator)
+    except (KaggleWorkerError, PortfolioError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
+
+
+@kaggle_png_finalizer_app.command("status")
+def kaggle_png_finalizer_status(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> None:
+    """Read PNG finalizer kernel status through the Kaggle API."""
+    raise typer.Exit(code=kaggle_png_finalizer_remote("status", kernel))
+
+
+@kaggle_png_finalizer_app.command("output")
+def kaggle_png_finalizer_output(
+    project: str = typer.Option(..., "--project", "-p"),
+    kernel: str | None = typer.Option(None, "--kernel", "-k"),
+    destination: str | None = typer.Option(None, "--destination", "-d"),
+    force: bool = typer.Option(False, "--force", help="Overwrite local output with the latest completed PNG kernel files."),
+) -> None:
+    """Download PNG finalizer output into the project without using GPU."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        output_dir = Path(destination).expanduser() if destination else project_root / "kaggle-png-finalizer-output"
+        output_dir = output_dir.resolve()
+        try:
+            output_dir.relative_to(project_root)
+        except ValueError as exc:
+            raise PortfolioError("PNG output destination must remain inside the requested project workspace.") from exc
+        code = kaggle_png_finalizer_remote("output", kernel, output_dir, force=force)
+    except (KaggleWorkerError, PortfolioError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
+
+
+@kaggle_vector_app.command("test")
+def kaggle_vector_test() -> None:
+    """Validate the isolated StarVector bundle locally; never pushes or uses GPU."""
+    try:
+        info = validate_kaggle_vector()
+    except KaggleVectorWorkerError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo("KAGGLE STARVECTOR TEST: PASS")
+    typer.echo(f"Worker: {info['worker_dir']}")
+    typer.echo(f"Kernel: {info['metadata']['id']}")
+    typer.echo(f"Code: {info['code_file']}")
+    typer.echo(f"GPU enabled: {info['metadata'].get('enable_gpu', False)}")
+    typer.echo(f"JPEG isolation: {info['jpeg_isolation']}")
+
+
+@kaggle_vector_app.command("doctor")
+def kaggle_vector_doctor_cmd() -> None:
+    """Check Kaggle CLI/auth/vector files; never pushes or uses GPU."""
+    checks = kaggle_vector_doctor()
+    failed = False
+    for name, ok, detail in checks:
+        typer.echo(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
+        failed |= not ok
+    raise typer.Exit(code=1 if failed else 0)
+
+
+@kaggle_vector_app.command("submit")
+def kaggle_vector_submit_cmd(
+    prompt_file: str = typer.Option(..., "--prompt-file", help="Project-local brief file for one StarVector candidate."),
+    input_image: str = typer.Option(..., "--input-image", help="Project-local PNG input for image-to-SVG."),
+    accelerator: str = typer.Option("NvidiaTeslaT4", "--accelerator", "-a"),
+) -> None:
+    """Push exactly one isolated StarVector image-to-SVG job after an explicit approval gate."""
+    try:
+        code = kaggle_vector_submit(prompt_file=prompt_file, input_image_file=input_image, accelerator=accelerator)
+    except KaggleVectorWorkerError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    raise typer.Exit(code=code)
+
+
+@kaggle_vector_app.command("status")
+def kaggle_vector_status(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> None:
+    """Read isolated StarVector kernel status through the Kaggle API."""
+    raise typer.Exit(code=kaggle_vector_remote("status", kernel))
+
+
+@kaggle_vector_app.command("output")
+def kaggle_vector_output(
+    destination: str = typer.Option(..., "--destination", "-d", help="Project-local output directory."),
+    kernel: str | None = typer.Option(None, "--kernel", "-k"),
+    force: bool = typer.Option(False, "--force"),
+) -> None:
+    """Download isolated StarVector output into a project-local directory."""
+    try:
+        output_dir = Path(destination).expanduser().resolve()
+        code = kaggle_vector_remote("output", kernel, output_dir, force=force)
+    except KaggleVectorWorkerError as exc:
         raise typer.BadParameter(str(exc)) from exc
     raise typer.Exit(code=code)
 
