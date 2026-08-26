@@ -568,3 +568,15 @@ No upload-copy, Adobe upload, or submission occurred. Upload preparation remains
 - Added controller and bundle isolation guards: private/offline metadata, BiRefNet cache-only dataset, JPEG source rejection, protected JPEG finalizer rejection, path/checksum/size validation, and no RealESRGAN route.
 - Focused PNG/multiformat/selector tests passed 35/35. Full regression suite passed **327 tests, 1 skipped**; compileall, `git diff --check`, PNG CLI test/doctor, and protected JPEG doctor passed.
 - Production status remains `BLOCKED` / `visual_review_required`. No real asset, Android export, Adobe upload, or marketplace submission was performed in this milestone.
+
+
+## 2026-08-26 — Thailand Tomyum Kung trial and JPEG master finalized
+
+### REVIEW_READY — one food preview, one accepted review, compatible-accelerator finalizer
+
+- Read the traditional-food research branch without checkout or modification and selected the evidence-bound global P0 candidate `traditional_food_tomyum_kung` / `tomyum-kung` from Thailand. UNESCO identifies Tomyum Kung as a traditional Thai prawn soup with aromatic herbs and vibrant colours; Adobe category guidance places food-focused content in category 7 (Food). Research and references are stored in `docs/research/TRADITIONAL_FOOD_TOMYUM_KUNG_TRIAL_2026-08-26.md`.
+- Created exactly one project-local batch and generated exactly one 1024×1024 ZeroGPU preview. Preview execution `32a8bd7c-6565-547c-8433-2fa51b7baf3c`; preview artifact `ed286457-fd83-4065-a1e2-6757d476bf2e`; user verdict `KEEP`; evaluation overall 3.75/5; marketplace outcome `not_submitted`.
+- The first finalizer submission, kernel version 14 on Kaggle P100, failed for a confirmed runtime/accelerator mismatch: P100 `sm_60` versus current Torch support `sm_70+`, failing in RealESRGAN at `model.half()`. The protected JPEG worker was not changed and no blind retry was made.
+- The identical request was submitted to compatible T4 as kernel version 15 and completed with `RealESRGAN_x4plus` at 4×. Imported master execution `4c8d3bfd-c3ef-49ae-95fb-5e0fbafce0fa`; master artifact `7d506166-62b2-4c61-988c-4c72d42a8860`.
+- Master passed deterministic checks: JPEG, 4096×4096, 16.777216 MP, RGB, sRGB, decodable, quality 95, 4:4:4, and 1,755,278 bytes. Full-resolution whole-image and four-tile audit found no fatal text/logo/watermark/hand/scene/halo/object-drift issue. A non-blocking note remains that pale curved strands resemble noodles despite the no-noodle prompt; the user accepted the preview.
+- Master remains `review_ready` / `visual_review_required`. No upload-copy, Android export, Adobe upload, or marketplace submission was created. A separate explicit approval is required before preparing the manual Adobe upload bundle.

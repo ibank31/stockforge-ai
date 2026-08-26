@@ -28,6 +28,7 @@ ADOBE_CATEGORY_BY_LANE = {
     "native_vector_workflow_sets": 8,  # Graphic resources
     "animal_adoption_foster_helper_characters": 1,  # Animals
     "animal_adoption_foster_story_vignettes": 1,  # Animals
+    "traditional_food_tomyum_kung": 7,  # Food
 }
 
 CSV_HEADER = ("Filename", "Title", "Keywords", "Category", "Releases")

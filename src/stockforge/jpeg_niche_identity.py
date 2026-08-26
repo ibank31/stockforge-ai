@@ -114,6 +114,15 @@ JPEG_NICHE_IDENTITIES: dict[str, JpegNicheIdentity] = {
         distinctness=("cell-tray geometry", "seedling-stage clarity", "moisture-and-compost material relationship", "propagation-specific silhouette"),
         prohibited_shorthand=("brand seed packet", "readable label", "named cultivar", "garden-tool pile", "greenhouse clutter", "certification badge", "eco claim", "botanical pattern", "generic plant pot"),
     ),
+    "traditional_food_tomyum_kung": JpegNicheIdentity(
+        lane_key="traditional_food_tomyum_kung",
+        signature="recognizable Thai tomyum kung bowl with visible prawns, aromatic herbs, and a vivid layered hot-and-sour soup palette",
+        lighting="soft natural daylight with appetizing but restrained broth highlights; no glossy restaurant-ad glare",
+        framing="top-front three-quarter isolated bowl study with the full vessel, prawns, mushrooms, herbs, and broth surface readable at thumbnail size",
+        context="clean warm-white food editorial studio; Thai culinary identity comes from visible ingredients and bowl composition, not random cultural props or sacred symbolism",
+        distinctness=("prawn-and-broth silhouette", "lemongrass and makrut lime leaf cues", "red-orange soup colour contrast", "ingredient-led Thai food identity"),
+        prohibited_shorthand=("health claim", "wellness claim", "medicinal claim", "authentic", "restaurant logo", "brand label", "readable menu", "chopstick hand", "human hand", "street sign", "temple", "festival decoration", "random Thai ornament", "generic noodle soup", "coconut curry", "pho", "ramen"),
+    ),
     "sewing_craft_tool_clipart": JpegNicheIdentity(
         lane_key="sewing_craft_tool_clipart",
         signature="compact cheerful cluster of unbranded sewing and textile-craft tools with bold consistent outlines and clear object separation",
