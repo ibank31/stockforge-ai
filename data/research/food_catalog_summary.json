@@ -1,0 +1,32 @@
+{
+  "global": {
+    "path": "data/research/global_traditional_food_asset_catalog.csv",
+    "row_count": 63,
+    "missing_required_columns": [],
+    "priority_counts": {
+      "P0": 12,
+      "P1": 22,
+      "P2": 29
+    },
+    "confidence_counts": {
+      "high": 19,
+      "low": 10,
+      "medium": 34
+    }
+  },
+  "indonesia": {
+    "path": "data/research/indonesia_regional_food_asset_candidates.csv",
+    "row_count": 32,
+    "missing_required_columns": [],
+    "priority_counts": {
+      "P0": 8,
+      "P1": 12,
+      "P2": 12
+    },
+    "confidence_counts": {
+      "high": 8,
+      "low": 6,
+      "medium": 18
+    }
+  }
+}
