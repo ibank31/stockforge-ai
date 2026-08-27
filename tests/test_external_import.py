@@ -21,6 +21,18 @@ def _png(path: Path, size=(128, 96), mode="RGB") -> None:
     image.save(path, format="PNG")
 
 
+def test_import_external_reads_rgba_alpha_without_verify_runtime_error(tmp_path: Path) -> None:
+    source = tmp_path / "rgba.png"
+    _png(source, size=(64, 64), mode="RGBA")
+    from stockforge.external_import import inspect_external_image
+
+    facts = inspect_external_image(source)
+    assert facts.detected_format == "PNG"
+    assert facts.has_alpha is True
+    assert facts.alpha_extrema == (255, 255)
+    assert facts.transparent_fraction == 0.0
+
+
 def test_import_external_registers_execution_artifact_and_provenance(tmp_path: Path) -> None:
     database, project_root, project_id = _database(tmp_path)
     source = tmp_path / "crate.png"

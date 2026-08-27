@@ -108,6 +108,10 @@ def inspect_external_image(source: Path) -> ExternalImageFacts:
     if not source.is_file():
         raise ExternalImportError(f"External source does not exist: {source}")
     try:
+        # Pillow requires verify() to be called immediately after open(), before
+        # any pixel/channel access. Reopen the file for the pixel facts.
+        with Image.open(source) as image:
+            image.verify()
         with Image.open(source) as image:
             image_format = image.format or "UNKNOWN"
             width, height = image.size
@@ -120,10 +124,8 @@ def inspect_external_image(source: Path) -> ExternalImageFacts:
                 alpha_extrema = tuple(int(v) for v in alpha.getextrema())
                 histogram = alpha.histogram()
                 transparent_fraction = sum(histogram[:255]) / (width * height)
-            image.verify()
-        with Image.open(source) as image:
             image.load()
-    except (UnidentifiedImageError, OSError, ValueError) as exc:
+    except (UnidentifiedImageError, OSError, ValueError, RuntimeError) as exc:
         raise ExternalImportError(f"Source is not a safely decodable image: {exc}") from exc
     return ExternalImageFacts(
         detected_format=image_format,
