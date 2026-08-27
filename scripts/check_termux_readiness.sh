@@ -57,7 +57,7 @@ printf '%s\n' '--- local control-plane checks ---'
 providers=$(python3 -m stockforge.cli provider list 2>&1)
 provider_rc=$?
 printf '%s\n' "$providers"
-if [ "$provider_rc" -eq 0 ] && printf '%s\n' "$providers" | grep -q 'huggingface-zerogpu'; then pass 'ZeroGPU provider configured'; else fail 'ZeroGPU provider missing or unreadable'; fi
+if [ "$provider_rc" -eq 0 ] && printf '%s\n' "$providers" | grep -qE '(^|[^a-z])(zerogpu|huggingface-zerogpu)([^a-z]|$)'; then pass 'ZeroGPU provider configured'; else fail 'ZeroGPU provider missing or unreadable'; fi
 if command -v termux-wake-lock >/dev/null 2>&1; then pass 'termux-wake-lock available'; else fail 'termux-wake-lock missing (background run may be interrupted)'; fi
 python3 -m stockforge.cli kaggle-finalizer test 2>&1 && pass 'JPEG finalizer local bundle' || fail 'JPEG finalizer local bundle'
 python3 -m stockforge.cli kaggle-png-finalizer test 2>&1 && pass 'PNG finalizer local bundle' || fail 'PNG finalizer local bundle'
