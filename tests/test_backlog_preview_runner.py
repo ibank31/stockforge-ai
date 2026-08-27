@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from scripts.run_backlog_preview_batch import active_provider_errors, make_plan, validate_plan, window_attempts
+from scripts.run_backlog_preview_batch import DEFAULT_DAILY_CAP, active_provider_errors, make_plan, validate_plan, window_attempts
 
 
 BACKLOG = Path('/home/ubuntu/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json')
@@ -23,6 +23,7 @@ def test_backlog_plan_preserves_prompt_contract_and_routes():
     assert len(checks) == 30
     assert all(item['gpu_eligible'] for item in checks)
     assert plan['quality_policy']['batch_size'] == 1
+    assert plan['quality_policy']['daily_preview_cap'] == DEFAULT_DAILY_CAP == 3
     assert plan['quality_policy']['kaggle_auto_submit'] is False
 
     source_by_id = {item['id']: item for item in backlog['candidates']}

@@ -1,6 +1,6 @@
 # StockForge Batch Preview Runner
 
-Runner ini menjalankan Backlog v2 sebagai antrean preview serial. Ia memproses tepat satu brief per request dengan profile `z-image-turbo`, `batch_size=1`, dan cap default empat percobaan per jendela 24 jam. Ia tidak menjalankan Kaggle, tidak mengubah prompt backlog, tidak melakukan seed-only retry, dan masuk cooldown saat provider gagal.
+Runner ini menjalankan Backlog v2 sebagai antrean preview serial. Ia memproses tepat satu brief per request dengan profile `z-image-turbo`, `batch_size=1`, dan cap default tiga percobaan per jendela 24 jam; ini mengikuti limit endpoint gratis yang teramati. Ia tidak menjalankan Kaggle, tidak mengubah prompt backlog, tidak melakukan seed-only retry, dan masuk cooldown saat provider gagal.
 
 ## Persiapan dan dry-run
 
@@ -13,7 +13,7 @@ export STOCKFORGE_HOME="$HOME/.stockforge"
 python3 scripts/run_backlog_preview_batch.py \
   --backlog "$HOME/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json" \
   --project stock-assets \
-  --daily-cap 4 \
+  --daily-cap 3 \
   --dry-run
 ```
 
@@ -21,7 +21,7 @@ Path backlog harus disesuaikan dengan lokasi file di Termux. Dry-run membuat ata
 
 ## Menjalankan satu batch harian
 
-Setelah dry-run menunjukkan empat `next_candidates` dan Anda memang ingin memulai generation:
+Setelah dry-run menunjukkan tiga `next_candidates` dan Anda memang ingin memulai generation:
 
 ```bash
 cd ~/stockforge-ai
@@ -31,7 +31,7 @@ termux-wake-lock
 python3 scripts/run_backlog_preview_batch.py \
   --backlog "$HOME/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json" \
   --project stock-assets \
-  --daily-cap 4 \
+  --daily-cap 3 \
   > "$HOME/stockforge-batch-day.log" 2>&1
 termux-wake-unlock
 ```
