@@ -42,6 +42,7 @@ from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .learning_loop import critique_image, save_critique, summarize_learning_memory
 from .artifact import sha256_file
+from .external_import import ExternalImportError, import_external_image
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
 from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
@@ -629,6 +630,63 @@ def _export_preview_to_android(*, database: JobDatabase, project_root: Path, art
     except (AndroidExportError, OSError, ValueError) as exc:
         return {"status": "failed", "error": str(exc)}
     return {"status": "exported", **exported.to_dict()}
+
+
+@portfolio_app.command("import-external")
+def portfolio_import_external(
+    project: str = typer.Option(..., "--project", "-p"),
+    source: str = typer.Option(..., "--source", help="External image path; it is copied into project-owned artifacts."),
+    candidate_id: str = typer.Option(..., "--candidate-id", help="Backlog/brief identifier, e.g. png-v2-002."),
+    provider: str = typer.Option("external-renderer", "--provider", help="Human-readable external provider label; no provider call is made."),
+    model: str | None = typer.Option(None, "--model", help="Optional external model label."),
+    original_filename: str | None = typer.Option(None, "--original-filename"),
+    prompt: str | None = typer.Option(None, "--prompt", help="Optional prompt text; only its hash is stored in execution."),
+    title: str | None = typer.Option(None, "--title"),
+    buyer_job: str | None = typer.Option(None, "--buyer-job"),
+    micro_niche: str | None = typer.Option(None, "--micro-niche"),
+    delivery_format: str | None = typer.Option(None, "--delivery-format", help="jpeg or png; preset is used when omitted."),
+) -> None:
+    """Import one externally rendered image into the review-required portfolio lane."""
+    try:
+        record, project_root = _portfolio_project(project)
+        config = ConfigManager().initialize()
+        database = JobDatabase(config.database)
+        database.initialize()
+        result = import_external_image(
+            database=database,
+            project_id=str(record["id"]),
+            project_root=project_root,
+            source=Path(source),
+            candidate_id=candidate_id,
+            provider_label=provider,
+            model_label=model,
+            original_filename=original_filename,
+            prompt=prompt,
+            title=title,
+            buyer_job=buyer_job,
+            micro_niche=micro_niche,
+            delivery_format=delivery_format,
+        )
+        portfolio = result.execution.parameters.get("portfolio")
+        auto_critique = _auto_critique_execution(
+            project_root=project_root,
+            database=database,
+            execution_id=result.execution.id,
+            artifact_ids=result.execution.artifact_ids,
+            portfolio_context=portfolio if isinstance(portfolio, dict) else None,
+        )
+        android_preview_export = _export_preview_to_android(
+            database=database,
+            project_root=project_root,
+            artifact_ids=result.execution.artifact_ids,
+            asset_name=candidate_id,
+        )
+        payload = dict(result.report)
+        payload.update({"auto_critique": auto_critique, "android_preview_export": android_preview_export})
+        result.report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    except (ExternalImportError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
 @portfolio_app.command("show")

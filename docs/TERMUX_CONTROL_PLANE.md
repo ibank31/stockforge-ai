@@ -51,6 +51,24 @@ market evidence
 
 Pengguna tidak perlu memilih niche, prompt, negative prompt, format, provider, category, atau keyword. Mesin memilih berdasarkan evidence market, buyer job, technical readiness, compliance risk, cost, dan learning history. Pengguna hanya memberi verdict visual bila diminta.
 
+## Alur resmi external renderer
+
+External renderer boleh menjadi sumber render, tetapi tidak boleh melewati audit StockForge. File dari aplikasi luar disalin ke `~/.stockforge/incoming/external/`, kemudian diimpor satu per satu dengan command berikut:
+
+```bash
+cd "$HOME/stockforge-ai"
+export PYTHONPATH="$PWD/src"
+python3 -m stockforge.cli portfolio import-external \
+  --project stock-assets \
+  --source "$HOME/.stockforge/incoming/external/<nama-file>" \
+  --candidate-id <candidate-id> \
+  --provider chatgpt
+```
+
+Command ini menyalin file ke `artifacts/external/`, menghitung SHA-256, membuat artifact dan execution `image.import_external`, mencatat provenance, menjalankan pemeriksaan raster/true-alpha CPU-only, memperbarui auto-critique konservatif, dan mengekspor hanya preview visual. Import tidak melakukan crop, resize, ekstraksi alpha, konversi format, ZeroGPU, Kaggle, KEEP/REJECT, package Adobe, atau submission. Untuk dua source yang sedang diuji, gunakan `png-v2-002` untuk crate dan `jpeg-external-e-cargo-battery-swap` untuk scene e-cargo. Source PNG yang secara konsep akan menjadi JPEG tetap dicatat sebagai `source_encoding=PNG`; finalizer/export JPEG nanti harus membuat file JPEG yang sesungguhnya.
+
+Setelah import, pengguna menilai hasil visual dan menjalankan `portfolio evaluate`. Hanya setelah verdict `accept`/KEEP yang eksplisit, pipeline format yang sesuai boleh dilanjutkan. Crate PNG 1536×1024 belum boleh dikirim ke PNG finalizer yang saat ini mensyaratkan input square 1024×1024 tanpa kebijakan crop/resize yang disetujui; jangan melakukan mutasi diam-diam.
+
 ## Output Android
 
 Generation yang berhasil mengekspor satu preview visual ke:
