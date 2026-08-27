@@ -2,7 +2,8 @@
 # StockForge read-only readiness audit. Does not generate, submit, upload, or print secrets.
 set +e
 repo="${HOME}/stockforge-ai"
-backlog="${HOME}/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json"
+backlog="$repo/data/research/STOCKFORGE_BACKLOG_V2_2026-08-27.json"
+[ -f "$backlog" ] || backlog="${HOME}/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json"
 log="${HOME}/stockforge-readiness-$(date -u +%Y%m%dT%H%M%SZ).log"
 exec > >(tee "$log") 2>&1
 

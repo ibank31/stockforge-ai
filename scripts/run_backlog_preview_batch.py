@@ -28,7 +28,8 @@ from stockforge.job_database import JobDatabase
 from stockforge.portfolio_io import preview_preflight
 
 UTC = timezone.utc
-DEFAULT_BACKLOG = Path("/home/ubuntu/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json")
+REPO_BACKLOG = REPO_ROOT / "data" / "research" / "STOCKFORGE_BACKLOG_V2_2026-08-27.json"
+DEFAULT_BACKLOG = REPO_BACKLOG if REPO_BACKLOG.is_file() else Path("/home/ubuntu/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json")
 DEFAULT_PLAN_NAME = "backlog-v2-2026-08-27.json"
 DEFAULT_DAILY_CAP = 4
 WINDOW_SECONDS = 24 * 60 * 60
