@@ -408,6 +408,7 @@ def _run_one_generation(
     canvas: str,
     dry_run: bool,
     portfolio_context: dict[str, object] | None = None,
+    negative_prompt: str | None = None,
 ) -> dict[str, object]:
     """Run the existing bounded Termux path and optionally freeze portfolio context."""
     manager = ConfigManager()
@@ -431,7 +432,7 @@ def _run_one_generation(
             parameters["portfolio"] = portfolio_context
         request = GenerationRequest(
             prompt=base_request.prompt,
-            negative_prompt=base_request.negative_prompt,
+            negative_prompt=base_request.negative_prompt if negative_prompt is None else negative_prompt,
             width=base_request.width,
             height=base_request.height,
             steps=base_request.steps,
@@ -1002,6 +1003,7 @@ def portfolio_generate(
         output = _run_one_generation(
             project=project,
             prompt=selected["prompt_package"]["prompt"],
+            negative_prompt=selected["prompt_package"].get("negative_prompt", ""),
             provider=provider,
             profile=profile,
             seed=seed,
