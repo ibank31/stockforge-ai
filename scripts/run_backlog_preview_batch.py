@@ -4,7 +4,7 @@
 This runner intentionally does not call Kaggle and does not set batch_size > 1.
 It adapts backlog-v2 records into a project-local StockForge portfolio plan, then
 invokes the existing `portfolio generate` command exactly once per candidate.
-Provider failures are recorded and stop the run; there are no blind retries.
+Provider failures are recorded and stop the run; the failed candidate is retryable only after the quota window resets, never within the active window.
 """
 from __future__ import annotations
 
@@ -293,6 +293,11 @@ def window_attempts(state: dict[str, Any], current: datetime) -> list[dict[str, 
     return [item for item in state["attempts"] if parse_iso(item.get("attempted_at")) and parse_iso(item["attempted_at"]) >= started]
 
 
+def active_provider_errors(state: dict[str, Any], current: datetime) -> list[dict[str, Any]]:
+    active_attempts = window_attempts(state, current)
+    return [item for item in active_attempts if item.get("status") == "provider_error_no_auto_retry"]
+
+
 def run_one(*, args: argparse.Namespace, project_root: Path, plan_path: Path, brief_id: str, state: dict[str, Any], state_path: Path, log_handle: Any) -> int:
     command = [
         sys.executable,
@@ -374,6 +379,19 @@ def main() -> int:
     state = load_state(state_path, batch_id)
     current = now()
     active_attempts = window_attempts(state, current)
+    active_provider_error_items = active_provider_errors(state, current)
+    if active_provider_error_items:
+        window_started = parse_iso(state.get("window_started_at"))
+        reset_at = iso(window_started + timedelta(seconds=WINDOW_SECONDS)) if window_started else None
+        print(json.dumps({
+            "status": "provider_error_cooldown",
+            "reason": "A provider error occurred in the active quota window; no retry or later candidate is sent before reset.",
+            "failed_candidates": [item.get("candidate_id") for item in active_provider_error_items],
+            "reset_at": reset_at,
+            "state": str(state_path),
+            "provider_called": False,
+        }, indent=2))
+        return 0
     in_flight = [item for item in state["attempts"] if item.get("status") == "in_flight"]
     if in_flight:
         print(json.dumps({
@@ -383,10 +401,12 @@ def main() -> int:
             "state": str(state_path),
         }, indent=2))
         return 3
+    # Successful previews are terminal. A provider error is terminal only for
+    # the active quota window and becomes retryable after the window resets.
     terminal_ids = {
         item.get("candidate_id")
         for item in state["attempts"]
-        if item.get("status") in {"preview_ready", "provider_error_no_auto_retry"}
+        if item.get("status") == "preview_ready"
     }
     attempted_ids = {item.get("candidate_id") for item in active_attempts}
     remaining = [

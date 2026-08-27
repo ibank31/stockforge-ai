@@ -1,7 +1,8 @@
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from scripts.run_backlog_preview_batch import make_plan, validate_plan
+from scripts.run_backlog_preview_batch import active_provider_errors, make_plan, validate_plan, window_attempts
 
 
 BACKLOG = Path('/home/ubuntu/stockforge-backlog-v2/StockForge_Backlog_v2_2026-08-27.json')
@@ -32,6 +33,22 @@ def test_backlog_plan_preserves_prompt_contract_and_routes():
         assert package['negative_prompt'] == source['negative_prompt']
         assert brief['metadata']['human_review_required'] is True
         assert brief['metadata']['status'] == 'human_review_required'
+
+
+def test_provider_error_cooldown_and_retry_after_window_reset():
+    started = datetime(2026, 8, 27, 4, 0, tzinfo=timezone.utc)
+    state = {
+        'window_started_at': started.isoformat().replace('+00:00', 'Z'),
+        'attempts': [{
+            'candidate_id': 'jpeg-v2-004',
+            'attempted_at': (started + timedelta(minutes=1)).isoformat().replace('+00:00', 'Z'),
+            'status': 'provider_error_no_auto_retry',
+        }],
+    }
+    assert [item['candidate_id'] for item in active_provider_errors(state, started + timedelta(hours=1))] == ['jpeg-v2-004']
+    assert window_attempts(state, started + timedelta(days=1, seconds=1)) == []
+    assert state['window_started_at'] is None
+    assert active_provider_errors(state, started + timedelta(days=1, seconds=1)) == []
 
 
 def test_png_route_is_true_alpha_trial_and_never_jpeg():

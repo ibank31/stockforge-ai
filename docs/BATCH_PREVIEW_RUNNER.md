@@ -1,6 +1,6 @@
 # StockForge Batch Preview Runner
 
-Runner ini menjalankan Backlog v2 sebagai antrean preview serial. Ia memproses tepat satu brief per request dengan profile `z-image-turbo`, `batch_size=1`, dan cap default empat percobaan per jendela 24 jam. Ia tidak menjalankan Kaggle, tidak mengubah prompt backlog, tidak melakukan seed-only retry, dan berhenti saat provider gagal.
+Runner ini menjalankan Backlog v2 sebagai antrean preview serial. Ia memproses tepat satu brief per request dengan profile `z-image-turbo`, `batch_size=1`, dan cap default empat percobaan per jendela 24 jam. Ia tidak menjalankan Kaggle, tidak mengubah prompt backlog, tidak melakukan seed-only retry, dan masuk cooldown saat provider gagal.
 
 ## Persiapan dan dry-run
 
@@ -40,7 +40,7 @@ termux-wake-unlock
 
 ## Resume dan batas keamanan
 
-Jalankan command yang sama pada jendela berikutnya. Runner memakai state lokal di folder `portfolio-plans`, menghitung jendela 24 jam dari percobaan pertama, dan mengabaikan candidate yang sudah `preview_ready` atau `provider_error_no_auto_retry`. Jika proses mati ketika request masih `in_flight`, runner tidak mengirim ulang secara otomatis; periksa log dan endpoint terlebih dahulu. Ini sengaja mencegah pemakaian quota ganda.
+Jalankan command yang sama pada jendela berikutnya. Runner memakai state lokal di folder `portfolio-plans` dan menghitung jendela 24 jam dari percobaan pertama. Candidate `preview_ready` selalu terminal. Jika provider mengembalikan quota/error, runner mencatat `provider_error_no_auto_retry`, masuk cooldown, dan tidak mengirim candidate itu maupun candidate berikutnya dalam jendela aktif. Setelah jendela 24 jam reset, candidate yang gagal menjadi item berikutnya untuk dicoba satu kali; preview yang sudah sukses tetap tidak diulang. Jika proses mati ketika request masih `in_flight`, runner tidak mengirim ulang secara otomatis; periksa log dan endpoint terlebih dahulu. Ini sengaja mencegah pemakaian quota ganda.
 
 Preview yang berhasil akan diekspor oleh pipeline existing ke folder preview visual yang ditentukan konfigurasi. JSON, log, dan state tetap berada di workspace, bukan folder Android visual.
 
@@ -50,4 +50,4 @@ Review preview secara manual. Beri keputusan `KEEP` atau `REJECT` per candidate.
 
 ## Quality invariants
 
-Prompt dan negative prompt backlog disalin ke plan tanpa rewrite; canvas backlog tetap square; profile tetap `z-image-turbo`; batch size tetap satu; tidak ada parallel generation; setiap kegagalan menghentikan batch; dan human review tetap wajib sebelum finalisasi. Active ZeroGPU API menerima prompt, ukuran, steps, seed, randomize flag, serta job id; negative prompt tetap dicatat sebagai provenance/quality contract karena endpoint aktif belum mengekspos field negative prompt terpisah.
+Prompt dan negative prompt backlog disalin ke plan tanpa rewrite; canvas backlog tetap square; profile tetap `z-image-turbo`; batch size tetap satu; tidak ada parallel generation; provider error menghentikan batch dan memulai cooldown sampai reset quota; dan human review tetap wajib sebelum finalisasi. Active ZeroGPU API menerima prompt, ukuran, steps, seed, randomize flag, serta job id; negative prompt tetap dicatat sebagai provenance/quality contract karena endpoint aktif belum mengekspos field negative prompt terpisah.
