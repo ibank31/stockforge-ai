@@ -25,10 +25,8 @@ printf 'origin-main: '; git rev-parse --short origin/main 2>/dev/null
 if [ "$(git branch --show-current)" = "main" ]; then pass 'on main branch'; else fail 'not on main branch'; fi
 if [ -z "$(git status --porcelain)" ]; then pass 'working tree clean'; else fail 'working tree has changes'; git status --short; fi
 
-printf '%s\n' '--- runner files ---'
-for f in scripts/run_backlog_preview_batch.py docs/BATCH_PREVIEW_RUNNER.md tests/test_backlog_preview_runner.py; do
-  if [ -f "$f" ]; then pass "$f present"; else fail "$f missing"; fi
-done
+printf '%s\n' '--- batch workflow ---'
+info 'batch preview runner intentionally removed; individual generation remains the supported path'
 
 printf '%s\n' '--- runtime ---'
 printf 'python: '; python3 --version 2>&1
@@ -36,7 +34,7 @@ if command -v python3 >/dev/null 2>&1; then pass 'python3 available'; else fail 
 if [ -f "$HOME/.stockforge/config.json" ]; then pass 'STOCKFORGE_HOME config exists'; else fail "config missing at $HOME/.stockforge/config.json"; fi
 export PYTHONPATH="$repo/src${PYTHONPATH:+:$PYTHONPATH}"
 export STOCKFORGE_HOME="${STOCKFORGE_HOME:-$HOME/.stockforge}"
-python3 -m py_compile scripts/run_backlog_preview_batch.py src/stockforge/cli.py && pass 'python compile' || fail 'python compile'
+python3 -m py_compile src/stockforge/cli.py && pass 'CLI python compile' || fail 'CLI python compile'
 
 printf '%s\n' '--- backlog ---'
 if [ -f "$backlog" ]; then
@@ -59,10 +57,8 @@ providers=$(python3 -m stockforge.cli provider list 2>&1)
 provider_rc=$?
 printf '%s\n' "$providers"
 if [ "$provider_rc" -eq 0 ] && printf '%s\n' "$providers" | grep -qE '(^|[^a-z])(zerogpu|huggingface-zerogpu)([^a-z]|$)'; then pass 'ZeroGPU provider configured'; else fail 'ZeroGPU provider missing or unreadable'; fi
-if command -v termux-wake-lock >/dev/null 2>&1; then pass 'termux-wake-lock available'; else fail 'termux-wake-lock missing (background run may be interrupted)'; fi
 python3 -m stockforge.cli kaggle-finalizer test 2>&1 && pass 'JPEG finalizer local bundle' || fail 'JPEG finalizer local bundle'
 python3 -m stockforge.cli kaggle-png-finalizer test 2>&1 && pass 'PNG finalizer local bundle' || fail 'PNG finalizer local bundle'
-python3 scripts/run_backlog_preview_batch.py --backlog "$backlog" --project stock-assets --daily-cap 4 --dry-run 2>&1 && pass 'batch dry-run (no provider call)' || fail 'batch dry-run'
 
 printf '%s\n' '--- Kaggle read-only checks ---'
 if command -v kaggle >/dev/null 2>&1; then pass 'kaggle CLI available'; else fail 'kaggle CLI missing'; fi
