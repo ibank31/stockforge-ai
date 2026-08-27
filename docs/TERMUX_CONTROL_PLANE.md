@@ -3,7 +3,7 @@
 **Updated:** 2026-08-25
 **Status:** Active baseline
 **Branch:** `main`
-**Scope:** JPEG portfolio generation, learning, finalization, and manual Adobe upload preparation
+**Scope:** External import, JPEG/PNG portfolio generation, learning, format-specific finalization, and manual Adobe upload preparation
 
 ## Prinsip utama
 
@@ -67,7 +67,17 @@ python3 -m stockforge.cli portfolio import-external \
 
 Command ini menyalin file ke `artifacts/external/`, menghitung SHA-256, membuat artifact dan execution `image.import_external`, mencatat provenance, menjalankan pemeriksaan raster/true-alpha CPU-only, memperbarui auto-critique konservatif, dan mengekspor hanya preview visual. Import tidak melakukan crop, resize, ekstraksi alpha, konversi format, ZeroGPU, Kaggle, KEEP/REJECT, package Adobe, atau submission. Untuk dua source yang sedang diuji, gunakan `png-v2-002` untuk crate dan `jpeg-external-e-cargo-battery-swap` untuk scene e-cargo. Source PNG yang secara konsep akan menjadi JPEG tetap dicatat sebagai `source_encoding=PNG`; finalizer/export JPEG nanti harus membuat file JPEG yang sesungguhnya.
 
-Setelah import, pengguna menilai hasil visual dan menjalankan `portfolio evaluate`. Hanya setelah verdict `accept`/KEEP yang eksplisit, pipeline format yang sesuai boleh dilanjutkan. Crate PNG 1536×1024 belum boleh dikirim ke PNG finalizer yang saat ini mensyaratkan input square 1024×1024 tanpa kebijakan crop/resize yang disetujui; jangan melakukan mutasi diam-diam.
+Setelah import, pengguna menilai hasil visual dan menjalankan `portfolio evaluate`. Hanya setelah verdict `accept`/KEEP yang eksplisit, pipeline format yang sesuai boleh dilanjutkan. Crate PNG 1536×1024 tidak boleh dikirim mentah ke PNG finalizer yang saat ini mensyaratkan input square 1024×1024.
+
+Untuk asset yang sudah di-KEEP, gunakan preparer terpadu berikut; command ini hanya membuat request dan tidak mengirim GPU:
+
+```bash
+python3 -m stockforge.cli portfolio prepare-external-finalizer \
+  --project stock-assets \
+  --execution <execution-id>
+```
+
+Untuk JPEG, preparer membuat request `ai_upscale` 4× langsung dari source tanpa mengubah source import. Untuk PNG, preparer membuat artifact turunan baru berukuran 1024×1024 dengan **fit seluruh isi ke kanvas square**, tanpa crop, lalu mengompositkannya ke latar putih RGB karena worker BiRefNet membaca RGB dan menghasilkan alpha sendiri. Artifact asli tetap immutable dan lineage transformasinya dicatat. Hanya request yang sudah siap dan lolos pemeriksaan lokal yang boleh dikirim dengan command submit terpisah. Jangan menghapus atau menimpa source asli.
 
 ## Output Android
 

@@ -43,6 +43,7 @@ from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .learning_loop import critique_image, save_critique, summarize_learning_memory
 from .artifact import sha256_file
 from .external_import import ExternalImportError, import_external_image
+from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_external_finalizer
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
 from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
@@ -730,6 +731,34 @@ def portfolio_metadata_preflight(
         typer.echo(json.dumps(report, indent=2))
     except (PortfolioPlanError, PortfolioError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
+@portfolio_app.command("prepare-external-finalizer")
+def portfolio_prepare_external_finalizer(
+    project: str = typer.Option(..., "--project", "-p"),
+    execution: str = typer.Option(..., "--execution"),
+    artifact: str | None = typer.Option(None, "--artifact"),
+    minimum_megapixels: float = typer.Option(6.0, "--minimum-megapixels", min=4.0, max=100.0),
+    scale: int = typer.Option(4, "--scale"),
+) -> None:
+    """Prepare one KEEP-approved external asset for its isolated finalizer; never calls GPU."""
+    try:
+        record, project_root = _portfolio_project(project)
+        config = ConfigManager().initialize()
+        database = JobDatabase(config.database)
+        database.initialize()
+        payload = prepare_external_finalizer(
+            database=database,
+            project_id=str(record["id"]),
+            project_root=project_root,
+            execution_id=execution,
+            artifact_id=artifact,
+            minimum_megapixels=minimum_megapixels,
+            scale=scale,
+        )
+    except (ExternalFinalizerPreparationError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
 @portfolio_app.command("prepare-master")
