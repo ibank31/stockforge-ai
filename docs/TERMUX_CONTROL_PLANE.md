@@ -36,9 +36,10 @@ market evidence
   → dry-run dan pre-GPU gate
   → satu ZeroGPU preview
   → artifact/provenance/review package
+  → deterministic auto-critique + niche memory update
   → audit visual sederhana oleh pengguna dan audit teknis oleh mesin
   → portfolio evaluate
-  → portfolio learning-summary
+  → portfolio learning-summary + portfolio learning-memory
   → prepare-master
   → satu private Kaggle finalizer
   → import-kaggle-master
@@ -79,11 +80,11 @@ python -m stockforge.cli portfolio asset-types
 
 Setelah mesin menetapkan lane dan brief, jalankan `portfolio show` dan `portfolio generate --dry-run`. Gunakan path plan serta `brief_id` yang dikeluarkan CLI; jangan menebak tanggal atau membuat path manual. Hapus `--dry-run` hanya setelah pre-GPU gate lulus. Satu command live hanya boleh menghasilkan satu candidate.
 
-Output live harus memiliki artifact ID, execution ID, release package, dan Android preview export. Jika live request gagal, baca error dan log, dokumentasikan, lalu berhenti. Jangan mengulang hanya dengan seed lain.
+Output live harus memiliki artifact ID, execution ID, release package, Android preview export, dan auto-critique advisory bila portfolio context tersedia. Auto-critique berjalan setelah artifact tersimpan, tidak memanggil GPU kedua, tidak memanggil Kaggle, dan tidak mengubah prompt secara retroaktif. Jika live request gagal, baca error dan log, dokumentasikan, lalu berhenti. Jangan mengulang hanya dengan seed lain.
 
 ## Learning wajib setelah setiap review
 
-Setiap generation yang selesai atau ditolak harus masuk evaluation ledger. Gunakan `portfolio evaluate` setelah review teknis dan visual. Jalankan `portfolio learning-summary` setelah evaluation untuk melihat evidence per niche dan buyer job. Summary bersifat decision support; ia tidak mengubah prompt, tidak memprediksi sales, dan tidak memicu generation otomatis.
+Setiap generation yang selesai atau ditolak harus masuk evaluation ledger. Generation portfolio yang sukses juga membuat auto-critique di project-local `learning/auto-critiques/` dan memperbarui `learning/niche-memory.json`. Gunakan `portfolio evaluate` setelah review teknis dan visual, lalu `portfolio learning-summary` untuk evidence review dan `portfolio learning-memory` untuk melihat memory otomatis. Auto-memory hanya menyimpan observasi deterministik dan hipotesis belum terverifikasi; ia tidak memprediksi sales, tidak memberi KEEP otomatis, tidak mengubah prompt asli, dan tidak memicu generation otomatis.
 
 Satu evaluation tidak cukup untuk menaikkan lane menjadi terbukti. Keputusan berikutnya tetap harus memakai evidence market dan perbedaan produk yang material.
 

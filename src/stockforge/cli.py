@@ -40,6 +40,7 @@ from .portfolio import PortfolioError, build_brief, lane_for, list_lanes, metada
 from .portfolio_io import PortfolioPlanError, jpeg_metadata_preflight, load_project_plan, normalize_historical_plan_reference, portfolio_snapshot, preview_preflight, select_brief
 from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
+from .learning_loop import critique_image, save_critique, summarize_learning_memory
 from .artifact import sha256_file
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
@@ -508,6 +509,13 @@ def _run_one_generation(
             artifact_ids=result.execution.artifact_ids,
             asset_name=str((portfolio_context or {}).get("brief_id", result.execution.id[:12])),
         )
+        auto_critique = _auto_critique_execution(
+            project_root=project_root,
+            database=database,
+            execution_id=result.execution.id,
+            artifact_ids=result.execution.artifact_ids,
+            portfolio_context=portfolio_context,
+        )
         jobs.complete(
             claimed.id,
             {
@@ -516,6 +524,7 @@ def _run_one_generation(
                 "provider": candidate.capabilities.provider_id,
                 "release_package": package.to_dict(),
                 "android_preview_export": android_preview_export,
+                "auto_critique": auto_critique,
             },
         )
     except Exception as exc:
@@ -531,8 +540,53 @@ def _run_one_generation(
         "artifact_ids": list(result.execution.artifact_ids),
         "release_package": package.to_dict(),
         "android_preview_export": android_preview_export,
+        "auto_critique": auto_critique,
         "status": "review_ready",
     }
+
+
+def _auto_critique_execution(
+    *,
+    project_root: Path,
+    database: JobDatabase,
+    execution_id: str,
+    artifact_ids: tuple[str, ...],
+    portfolio_context: dict[str, object] | None,
+) -> dict[str, object]:
+    """Record conservative post-generation learning without another provider call."""
+    if portfolio_context is None:
+        return {"status": "skipped", "reason": "Learning loop requires portfolio context."}
+    if not artifact_ids:
+        return {"status": "unavailable", "error": "Generation returned no artifact IDs."}
+    artifact = database.get_artifact(artifact_ids[0])
+    if artifact is None:
+        return {"status": "unavailable", "error": "Generated artifact was not found."}
+    image_path = (project_root / artifact.relative_path).resolve()
+    asset_spec = portfolio_context.get("asset_spec")
+    asset_spec = asset_spec if isinstance(asset_spec, dict) else {}
+    metadata = portfolio_context.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    try:
+        critique = critique_image(
+            image_path=image_path,
+            execution_id=execution_id,
+            artifact_id=artifact.id,
+            lane_key=str(portfolio_context.get("lane_key", "unknown")),
+            buyer_job=str(portfolio_context.get("buyer_job", asset_spec.get("buyer_job", "unknown"))),
+            delivery_format=str(asset_spec.get("delivery_format", "jpeg")),
+            product_kind=str(asset_spec.get("product_kind", "raster_illustration")),
+            title=str(metadata.get("title", portfolio_context.get("brief_id", execution_id[:12]))),
+        )
+        path = save_critique(project_root, critique)
+        return {"status": "saved", "path": str(path), "critique": critique.to_dict()}
+    except Exception as exc:
+        # Learning is advisory. A critic failure must not invalidate a successful
+        # generation or trigger a retry that could consume provider quota.
+        return {
+            "status": "unavailable",
+            "error": f"{type(exc).__name__}: {exc}",
+            "notice": "Generation succeeded; automatic learning record was not available.",
+        }
 
 
 def _export_ready_uploads_to_android(bundle: object) -> dict[str, object]:
@@ -926,6 +980,19 @@ def portfolio_learning_summary(
         _record, project_root = _portfolio_project(project)
         summary = summarize_niche_learning(str(project_root))
     except (EvaluationError, PortfolioError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(summary, indent=2))
+
+
+@portfolio_app.command("learning-memory")
+def portfolio_learning_memory(
+    project: str = typer.Option(..., "--project"),
+) -> None:
+    """Show conservative auto-learning memory; never generates or finalizes."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        summary = summarize_learning_memory(project_root)
+    except (PortfolioError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(json.dumps(summary, indent=2))
 
