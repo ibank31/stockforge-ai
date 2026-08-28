@@ -347,7 +347,7 @@ This file is the canonical GPT-facing workflow. If another document conflicts wi
 
 ## References
 
-[1] StockForge canonical two-flow runbook: `docs/CANONICAL_TWO_FLOWS.md`  
-[2] StockForge external renderer workflow: `docs/EXTERNAL_RENDERER_WORKFLOW.md`  
-[3] StockForge Termux control plane: `docs/TERMUX_CONTROL_PLANE.md`
+[1] StockForge active status snapshot: `docs/STATUS.md`
+[2] StockForge documentation index: `docs/README.md`
+[3] StockForge source code and tests for implementation contracts
 
