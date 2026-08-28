@@ -789,6 +789,39 @@ def portfolio_workflow_finalizer_ready(
     typer.echo(json.dumps(workflow.to_dict(), indent=2))
 
 
+@portfolio_app.command("export-ready-visual")
+def portfolio_export_ready_visual(
+    project: str = typer.Option(..., "--project", "-p"),
+    source: str = typer.Option(..., "--source"),
+    asset_name: str = typer.Option(..., "--asset-name"),
+    approved: bool = typer.Option(False, "--approved"),
+) -> None:
+    """Copy exactly one technically valid approved visual master to Android."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        if not approved:
+            raise PortfolioError("READY_UPLOAD export requires explicit --approved after human 100% visual review.")
+        source_path = Path(source).expanduser().resolve()
+        source_path.relative_to(project_root)
+        if source_path.suffix.casefold() in {".jpg", ".jpeg"}:
+            report = inspect_image(source_path)
+            if not report.ready or report.format != "JPEG" or report.color_mode != "RGB":
+                raise PortfolioError("JPEG master failed the technical gate.")
+        elif source_path.suffix.casefold() == ".png":
+            report = inspect_transparent_png(source_path)
+            if not report.ready:
+                raise PortfolioError("PNG master failed the true-alpha technical gate.")
+        else:
+            raise PortfolioError("READY_UPLOAD export accepts only JPEG or PNG masters.")
+        downloads_root = default_downloads_root()
+        if downloads_root is None:
+            raise PortfolioError("Android Download mount is unavailable.")
+        exported = export_ready_upload(source=source_path, downloads_root=downloads_root, asset_name=asset_name)
+    except (PortfolioError, AndroidExportError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({"status": "exported_visual_only", **exported.to_dict()}, indent=2))
+
+
 @portfolio_app.command("show")
 def portfolio_show(
     project: str = typer.Option(..., "--project", "-p"),
