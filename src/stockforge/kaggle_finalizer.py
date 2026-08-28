@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Sequence
@@ -129,7 +130,10 @@ def submit(*, request: str | Path, project_root: str | Path, accelerator: str = 
         result = _run(
             ["kaggle", "kernels", "push", "-p", str(staged), "--accelerator", accelerator]
         )
-    print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
+    if result.stdout:
+        print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
+    if result.stderr:
+        print(result.stderr, file=sys.stderr, end="" if result.stderr.endswith("\n") else "\n")
     return result.returncode
 
 
