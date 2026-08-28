@@ -47,6 +47,7 @@ from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
 from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
+from .workflow import WorkflowError, attest_keep, load_workflow, mark_finalizer_ready, mark_master_ready, start_external, start_internal
 from .model_catalog import list_image_models
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .release_package import build_release_package
@@ -688,6 +689,104 @@ def portfolio_import_external(
     except (ExternalImportError, PortfolioError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+@portfolio_app.command("workflow-start-internal")
+def portfolio_workflow_start_internal(
+    project: str = typer.Option(..., "--project", "-p"),
+    candidate_id: str = typer.Option(..., "--candidate-id"),
+    delivery_format: str = typer.Option(..., "--delivery-format", help="jpeg or png"),
+    plan: str = typer.Option(..., "--plan"),
+    brief: str = typer.Option(..., "--brief"),
+    execution: str = typer.Option(..., "--execution"),
+    artifact: str = typer.Option(..., "--artifact"),
+    preview: str | None = typer.Option(None, "--preview"),
+) -> None:
+    """Start canonical Flow A state from one successful internal preview."""
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        execution_record = database.get_execution(execution)
+        if execution_record is None or execution_record.project_id != record["id"] or artifact not in execution_record.artifact_ids:
+            raise PortfolioError("Internal execution/artifact is invalid for this project.")
+        workflow = start_internal(project=project, project_id=str(record["id"]), candidate_id=candidate_id, delivery_format=delivery_format, plan=plan, brief=brief, execution_id=execution, artifact_id=artifact, preview_path=preview, project_root=project_root)
+    except (PortfolioError, WorkflowError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(workflow.to_dict(), indent=2))
+
+
+@portfolio_app.command("workflow-start-external")
+def portfolio_workflow_start_external(
+    project: str = typer.Option(..., "--project", "-p"),
+    candidate_id: str = typer.Option(..., "--candidate-id"),
+    delivery_format: str = typer.Option(..., "--delivery-format", help="jpeg or png"),
+    execution: str = typer.Option(..., "--execution"),
+    artifact: str = typer.Option(..., "--artifact"),
+    source: str = typer.Option(..., "--source"),
+    preview: str | None = typer.Option(None, "--preview"),
+) -> None:
+    """Start canonical Flow B state from one imported external preview."""
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        execution_record = database.get_execution(execution)
+        if execution_record is None or execution_record.project_id != record["id"] or artifact not in execution_record.artifact_ids:
+            raise PortfolioError("External execution/artifact is invalid for this project.")
+        workflow = start_external(project=project, project_id=str(record["id"]), candidate_id=candidate_id, delivery_format=delivery_format, execution_id=execution, artifact_id=artifact, source_path=source, preview_path=preview, project_root=project_root)
+    except (PortfolioError, WorkflowError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(workflow.to_dict(), indent=2))
+
+
+@portfolio_app.command("workflow-status")
+def portfolio_workflow_status(
+    project: str = typer.Option(..., "--project", "-p"),
+    workflow_id: str = typer.Option(..., "--workflow"),
+) -> None:
+    """Show one canonical workflow state without triggering work."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        workflow = load_workflow(project_root, workflow_id)
+    except (PortfolioError, WorkflowError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(workflow.to_dict(), indent=2))
+
+
+@portfolio_app.command("workflow-keep")
+def portfolio_workflow_keep(
+    project: str = typer.Option(..., "--project", "-p"),
+    workflow_id: str = typer.Option(..., "--workflow"),
+    reject: bool = typer.Option(False, "--reject"),
+) -> None:
+    """Record the human KEEP/REJECT gate; never calls GPU."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        workflow = attest_keep(project_root=project_root, workflow_id=workflow_id, keep=not reject)
+    except (PortfolioError, WorkflowError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(workflow.to_dict(), indent=2))
+
+
+@portfolio_app.command("workflow-finalizer-ready")
+def portfolio_workflow_finalizer_ready(
+    project: str = typer.Option(..., "--project", "-p"),
+    workflow_id: str = typer.Option(..., "--workflow"),
+    request: str = typer.Option(..., "--request"),
+) -> None:
+    """Attach a validated finalizer request to a KEEP workflow without submitting GPU."""
+    try:
+        _record, project_root = _portfolio_project(project)
+        request_path = Path(request).expanduser().resolve()
+        request_path.relative_to(project_root)
+        payload = json.loads(request_path.read_text(encoding="utf-8"))
+        if payload.get("status") != "prepared_no_gpu":
+            raise WorkflowError("Finalizer request is not prepared_no_gpu.")
+        workflow = mark_finalizer_ready(project_root=project_root, workflow_id=workflow_id, master_request_path=str(request_path))
+    except (PortfolioError, WorkflowError, OSError, ValueError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(workflow.to_dict(), indent=2))
 
 
 @portfolio_app.command("show")
