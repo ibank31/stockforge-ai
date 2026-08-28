@@ -14,6 +14,7 @@ from . import __version__
 from .adobe_finalize import AdobeFinalizationError, finalize_image
 from .android_export import AndroidExportError, default_downloads_root, export_preview, export_ready_upload
 from .adobe_upload_bundle import AdobeUploadBundleError, latest_finalized_master_execution_id, prepare_adobe_upload_bundle
+from .adobe_png_upload_bundle import AdobePngUploadBundleError, prepare_adobe_png_upload_bundle
 from .asset_selector import AssetSelectionError, list_asset_type_policies, select_asset_type
 from .adobe_gate import inspect_image
 from .adobe_png_gate import inspect_transparent_png
@@ -47,6 +48,7 @@ from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_
 from .master_finalizer import MasterFinalizationError, MasterTarget
 from .master_registry import MasterRegistryError, register_master_candidate
 from .kaggle_master_import import KaggleMasterImportError, import_kaggle_master
+from .kaggle_png_master_import import KagglePngMasterImportError, import_kaggle_png_master
 from .workflow import WorkflowError, attest_keep, load_workflow, mark_finalizer_ready, mark_master_ready, start_external, start_internal
 from .model_catalog import list_image_models
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
@@ -1022,6 +1024,70 @@ def portfolio_prepare_adobe_upload(
         typer.echo(json.dumps(output, indent=2))
     except (AdobeUploadBundleError, PortfolioError, OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
+@portfolio_app.command("prepare-adobe-png-upload")
+def portfolio_prepare_adobe_png_upload(
+    project: str = typer.Option(..., "--project", "-p"),
+    execution: list[str] = typer.Option([], "--execution", "-e", help="Finalized PNG execution ID; repeat for a batch."),
+    approved: bool = typer.Option(False, "--approved", help="Explicitly attest that each PNG passed 100% visual edge review."),
+    category: int | None = typer.Option(None, "--category", help="Reviewed Adobe category number (1-21)."),
+    destination: str | None = typer.Option(None, "--destination", "-d"),
+) -> None:
+    """Create an Android-ready manual upload bundle for transparent PNG masters."""
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        destination_root = Path(destination).expanduser().resolve() if destination else project_root / "adobe-png-upload-bundles"
+        bundle = prepare_adobe_png_upload_bundle(database=database, project_id=record["id"], project_root=project_root, execution_ids=tuple(execution), approved_by_user=approved, category=category, destination_root=destination_root)
+        exports = []
+        downloads_root = default_downloads_root()
+        if downloads_root is not None:
+            for asset_dir in bundle["asset_dirs"]:
+                candidates = sorted(Path(asset_dir).glob("*.png"))
+                if len(candidates) != 1:
+                    raise PortfolioError("Each PNG upload folder must contain exactly one PNG master.")
+                exports.append(export_ready_upload(source=candidates[0], downloads_root=downloads_root, asset_name=Path(asset_dir).name).to_dict())
+        bundle["android_ready_upload_exports"] = {"status": "exported" if downloads_root is not None else "not_available", "exports": exports}
+    except (AdobePngUploadBundleError, PortfolioError, AndroidExportError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(bundle, indent=2, ensure_ascii=False))
+
+
+@portfolio_app.command("import-kaggle-png-master")
+def portfolio_import_kaggle_png_master(
+    project: str = typer.Option(..., "--project", "-p"),
+    request: str = typer.Option(..., "--request"),
+    result_dir: str = typer.Option(..., "--result-dir"),
+    metadata_review: str | None = typer.Option(None, "--metadata-review"),
+) -> None:
+    """Verify/register one Kaggle BiRefNet PNG master; no GPU call is made."""
+    try:
+        record, project_root = _portfolio_project(project)
+        request_path = Path(request).expanduser().resolve()
+        request_path.relative_to(project_root)
+        payload = json.loads(request_path.read_text(encoding="utf-8"))
+        source_data = payload.get("source")
+        if not isinstance(source_data, dict) or not isinstance(source_data.get("artifact_id"), str) or not isinstance(source_data.get("execution_id"), str):
+            raise PortfolioError("PNG request lacks source artifact/execution identity.")
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        source_artifact = database.get_artifact(source_data["artifact_id"])
+        source_execution = database.get_execution(source_data["execution_id"])
+        if source_artifact is None or source_execution is None:
+            raise PortfolioError("Original PNG preview artifact or execution is unavailable.")
+        reviewed_metadata = None
+        if metadata_review:
+            metadata_path = Path(metadata_review).expanduser().resolve()
+            metadata_path.relative_to(project_root)
+            reviewed_metadata = metadata_from_dict(json.loads(metadata_path.read_text(encoding="utf-8"))).to_dict()
+        report = import_kaggle_png_master(request_path=request_path, result_dir=result_dir, project_root=project_root)
+        master, master_execution = register_master_candidate(database=database, project_id=record["id"], project_root=project_root, source_artifact=source_artifact, source_execution=source_execution, report=report, reviewed_metadata=reviewed_metadata)
+        package = build_release_package(database=database, project_id=record["id"], project_root=project_root, execution_id=master_execution.id)
+    except (PortfolioError, KagglePngMasterImportError, MasterRegistryError, OSError, ValueError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps({"status": "review_ready", "format": "PNG", "master_artifact_id": master.id, "master_execution_id": master_execution.id, "master_finalization": report.to_dict(), "release_package": package.to_dict(), "notice": "Review PNG edges at 100% before prepare-adobe-png-upload --approved."}, indent=2))
 
 
 @portfolio_app.command("import-kaggle-master")

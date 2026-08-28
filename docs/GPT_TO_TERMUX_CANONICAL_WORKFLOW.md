@@ -270,7 +270,7 @@ A COMPLETE status alone is insufficient. If the request ID differs, treat the ou
 
 ## 8. Master import, audit, metadata, and delivery
 
-After matching the result, use the active repository's master-import command for the relevant format. JPEG master import is supported by the established JPEG registry. PNG master import/package support must be verified in the active repository before claiming Adobe readiness.
+After matching the result, use the format-specific master-import command: `portfolio import-kaggle-master` for JPEG or `portfolio import-kaggle-png-master` for PNG. Both commands verify request/result identity, checksum, target dimensions, and local technical gates before registering immutable preview-to-master lineage. PNG then uses `portfolio prepare-adobe-png-upload`; JPEG uses `portfolio prepare-adobe-upload`. Neither command submits to Adobe.
 
 Run the technical audit and preserve its report. Then perform human full-resolution review. A state such as `visual_review_required` is not an error and is not marketplace approval.
 
@@ -283,7 +283,7 @@ python3 -m stockforge.cli portfolio export-ready-visual \
   --approved
 ```
 
-The exact options must follow `python3 -m stockforge.cli portfolio export-ready-visual --help` in the active checkout. The exporter may copy only the approved visual master:
+The exact options must follow `python3 -m stockforge.cli portfolio export-ready-visual --help` in the active checkout. The exporter accepts both JPEG and PNG, applies the matching technical gate, and may copy only the approved visual master:
 
 ```text
 /storage/emulated/0/Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/
@@ -325,7 +325,7 @@ If a command fails, preserve its output, stop that route, and report the exact e
 
 The JPEG route is the mature production route: internal or external source, preview, KEEP gate, protected RealESRGAN finalizer, master audit, metadata/package, and visual export are established.
 
-The PNG route has isolated BiRefNet preparation and finalization, but PNG master import and complete Adobe package support must be verified before calling the PNG result ready for Adobe upload. Until that support is verified, preserve the PNG master in the project workspace and report `visual_review_required`.
+The PNG route is now end-to-end: isolated BiRefNet preparation/finalization, checksum-checked master import, RGBA/true-alpha/sRGB technical gate, immutable registry lineage, embedded PNG metadata, manual upload bundle, and visual-only export to `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE`. The result remains `visual_review_required` until the user completes the 100% visual edge review and passes `--approved`.
 
 The internal Z-Image batch workflow is retired. The external-renderer adapter is supported. The local llama.cpp/Qwen trial is not part of the production workflow.
 

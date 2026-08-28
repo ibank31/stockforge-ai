@@ -10,6 +10,7 @@ from .artifact import Artifact
 from .database import Database
 from .execution_record import GenerationExecutionRecord
 from .master_finalizer import MasterFinalizationReport
+from .kaggle_png_master_import import PngFinalizationReport
 from .provenance import ArtifactLineage, ProvenanceRecord
 
 
@@ -24,7 +25,7 @@ def register_master_candidate(
     project_root: Path,
     source_artifact: Artifact,
     source_execution: GenerationExecutionRecord,
-    report: MasterFinalizationReport,
+    report: MasterFinalizationReport | PngFinalizationReport,
     reviewed_metadata: dict[str, Any] | None = None,
 ) -> tuple[Artifact, GenerationExecutionRecord]:
     """Register an upscaled/finalized master and immutable preview-to-master lineage.
@@ -89,6 +90,20 @@ def register_master_candidate(
     actual_artifacts, actual_execution = database.create_artifacts_and_execution((master,), execution)
     actual_master = actual_artifacts[0]
 
+    provenance_parameters: dict[str, Any] = {
+        "scale": report.upscale.scale,
+        "minimum_megapixels": report.minimum_megapixels,
+        "delivery_format": "png" if isinstance(report, PngFinalizationReport) else "jpeg",
+    }
+    if isinstance(report, PngFinalizationReport):
+        provenance_parameters.update({"requires_true_alpha": True, "color_space": "sRGB"})
+    else:
+        provenance_parameters.update({
+            "jpeg_quality": report.jpeg.jpeg_quality,
+            "subsampling": report.jpeg.subsampling,
+            "assumed_srgb_after_upscale": report.jpeg.assumed_srgb,
+        })
+
     provenance = ProvenanceRecord.create(
         actual_master.id,
         project_id,
@@ -98,13 +113,7 @@ def register_master_candidate(
         pipeline_version=1,
         model_id=report.upscale.model_id,
         input_artifact_ids=(source_artifact.id,),
-        parameters={
-            "scale": report.upscale.scale,
-            "minimum_megapixels": report.minimum_megapixels,
-            "jpeg_quality": report.jpeg.jpeg_quality,
-            "subsampling": report.jpeg.subsampling,
-            "assumed_srgb_after_upscale": report.jpeg.assumed_srgb,
-        },
+        parameters=provenance_parameters,
         metadata={"quality_state": report.quality_state},
     )
     database.create_provenance(provenance)
