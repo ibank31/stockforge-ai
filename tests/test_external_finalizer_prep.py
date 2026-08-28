@@ -84,8 +84,14 @@ def test_jpeg_preparation_uses_four_x_request_without_mutating_source(tmp_path: 
     )
 
     assert prepared["delivery_format"] == "jpeg"
-    assert prepared["prepared_artifact_id"] is None
+    assert prepared["prepared_artifact_id"]
+    assert prepared["preparation"]["mode"] == "rgb_jpeg_staging"
     assert prepared["request"]["target"]["format"] == "jpeg"
     assert prepared["request"]["target"]["scale"] == 4
     assert prepared["request"]["target"]["expected_megapixels"] > 6
+    staged = database.get_artifact(prepared["prepared_artifact_id"])
+    assert staged is not None
+    with Image.open(root / staged.relative_path) as image:
+        assert image.format == "JPEG"
+        assert image.size == (1254, 1254)
     assert (root / imported.artifact.relative_path).read_bytes() == source_bytes

@@ -67,7 +67,7 @@ def _source_for_execution(database: JobDatabase, project_id: str, project_root: 
     return execution, artifact, source, portfolio
 
 
-def _jpeg_request(*, project_id: str, project_root: Path, execution: GenerationExecutionRecord, artifact: Artifact, source: Path, portfolio: dict[str, Any], minimum_megapixels: float, scale: int) -> tuple[Path, dict[str, Any], Artifact | None, GenerationExecutionRecord]:
+def _jpeg_request(*, database: JobDatabase, project_id: str, project_root: Path, execution: GenerationExecutionRecord, artifact: Artifact, source: Path, portfolio: dict[str, Any], minimum_megapixels: float, scale: int) -> tuple[Path, dict[str, Any], Artifact | None, GenerationExecutionRecord]:
     if scale != 4:
         raise ExternalFinalizerPreparationError("The protected JPEG finalizer supports only scale 4.")
     target = MasterTarget(minimum_megapixels=minimum_megapixels, scale=scale)
@@ -84,7 +84,76 @@ def _jpeg_request(*, project_id: str, project_root: Path, execution: GenerationE
         raise ExternalFinalizerPreparationError(f"Requested scale produces {expected_megapixels:.2f} MP, below target {target.minimum_megapixels:.2f} MP.")
     if expected_megapixels > 100:
         raise ExternalFinalizerPreparationError(f"Requested scale produces {expected_megapixels:.2f} MP, above 100 MP.")
-    request_id = f"master-{artifact.id}-{uuid4().hex[:8]}"
+    # Kaggle's kernel source has a practical 1 MB limit. The protected JPEG
+    # submitter embeds the selected source in worker.py, so a multi-megabyte
+    # external PNG can be rejected at SaveKernel before execution. Convert the
+    # scene to a compact RGB JPEG staging artifact while preserving dimensions;
+    # the original imported source remains immutable and linked by lineage.
+    staging_dir = project_root / "artifacts" / "external-prepared"
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    staged_path = staging_dir / f"{artifact.id}-jpeg-staging.jpg"
+    with Image.open(source) as opened:
+        opened.load()
+        staging_image = ImageOps.exif_transpose(opened).convert("RGB")
+        chosen_quality = None
+        for quality in (92, 88, 85, 82, 78, 74):
+            staging_image.save(staged_path, format="JPEG", quality=quality, optimize=True, progressive=True, subsampling="4:4:4", icc_profile=_srgb_profile())
+            if staged_path.stat().st_size <= 650_000:
+                chosen_quality = quality
+                break
+        if chosen_quality is None:
+            raise ExternalFinalizerPreparationError("JPEG staging source remains above the safe Kaggle kernel-source budget after deterministic compression.")
+    staged_artifact = Artifact.from_file(project_id=project_id, relative_path=staged_path.relative_to(project_root).as_posix(), root=project_root, kind="generated-image")
+    staged_artifact = replace(staged_artifact, metadata={
+        "source": "stockforge_external_finalizer_preparation",
+        "parent_artifact_id": artifact.id,
+        "parent_sha256": artifact.sha256,
+        "preparation_policy": "rgb-jpeg-staging-for-kaggle-source-budget",
+        "source_dimensions_preserved": True,
+        "source_format": detected_format,
+        "staging_format": "JPEG",
+        "jpeg_quality": chosen_quality,
+        "staging_size_bytes": staged_path.stat().st_size,
+        "original_source_immutable": True,
+    })
+    staged_execution = GenerationExecutionRecord.create(
+        project_id=project_id,
+        operation="image.prepare_external_for_finalizer",
+        state="completed",
+        provider_id="stockforge-local",
+        pipeline_id="external-finalizer-preparation",
+        pipeline_version=1,
+        step_id="jpeg-source-budget",
+        plugin_id="stockforge.external_finalizer_prep",
+        plugin_version="1",
+        model_id="deterministic-pillow",
+        model_version=None,
+        workflow_hash="external-finalizer-prep-v1",
+        input_artifact_ids=(artifact.id,),
+        parameters={"portfolio": portfolio, "preparation": {"format": "jpeg", "source_artifact_id": artifact.id, "max_embedded_source_bytes": 650000}},
+    )
+    (actual_staged,), staged_execution = database.create_artifacts_and_execution((staged_artifact,), staged_execution)
+    staged_execution = replace(staged_execution, state="succeeded", artifact_ids=(actual_staged.id,))
+    database.update_execution(staged_execution)
+    if not any(item.parent_artifact_id == artifact.id and item.relation == "transformed" for item in database.list_lineage(artifact_id=actual_staged.id)):
+        database.create_lineage(ArtifactLineage.create(actual_staged.id, artifact.id, project_id, relation="transformed", execution_id=staged_execution.id))
+    database.create_provenance(ProvenanceRecord.create(
+        artifact_id=actual_staged.id,
+        project_id=project_id,
+        operation="image.prepare_external_for_finalizer",
+        execution_id=staged_execution.id,
+        pipeline_id="external-finalizer-preparation",
+        pipeline_version=1,
+        step_id="jpeg-source-budget",
+        plugin_id="stockforge.external_finalizer_prep",
+        plugin_version="1",
+        model_id="deterministic-pillow",
+        workflow_hash="external-finalizer-prep-v1",
+        input_artifact_ids=(artifact.id,),
+        parameters={"format": "jpeg", "max_embedded_source_bytes": 650000, "quality": chosen_quality},
+        metadata={"parent_sha256": artifact.sha256, "staged_sha256": actual_staged.sha256},
+    ))
+    request_id = f"master-{actual_staged.id}-{uuid4().hex[:8]}"
     payload = {
         "schema_version": 1,
         "kind": "stockforge.master_finalizer_request",
@@ -92,13 +161,13 @@ def _jpeg_request(*, project_id: str, project_root: Path, execution: GenerationE
         "status": "prepared_no_gpu",
         "project_id": project_id,
         "source": {
-            "artifact_id": artifact.id,
-            "execution_id": execution.id,
-            "relative_path": artifact.relative_path,
-            "sha256": sha256_file(source),
+            "artifact_id": actual_staged.id,
+            "execution_id": staged_execution.id,
+            "relative_path": actual_staged.relative_path,
+            "sha256": sha256_file(staged_path),
             "width": width,
             "height": height,
-            "format": detected_format,
+            "format": "JPEG",
         },
         "target": {
             "mode": "ai_upscale",
@@ -121,7 +190,8 @@ def _jpeg_request(*, project_id: str, project_root: Path, execution: GenerationE
     request_dir.mkdir(parents=True, exist_ok=True)
     request_path = request_dir / f"{request_id}.json"
     request_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
-    return request_path, payload, None, execution
+    payload["preparation"] = {"mode": "rgb_jpeg_staging", "parent_artifact_id": artifact.id, "staged_artifact_id": actual_staged.id, "staging_size_bytes": staged_path.stat().st_size, "crop": False, "dimensions_preserved": True}
+    return request_path, payload, actual_staged, staged_execution
 
 
 def _normalize_png_source(*, database: JobDatabase, project_id: str, project_root: Path, execution: GenerationExecutionRecord, artifact: Artifact, source: Path, portfolio: dict[str, Any]) -> tuple[Path, Artifact, GenerationExecutionRecord, dict[str, Any]]:
@@ -234,10 +304,10 @@ def prepare_external_finalizer(*, database: JobDatabase, project_id: str, projec
     delivery_format = str(asset_spec.get("delivery_format", "")).lower()
     if delivery_format == "jpeg":
         request_path, payload, prepared_artifact, prepared_execution = _jpeg_request(
-            project_id=project_id, project_root=root, execution=execution, artifact=artifact, source=source, portfolio=portfolio, minimum_megapixels=minimum_megapixels, scale=scale
+            database=database, project_id=project_id, project_root=root, execution=execution, artifact=artifact, source=source, portfolio=portfolio, minimum_megapixels=minimum_megapixels, scale=scale
         )
-        preparation_report = {"mode": "jpeg_direct_source", "source_format_preserved": True}
-        result = {"status": "prepared_no_gpu", "delivery_format": "jpeg", "request_path": str(request_path), "request": payload, "source_execution_id": execution.id, "source_artifact_id": artifact.id, "prepared_artifact_id": None, "preparation": preparation_report}
+        preparation_report = payload.get("preparation", {"mode": "rgb_jpeg_staging"})
+        result = {"status": "prepared_no_gpu", "delivery_format": "jpeg", "request_path": str(request_path), "request": payload, "source_execution_id": execution.id, "source_artifact_id": artifact.id, "prepared_artifact_id": prepared_artifact.id if prepared_artifact else None, "preparation": preparation_report}
     elif delivery_format == "png":
         prepared_path, prepared_artifact, prepared_execution, png_report = _normalize_png_source(database=database, project_id=project_id, project_root=root, execution=execution, artifact=artifact, source=source, portfolio=portfolio)
         request_path, payload = prepare_png_request(source=prepared_path, project_root=root, project_id=project_id)
