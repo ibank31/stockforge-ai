@@ -7,7 +7,7 @@
 
 ## Prinsip utama
 
-Termux adalah control plane StockForge. Termux menyimpan source, database, project plans, artifacts, provenance, evaluation ledger, Kaggle requests/results, technical bundles, and master lineage. Android hanya menerima dua jenis file visual untuk dilihat pengguna: preview review dan upload-copy JPEG yang sudah disetujui. Jangan membuat folder output tambahan di Download.
+Termux adalah control plane StockForge. Termux menyimpan source, database, project plans, artifacts, provenance, evaluation ledger, Kaggle requests/results, technical bundles, and master lineage. Android hanya menerima dua jenis file visual untuk dilihat pengguna: preview review dan upload-copy visual yang sudah disetujui. Jangan membuat folder output tambahan di Download. Seluruh output Kaggle teknis harus tetap berada di project workspace, bukan di folder visual Android.
 
 > **Folder visual baku:** `/storage/emulated/0/Download/MACHINE STOCKFORGE/`
 >
@@ -87,7 +87,7 @@ Generation yang berhasil mengekspor satu preview visual ke:
 /storage/emulated/0/Download/MACHINE STOCKFORGE/PREVIEW_TO_MANUS/
 ```
 
-Upload preparation yang berhasil mengekspor satu JPEG yang disetujui ke:
+Upload preparation yang berhasil mengekspor satu visual yang disetujui ke:
 
 ```text
 /storage/emulated/0/Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/
@@ -131,7 +131,7 @@ cd "$HOME/stockforge-ai"
 python -m stockforge.cli portfolio prepare-adobe-upload --project stock-assets --latest-master --approved
 ```
 
-Default technical bundle sekarang dibuat di project-local `adobe-upload-bundles/`, bukan di Download. Hanya JPEG upload-copy yang disalin ke `READY_UPLOAD_ADOBE/`. Mesin otomatis membuat filename aman, title, maksimum 49 visual-first keywords, XMP title/keywords, CSV resmi, category mapping yang sudah direview, technical report, GenAI marker, dan manual checklist.
+Default technical bundle sekarang dibuat di project-local `adobe-upload-bundles/`, bukan di Download. Hanya visual master yang sudah lulus route-specific audit dan diizinkan pengguna yang disalin ke `READY_UPLOAD_ADOBE/`. Mesin otomatis membuat filename aman, title, maksimum 49 visual-first keywords, XMP/metadata bila route mendukung, CSV resmi, category mapping yang sudah direview, technical report, GenAI marker, dan manual checklist. `request.json`, `result.json`, log, WebP, intermediate, model weights, dan ZIP tidak pernah disalin ke folder visual.
 
 Status bundle bukan approval Adobe. Pengguna tetap harus membuka JPEG, memeriksa metadata portal, memilih atau mengonfirmasi `Created using generative AI tools`, mengonfirmasi rights/releases sesuai keadaan sebenarnya, menerima Terms, menyelesaikan CAPTCHA, dan menekan Submit secara manual. StockForge tidak melakukan tindakan portal tersebut.
 
