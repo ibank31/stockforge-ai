@@ -4,9 +4,12 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 
 ## Mulai dari sini
 
+> **Canonical operating contract:** baca [`CANONICAL_TWO_FLOWS.md`](CANONICAL_TWO_FLOWS.md) terlebih dahulu. Dokumen ini menetapkan dua flow resmi: full internal generation dan external rendering.
+
 | Kebutuhan | Dokumen |
 |---|---|
 | Memahami kondisi terbaru dan batasan proyek | [`STATUS.md`](STATUS.md) |
+| Mengikuti dua flow produksi resmi | [`CANONICAL_TWO_FLOWS.md`](CANONICAL_TWO_FLOWS.md) |
 | Melanjutkan sesi berikutnya | [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) |
 | Memahami kontrak learning loop dan folder output | [`LEARNING_LOOP_POLICY.md`](LEARNING_LOOP_POLICY.md) |
 | Memahami arsitektur dan alur asset factory | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
