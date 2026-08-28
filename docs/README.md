@@ -1,40 +1,43 @@
 # StockForge Documentation
 
-## Mulai di sini
+> **Active scope:** StockForge production currently generates and finalizes **PNG and JPEG only**. Do not treat the presence of other code or documents as support for another production format.
 
-Untuk operasi apa pun, GPT/agent wajib membaca **[`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md)** terlebih dahulu. Dokumen tersebut adalah satu-satunya panduan operasional aktif dan mencakup dua flow produksi resmi: **JPEG** dan **PNG**.
+## Required reading order
 
-Setelah itu, baca **[`STATUS.md`](STATUS.md)** hanya untuk snapshot kondisi repository. Jangan mengambil instruksi operasional dari dokumen historis, changelog, riset, atau arsip.
+For any implementation or production operation, read these files in order:
 
-## Sumber kebenaran
+1. [`ACTIVE_SCOPE.md`](ACTIVE_SCOPE.md) — the authoritative output-format boundary and agent rules.
+2. [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) — the only active end-to-end operational workflow.
+3. [`STATUS.md`](STATUS.md) — the current implementation snapshot and known limitations.
+4. The relevant source code and tests — the detailed executable contract for the selected PNG or JPEG route.
 
-| Kebutuhan | Sumber |
-|---|---|
-| Workflow GPT → Termux → Kaggle → Android | [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) |
-| Status route dan batasan aktif | [`STATUS.md`](STATUS.md) |
-| Perubahan repository | [`CHANGELOG.md`](CHANGELOG.md) |
-| Riset niche dan market evidence | [`research/`](research/) sebagai referensi saja |
-| Kontrak kode terperinci | Source code dan test terkait; bukan pengganti workflow canonical |
+If these files disagree with a historical document, the active files win. If a request does not clearly identify PNG or JPEG, stop and clarify instead of choosing a route by filename or subject intuition.
 
-## Dua route produksi
+## Active production routes
 
-| Route | Untuk | Worker finalizer | Output |
+| Route | Intended use | Worker finalizer | Output |
 |---|---|---|---|
-| JPEG | Scene, environment, hero composition, ilustrasi berlatar, dan visual dengan copy space | Protected Kaggle RealESRGAN | Master JPEG RGB/sRGB |
-| PNG | Isolated object, cutout, sticker, overlay, dan utility asset transparan | Isolated Kaggle BiRefNet | Master PNG RGBA/true-alpha/sRGB |
+| **JPEG** | Scene, environment, hero composition, illustration with background, or copy-space visual | Protected Kaggle RealESRGAN | RGB/sRGB JPEG master |
+| **PNG** | Isolated object, cutout, sticker, overlay, or transparent utility asset | Isolated Kaggle BiRefNet | RGBA/true-alpha/sRGB PNG master |
 
-SVG/vector, batch generation, local AI, llama.cpp/Qwen, dan jalur eksperimen lama **bukan bagian dari produksi aktif**.
+The route is selected from the buyer job and background requirement. In particular, `pet_enrichment_object_illustrations → puzzle-feeder` is a **JPEG** contract in the portfolio registry; it is not a PNG candidate merely because the subject is an object.
 
-## Kontrak folder Android
+## Canonical storage boundary
 
 ```text
 Download/MACHINE STOCKFORGE/
-├── PREVIEW_TO_MANUS/       # hanya preview visual
-└── READY_UPLOAD_ADOBE/     # hanya master JPEG/PNG yang telah disetujui
+├── PREVIEW_TO_MANUS/       # visual previews only
+└── READY_UPLOAD_ADOBE/     # approved JPEG/PNG masters only
 ```
 
-JSON, log, request, `result.json`, ZIP, WebP intermediate, staging image, database, model, checksum, dan artefak teknis harus tetap berada di workspace proyek.
+JSON, logs, requests, `result.json`, ZIP files, WebP intermediates, staging images, databases, models, checksums, and other technical artifacts remain in the project workspace.
 
-## Aturan pemeliharaan
+## Non-active material
 
-Jika ada perubahan pada flow JPEG atau PNG, perbarui `GPT_TO_TERMUX_CANONICAL_WORKFLOW.md` dan `STATUS.md` dalam commit yang sama. Jangan membuat runbook operasional baru yang menduplikasi dokumen canonical. Dokumen lama boleh dipertahankan hanya sebagai bukti sejarah di `archive/`; dokumen tersebut tidak boleh digunakan sebagai instruksi.
+SVG/vector generation, retired batch-generation runners, local-AI trials, provider experiments, pretrials, and other exploratory workflows are **not active production routes**. Research is evidence only, not an operational instruction. Historical documents are retained under [`archive/`](archive/) and must not be linked as current runbooks.
+
+Do not revive, extend, or create a parallel runbook for a non-active route. The repository may retain implementation and tests for compatibility or audit history; that does not change the production scope.
+
+## Maintenance rule
+
+When the PNG or JPEG flow changes, update [`ACTIVE_SCOPE.md`](ACTIVE_SCOPE.md), [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md), and [`STATUS.md`](STATUS.md) in the same commit. Keep the canonical workflow as the single operational guide.

@@ -1,5 +1,9 @@
 # StockForge AI — Changelog
 
+## 2026-08-29 — Enforce PNG/JPEG-only active scope
+
+Added a repository-level `AGENTS.md` and `docs/ACTIVE_SCOPE.md` that make PNG and JPEG the only active production outputs. Updated the README, documentation index, canonical workflow, and status snapshot so historical SVG/vector, batch, local-AI, provider-trial, and pretrial material is explicitly non-authoritative. Clarified that `pet_enrichment_object_illustrations → puzzle-feeder` is a JPEG contract.
+
 ## 2026-08-26 — Traditional food global asset research
 
 ### DONE — country-based catalog, priority tiers, and agent handoff

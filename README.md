@@ -1,38 +1,42 @@
 # StockForge AI
 
-StockForge AI adalah asset factory berbasis **Android/Termux** yang mengubah market evidence dan buyer job menjadi asset package yang dapat diproduksi, diperiksa, dan disiapkan untuk marketplace dengan provenance yang jelas.
+StockForge AI is an Android-first digital-asset production automation platform. The repository’s **active production scope is limited to two raster output formats: PNG and JPEG**.
 
-## Status saat ini
+> **If a task does not target PNG or JPEG, it is not an active StockForge production task. Do not infer a third route from old code, research notes, or archived runbooks.**
 
-Branch aktif adalah `main`. Jalur yang sudah terbukti adalah JPEG raster melalui remote worker dan native SVG deterministic secara lokal; JPEG sekarang menjadi track pematangan aktif. SVG value-upgrade dibekukan sebagai roadmap, sedangkan PNG transparan masih diblokir sampai true alpha producer, edge-quality gate, dan validasi portal tersedia. Lihat [`docs/STATUS.md`](docs/STATUS.md) untuk snapshot terbaru.
+## Start here
 
-## Quick start
+Agents and maintainers must read these files in order:
+
+1. [`AGENTS.md`](AGENTS.md) — repository-wide operating rules and the format boundary.
+2. [`docs/ACTIVE_SCOPE.md`](docs/ACTIVE_SCOPE.md) — the authoritative PNG/JPEG contract.
+3. [`docs/GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](docs/GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) — the only active end-to-end operational workflow.
+4. [`docs/STATUS.md`](docs/STATUS.md) — the current implementation snapshot and limitations.
+
+Historical material is under [`docs/archive/`](docs/archive/) and must not be used as instructions.
+
+## Active output routes
+
+| Route | Intended use | Final technical contract |
+|---|---|---|
+| **PNG** | Isolated objects, cutouts, stickers, overlays, and transparent utility assets | RGBA/true alpha, sRGB, isolated BiRefNet finalizer, technical alpha gate, and 100% visual edge review |
+| **JPEG** | Self-contained scenes, environments, hero compositions, illustrations with backgrounds, and copy-space visuals | RGB/sRGB, active resolution gate, protected RealESRGAN finalizer, and full-resolution visual review |
+
+Select the route from the buyer job and background requirement, not from the source file extension or filename. The current portfolio contract maps `pet_enrichment_object_illustrations → puzzle-feeder` to **JPEG**.
+
+## Repository boundaries
+
+SVG/vector generation, retired batch runners, local-AI trials, provider experiments, pretrials, and other historical workflows are not active production targets. Their source code or tests may remain for compatibility and audit evidence, but they must not be extended or invoked for a new production run.
+
+The repository preserves provenance and requires human review before finalization and upload packaging. StockForge does not automatically submit assets to Adobe or another marketplace.
+
+## Development
+
+Install the package and development dependencies, then run the test suite from the repository root:
 
 ```bash
-uv sync
-uv run stockforge version
-uv run stockforge doctor
-uv run stockforge init
-uv run stockforge project create demo
-uv run stockforge project list
+python3 -m pip install -e '.[dev]'
+python3 -m pytest -q
 ```
 
-Untuk Android, Termux menjadi control plane. Heavy model inference berjalan di provider remote; dependency GPU tidak dipasang di perangkat.
-
-## Alur utama
-
-```text
-market evidence → buyer job → AssetSpec → concept/prompt
-→ pre-GPU gate → provider/local route → generation/build
-→ QA → deduplication → metadata/compliance → human review
-```
-
-Sistem tidak menganggap generation success sebagai marketplace acceptance. Sebelum upload JPEG, gunakan `portfolio metadata-preflight --project ... --plan ... --brief ...` untuk laporan lintas platform; perintah ini hanya memvalidasi dan mengurutkan keyword yang sudah ada, tanpa provider call, upload, atau submit. Upload, disclosure, release decision, CAPTCHA, dan final submit tetap memerlukan tindakan manusia.
-
-## Dokumentasi
-
-Mulai dari [`docs/README.md`](docs/README.md), lalu gunakan [`docs/STATUS.md`](docs/STATUS.md) untuk kondisi terbaru dan [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) untuk desain aktif. Daftar feature dan pekerjaan berikutnya ada di [`docs/FEATURE_ROADMAP.md`](docs/FEATURE_ROADMAP.md); keputusan niche/format terbaru ada di [`docs/research/FORMAT_AND_NICHE_DECISION_2026-08-24.md`](docs/research/FORMAT_AND_NICHE_DECISION_2026-08-24.md). Audit kedalaman knowledge dan visual identity JPEG ada di [`docs/research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md`](docs/research/JPEG_NICHE_KNOWLEDGE_AUDIT_2026-08-25.md). Analisis sepuluh screenshot Adobe Stock dan hasil riset product family ada di [`docs/research/ADOBE_STOCK_BEST_SELLER_SCREENSHOT_ANALYSIS_2026-08-25.md`](docs/research/ADOBE_STOCK_BEST_SELLER_SCREENSHOT_ANALYSIS_2026-08-25.md). Recovery catatan 31 screenshot dari agent sebelumnya ada di [`docs/research/LEGACY_BEST_SELLER_EVIDENCE_RECOVERY_2026-08-25.md`](docs/research/LEGACY_BEST_SELLER_EVIDENCE_RECOVERY_2026-08-25.md), sedangkan shortlist niche untuk target penjualan pertama ada di [`docs/research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md`](docs/research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md).
-
-## Quality rule
-
-Setiap perubahan harus diuji. Setiap market claim harus memiliki source dan confidence. Setiap format harus dipilih karena buyer job, bukan karena file extension. Jangan menjalankan GPU, upload, atau submission tanpa hypothesis dan human review yang jelas.
+When changing an active PNG or JPEG flow, update [`docs/ACTIVE_SCOPE.md`](docs/ACTIVE_SCOPE.md), [`docs/GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](docs/GPT_TO_TERMUX_CANONICAL_WORKFLOW.md), and [`docs/STATUS.md`](docs/STATUS.md) in the same commit. Do not add a competing operational runbook.

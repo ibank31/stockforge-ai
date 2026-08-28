@@ -1,14 +1,15 @@
 # StockForge Active Status
 
-**Updated:** 2026-08-28
+**Updated:** 2026-08-29
 **Branch:** `main`
+**Active scope:** [`ACTIVE_SCOPE.md`](ACTIVE_SCOPE.md)
 **Operational source of truth:** [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md)
 
 ## Current architecture
 
 StockForge memakai pembagian yang tetap: **GPT adalah brain** untuk memilih candidate, buyer job, format, prompt, dan langkah berikutnya; **Termux adalah executor** untuk menjalankan command, audit, provenance, GitHub, Hugging Face, Kaggle, dan Android export.
 
-Produksi aktif hanya mencakup **JPEG** dan **PNG**. Semua pekerjaan berat dilakukan oleh renderer atau worker remote. Model AI generator lokal, batch runner lama, llama.cpp/Qwen, dan eksperimen vector tidak termasuk workflow produksi.
+Produksi aktif hanya mencakup **JPEG** dan **PNG**. Semua pekerjaan berat dilakukan oleh renderer atau worker remote. Model AI generator lokal, batch runner lama, llama.cpp/Qwen, SVG/vector, provider trial, dan pretrial tidak termasuk workflow produksi.
 
 ## Production routes
 
@@ -74,4 +75,4 @@ Jangan melakukan blind retry, batch generation, automatic Adobe upload, automati
 
 Riset niche tetap tersedia di `docs/research/` sebagai evidence dan tidak otomatis menjadi keputusan produksi. Dokumentasi eksperimen lama, SVG/vector, batch, local AI, provider trial, dan pretrial yang telah digantikan berada di `docs/archive/` dan **bukan instruksi aktif**.
 
-Jika status atau command berubah, perbarui file ini dan [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) dalam commit yang sama. Jangan membuat runbook operasional duplikat.
+Jika status atau command berubah, perbarui file ini, [`ACTIVE_SCOPE.md`](ACTIVE_SCOPE.md), dan [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) dalam commit yang sama. Jangan membuat runbook operasional duplikat.
