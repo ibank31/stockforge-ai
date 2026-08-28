@@ -4,11 +4,12 @@ Dokumentasi aktif StockForge dipisahkan berdasarkan fungsi. **`STATUS.md` adalah
 
 ## Mulai dari sini
 
-> **Canonical operating contract:** baca [`CANONICAL_TWO_FLOWS.md`](CANONICAL_TWO_FLOWS.md) terlebih dahulu. Dokumen ini menetapkan dua flow resmi: full internal generation dan external rendering.
+> **Canonical operating contract:** GPT dan semua agent wajib membaca [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) terlebih dahulu. Dokumen itu menetapkan urutan GPT → Termux → repo/HF/Kaggle → output visual. Setelah itu baca [`CANONICAL_TWO_FLOWS.md`](CANONICAL_TWO_FLOWS.md) untuk detail dua route internal-versus-eksternal.
 
 | Kebutuhan | Dokumen |
 |---|---|
 | Memahami kondisi terbaru dan batasan proyek | [`STATUS.md`](STATUS.md) |
+| Mengikuti workflow GPT-to-Termux end-to-end | [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) |
 | Mengikuti dua flow produksi resmi | [`CANONICAL_TWO_FLOWS.md`](CANONICAL_TWO_FLOWS.md) |
 | Melanjutkan sesi berikutnya | [`SESSION_HANDOVER.md`](SESSION_HANDOVER.md) |
 | Memahami kontrak learning loop dan folder output | [`LEARNING_LOOP_POLICY.md`](LEARNING_LOOP_POLICY.md) |
