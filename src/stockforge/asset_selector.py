@@ -114,8 +114,8 @@ ASSET_TYPE_POLICIES: tuple[AssetTypePolicy, ...] = (
         candidate_niches=("isolated ingredient object", "food component overlay", "hard-edge sticker-like element"),
         blockers=("anti-fringe and trim gates still require per-asset review", "portal validation is pending", "human edge review remains mandatory"),
         next_step="Use one evidence-backed hard-edge utility asset, generate one white-background source, finalize through the remote alpha worker, then review the RGBA result before any manual upload.",
-        recommended_lane_keys=("traditional_food_mango_sticky_rice_png",),
-        recommended_concept_keys=("mango-sticky-rice-cutout",),
+        recommended_lane_keys=("household_furniture_small_space_png", "traditional_food_mango_sticky_rice_png"),
+        recommended_concept_keys=("rolling-kitchen-island-cart-cutout", "mango-sticky-rice-cutout"),
     ),
 )
 

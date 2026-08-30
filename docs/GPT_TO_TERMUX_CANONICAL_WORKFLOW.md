@@ -130,12 +130,12 @@ The preview is exported to:
 
 Stop and wait for the human decision. `KEEP` is required before any finalizer preparation or GPU submission. Do not perform blind seed retries and do not revive the retired batch runner.
 
-After KEEP, use the execution ID emitted by the live generation:
+After the preview is attached to a workflow, use the workflow ID emitted by `workflow-start-internal` or `workflow-start-external`:
 
 ```bash
 python3 -m stockforge.cli portfolio workflow-keep \
   --project stock-assets \
-  --execution <execution-id>
+  --workflow <workflow-id>
 
 python3 -m stockforge.cli portfolio prepare-external-finalizer \
   --project stock-assets \
@@ -279,11 +279,12 @@ Only after the master passes the technical gate and human review may the visual-
 ```bash
 python3 -m stockforge.cli portfolio export-ready-visual \
   --project stock-assets \
-  --master <audited-master-path> \
+  --source <audited-master-path> \
+  --asset-name <candidate-id> \
   --approved
 ```
 
-The exact options must follow `python3 -m stockforge.cli portfolio export-ready-visual --help` in the active checkout. The exporter accepts both JPEG and PNG, applies the matching technical gate, and may copy only the approved visual master:
+The exact options must follow `python3 -m stockforge.cli portfolio export-ready-visual --help` in the active checkout. The current exporter accepts `--source`, not `--master`; it accepts both JPEG and PNG, applies the matching technical gate, and may copy only the approved visual master:
 
 ```text
 /storage/emulated/0/Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE/

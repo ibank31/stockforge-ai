@@ -8,16 +8,20 @@
 
 StockForge memakai pembagian yang tetap: **GPT adalah brain** untuk memilih candidate, buyer job, format, prompt, dan langkah berikutnya; **Termux adalah executor** untuk menjalankan command, audit, provenance, GitHub, Hugging Face, Kaggle, dan Android export.
 
-Produksi aktif hanya mencakup **JPEG** dan **PNG**. Semua pekerjaan berat dilakukan oleh renderer atau worker remote. Model AI generator lokal, batch runner lama, llama.cpp/Qwen, dan eksperimen vector tidak termasuk workflow produksi.
+Produksi aktif hanya mencakup **JPEG** dan **PNG**. Infrastruktur PNG sudah diimplementasikan dan test-covered; status live pada environment Termux pengguna tetap harus dibuktikan oleh satu runtime validation nyata. Semua pekerjaan berat dilakukan oleh renderer atau worker remote. Model AI generator lokal, batch runner lama, llama.cpp/Qwen, dan eksperimen vector tidak termasuk workflow produksi.
 
 ## Production routes
 
 | Route | Status | Buyer job | Finalizer | Technical master gate |
 |---|---|---|---|---|
 | JPEG | **LIVE / verified** | Scene, environment, hero image, narrative illustration, background composition, copy-space visual | Protected Kaggle RealESRGAN | JPEG, RGB, sRGB, valid dimensions, decodable, within file/megapixel limits |
-| PNG | **LIVE / verified** | Isolated object, cutout, sticker, overlay, transparent utility asset | Isolated Kaggle BiRefNet | PNG, RGBA, true alpha, sRGB, 4096×4096 target, valid dimensions, decodable |
+| PNG | **IMPLEMENTED / runtime validation required** | Isolated object, cutout, sticker, overlay, transparent utility asset | Isolated Kaggle BiRefNet | PNG, RGBA, true alpha, sRGB, 4096×4096 target, valid dimensions, decodable |
 
 Technical pass tidak sama dengan marketplace approval. Kedua route tetap membutuhkan review visual 100%, metadata yang akurat, deklarasi generative AI, pemeriksaan hak, dan upload Adobe secara manual.
+
+## Current PNG candidate
+
+The selected household-furniture PNG trial is `household_furniture_small_space_png--rolling-kitchen-island-cart-cutout`. It is one unbranded compact rolling kitchen island cart with a warm oak worktop, muted sage cabinet body, one drawer, one open shelf, and four separated caster wheels. Its buyer job is a drop-in furniture element for small-space organization, apartment layout, renovation, and home-planning content. It is a PNG transparent-cutout candidate, not a JPEG scene and not a real product specification. The trial cap is one preview; after generation the workflow must stop at human review.
 
 ## Canonical lifecycle
 

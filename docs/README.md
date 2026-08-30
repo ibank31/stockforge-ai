@@ -21,7 +21,7 @@ Setelah itu, baca **[`STATUS.md`](STATUS.md)** hanya untuk snapshot kondisi repo
 | Route | Untuk | Worker finalizer | Output |
 |---|---|---|---|
 | JPEG | Scene, environment, hero composition, ilustrasi berlatar, dan visual dengan copy space | Protected Kaggle RealESRGAN | Master JPEG RGB/sRGB |
-| PNG | Isolated object, cutout, sticker, overlay, dan utility asset transparan | Isolated Kaggle BiRefNet | Master PNG RGBA/true-alpha/sRGB |
+| PNG | Untuk isolated object, cutout, sticker, overlay, dan utility asset transparan | Isolated Kaggle BiRefNet | Master PNG RGBA/true-alpha/sRGB; runtime validation wajib sebelum klaim live |
 
 SVG/vector, batch generation, local AI, llama.cpp/Qwen, dan jalur eksperimen lama **bukan bagian dari produksi aktif**.
 

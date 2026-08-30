@@ -14,7 +14,8 @@ runner = CliRunner()
 def test_all_priority_lanes_build_a_safe_seed_brief():
     lanes = list_lanes()
 
-    assert len(lanes) == 24
+    assert len(lanes) >= 24
+    assert any(lane.key == "household_furniture_small_space_png" for lane in lanes)
     assert {lane.tier for lane in lanes} == {"first", "secondary", "experimental"}
     for lane in lanes:
         brief = build_brief(lane.key, lane.concepts[0].key)

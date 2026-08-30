@@ -42,9 +42,10 @@ class FormatRoute:
 def route_asset_spec(spec: AssetSpec) -> FormatRoute:
     """Return the only valid route for a fully specified commercial product.
 
-    ``transparent_cutout`` remains intentionally unverified until a real alpha
-    producer and alpha-quality review are connected.  A model's white backdrop
-    is not treated as transparent merely because the prompt requested it.
+    ``transparent_cutout`` is routed through the isolated PNG alpha finalizer.
+    Technical output still requires true-alpha, sRGB, and 100% human edge review;
+    a model's white backdrop is not treated as transparent merely because the
+    prompt requested it.
     """
     if spec.product_kind == "raster_illustration":
         if spec.layout_mode == "portrait":
@@ -113,7 +114,7 @@ def route_asset_spec(spec: AssetSpec) -> FormatRoute:
             requires_true_alpha=True,
             verified_for_production=False,
             user_export_branch="READY_UPLOAD_ADOBE",
-            reason=decision.selection_reason + " Synthetic and runtime alpha preflight are passed; one real candidate and human edge review remain before production verification.",
+            reason=decision.selection_reason + " Isolated BiRefNet alpha finalization is implemented; one real candidate, runtime validation, and human edge review remain before production verification.",
             strategy_key=decision.strategy_key,
             trial_ready=True,
         )
