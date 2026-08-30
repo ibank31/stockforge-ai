@@ -1,5 +1,7 @@
 # GPT-to-Termux StockForge: Canonical End-to-End Workflow
 
+> **Active scope:** This workflow supports production generation and finalization of **PNG and JPEG only**. Read [`ACTIVE_SCOPE.md`](ACTIVE_SCOPE.md) first. SVG/vector, batch, local-AI, provider-trial, and pretrial material is historical or non-active and must not be used as an operational route.
+
 **Status:** Canonical operating instruction for GPT and all StockForge agents  
 **Audience:** GPT, human operator, and future StockForge agents  
 **Execution rule:** GPT reasons and gives commands. Termux executes commands. Never pretend that a command was executed unless Termux output is present.
@@ -73,7 +75,6 @@ The only difference between the flows is who creates the initial image. All post
 |---|---|---|---|---|
 | Self-contained scene, environment, narrative composition, illustration with background, hero image, copy-space visual | JPEG | RGB/raster scene | Protected Kaggle RealESRGAN | Composition, context, anatomy, artifacts, text/logo/IP risk, full-resolution quality |
 | Reusable isolated object, cutout, sticker, overlay, transparent utility asset | PNG | Object intended for transparency | Isolated Kaggle BiRefNet | Alpha at 100%, halos, holes, missing details, edge clipping, unwanted shadow/background |
-| Editable geometry or real vector deliverable | SVG/vector | Not active for automatic production | No JPEG/PNG finalizer | Do not route through raster workers |
 
 Choose from the buyer job and background requirement, never from the filename. Never mix JPEG and PNG workers.
 
@@ -328,7 +329,7 @@ The JPEG route is the mature production route: internal or external source, prev
 
 The PNG route is now end-to-end: isolated BiRefNet preparation/finalization, checksum-checked master import, RGBA/true-alpha/sRGB technical gate, immutable registry lineage, embedded PNG metadata, manual upload bundle, and visual-only export to `Download/MACHINE STOCKFORGE/READY_UPLOAD_ADOBE`. The result remains `visual_review_required` until the user completes the 100% visual edge review and passes `--approved`.
 
-The internal Z-Image batch workflow is retired. The external-renderer adapter is supported. The local llama.cpp/Qwen trial is not part of the production workflow.
+The internal Z-Image batch workflow, SVG/vector route, and local llama.cpp/Qwen trial are retired or non-active. The external-renderer adapter is supported only when its requested final output is PNG or JPEG.
 
 ## 12. GPT operating instruction
 
