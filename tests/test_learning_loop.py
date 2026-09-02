@@ -56,3 +56,22 @@ def test_auto_critique_marks_missing_image_as_technical_failure(tmp_path: Path):
     assert critique.decision == "FAIL_TECHNICAL"
     assert critique.recommendation == "DO_NOT_FINALIZE"
     assert any(signal.name == "file_exists" and signal.status == "FAIL" for signal in critique.signals)
+
+
+def test_png_preview_defers_final_master_alpha_gate(tmp_path: Path):
+    image_path = tmp_path / "preview.webp"
+    Image.new("RGB", (1024, 1024), (240, 240, 240)).save(image_path, format="WEBP", quality=90)
+    critique = critique_image(
+        image_path=image_path,
+        execution_id="exec-png-preview",
+        artifact_id="artifact-png-preview",
+        lane_key="household_furniture_small_space_png",
+        buyer_job="small-space furniture compositing asset",
+        delivery_format="png",
+        product_kind="transparent_cutout",
+        title="Compact Rolling Kitchen Island Cart",
+    )
+    assert critique.decision == "REVIEW_REQUIRED"
+    assert critique.recommendation == "HUMAN_REVIEW_REQUIRED"
+    assert not any(signal.name.startswith("png_") and signal.status == "FAIL" for signal in critique.signals)
+    assert any("deferred to finalized-master import" in item for item in critique.limitations)

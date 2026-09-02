@@ -106,6 +106,12 @@ def critique_image(
         "No aesthetic model was used; looks and originality remain human-review signals.",
         "Demand is represented only by the persisted buyer job and research evidence, not by sales prediction.",
     ]
+    # Preview outputs are intentionally provider-native (often WEBP at 1024px).
+    # The Adobe PNG gate is a final-master contract and must not false-fail a
+    # preview before the PNG finalizer has produced RGBA output at target size.
+    preview_png_gate_deferred = delivery_format.casefold() == "png"
+    if preview_png_gate_deferred:
+        limitations.append("PNG alpha, format, target resolution, and sRGB gates are deferred to finalized-master import; this critique is for the preview only.")
 
     quality = inspect_quality(path)
     quality_statuses = [check.status for check in quality.checks]
@@ -119,7 +125,7 @@ def critique_image(
             source="deterministic:image_quality",
         ))
 
-    if delivery_format.casefold() == "png":
+    if delivery_format.casefold() == "png" and not preview_png_gate_deferred:
         png_report = inspect_transparent_png(path)
         png_statuses = [check.status for check in png_report.checks]
         technical_score = round((technical_score + _quality_score(png_statuses)) / 2, 3)

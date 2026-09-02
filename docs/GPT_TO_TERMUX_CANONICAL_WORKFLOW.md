@@ -123,6 +123,8 @@ python3 -m stockforge.cli portfolio generate \
   --brief-id <brief-id>
 ```
 
+For PNG, the initial provider-native preview may be WEBP/RGB at 1024×1024. This is expected and is not the final PNG contract. Auto-critique may assess preview quality, but PNG format, RGBA/true-alpha, target resolution, and sRGB gates are deferred to finalized-master import after the BiRefNet worker. A preview must not be marked `FAIL_TECHNICAL` merely because it is not yet a finalized PNG.
+
 The preview is exported to:
 
 ```text
