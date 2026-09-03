@@ -1,6 +1,6 @@
 # StockForge Active Status
 
-**Updated:** 2026-08-30
+**Updated:** 2026-09-03
 **Branch:** `main`
 **Active scope:** [`ACTIVE_SCOPE.md`](ACTIVE_SCOPE.md)
 **Operational source of truth:** [`GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](GPT_TO_TERMUX_CANONICAL_WORKFLOW.md)
@@ -20,9 +20,9 @@ Produksi aktif hanya mencakup **JPEG** dan **PNG**. Infrastruktur PNG sudah diim
 
 Technical pass tidak sama dengan marketplace approval. Kedua route tetap membutuhkan review visual 100%, metadata yang akurat, deklarasi generative AI, pemeriksaan hak, dan upload Adobe secara manual.
 
-## Current PNG candidate
+## Current PNG candidates
 
-The selected household-furniture PNG trial is `household_furniture_small_space_png--rolling-kitchen-island-cart-cutout`. It is one unbranded compact rolling kitchen island cart with a warm oak worktop, muted sage cabinet body, one drawer, one open shelf, and four separated caster wheels. Its buyer job is a drop-in furniture element for small-space organization, apartment layout, renovation, and home-planning content. It is a PNG transparent-cutout candidate, not a JPEG scene and not a real product specification. The trial cap is one preview; after generation the workflow must stop at human review.
+The furniture PNG trial is `household_furniture_small_space_png--rolling-kitchen-island-cart-cutout`. The new food PNG trial is `traditional_food_banh_mi_cutaway_png--banh-mi-cutaway`: one unbranded Vietnamese banh mi sandwich cutaway with a visible layered filling, intended for recipe cards, menu layouts, culinary tourism, packaging concepts, and social compositions. Mango sticky rice and Tom Yum Kung are excluded from the new trial because the user reports they were already used; mango sticky rice was rejected for Similar Content. Do not revive either candidate or create seed/color/crop variants. Each trial remains capped at one preview and requires human review.
 
 ## Canonical lifecycle
 

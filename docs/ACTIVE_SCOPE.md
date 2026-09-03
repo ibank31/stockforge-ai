@@ -22,7 +22,7 @@ The complete operational command sequence is maintained only in [`GPT_TO_TERMUX_
 
 ## Current registered production candidates
 
-The current PNG furniture candidate is `household_furniture_small_space_png--rolling-kitchen-island-cart-cutout`: one unbranded compact rolling kitchen island cart with a warm oak worktop, muted sage body, one drawer, one open shelf, and four separated caster wheels. It is a transparent-cutout utility asset for small-space organization, apartment layouts, renovation content, and home-planning compositions. Use the registry and `portfolio plan-type --asset-type transparent_cutout` to resolve it; do not infer PNG compatibility from a lane name.
+The current PNG candidates include `household_furniture_small_space_png--rolling-kitchen-island-cart-cutout` for isolated small-space furniture and `traditional_food_banh_mi_cutaway_png--banh-mi-cutaway` for one isolated Vietnamese banh mi sandwich cutaway. The banh mi candidate is a single unbranded baguette sandwich with a visible layered filling, intended for recipe cards, menu layouts, culinary tourism, packaging concepts, and social compositions. Mango sticky rice and Tom Yum Kung are excluded from this new trial because the user reports they were already used; mango sticky rice was rejected for Similar Content. Do not choose an excluded candidate or create seed/color/crop variants. Use the explicit lane and concept registry; do not infer PNG compatibility from a lane name.
 
 ## Explicitly out of scope
 

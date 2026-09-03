@@ -8,7 +8,7 @@
 
 ## 1. Roles and boundaries
 
-GPT is the project brain. GPT reads the repository context, chooses a candidate, decides JPEG versus PNG from the buyer job, writes the prompt, interprets Termux output, and decides the next safe step.
+GPT is the project brain. GPT reads the repository context, chooses a candidate, decides JPEG versus PNG from the buyer job, writes the prompt, interprets Termux output, and decides the next safe step. Candidate history is binding: never reuse a candidate the user reports as already uploaded, rejected, or Similar Content. Use a materially distinct registered concept instead.
 
 Termux is the executor. Termux runs the local repository, Python CLI, GitHub CLI, Hugging Face commands, Kaggle commands, file copies, audits, and status checks. Termux is not the creative decision-maker.
 
@@ -76,7 +76,7 @@ The only difference between the flows is who creates the initial image. All post
 | Self-contained scene, environment, narrative composition, illustration with background, hero image, copy-space visual | JPEG | RGB/raster scene | Protected Kaggle RealESRGAN | Composition, context, anatomy, artifacts, text/logo/IP risk, full-resolution quality |
 | Reusable isolated object, cutout, sticker, overlay, transparent utility asset | PNG | Object intended for transparency | Isolated Kaggle BiRefNet | Alpha at 100%, halos, holes, missing details, edge clipping, unwanted shadow/background |
 
-Choose from the buyer job and background requirement, never from the filename. Never mix JPEG and PNG workers.
+Choose from the buyer job and background requirement, never from the filename. Never mix JPEG and PNG workers. For the current food PNG trial, use `traditional_food_banh_mi_cutaway_png` / `banh-mi-cutaway`; exclude mango sticky rice and Tom Yum Kung because the user reports they were already used, and mango sticky rice was rejected for Similar Content.
 
 ## 4. Standard Termux setup
 
