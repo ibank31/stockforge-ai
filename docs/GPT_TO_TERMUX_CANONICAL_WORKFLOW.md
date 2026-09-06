@@ -111,7 +111,7 @@ GPT then chooses one repository-backed plan and brief. Use the exact plan path a
 python3 -m stockforge.cli portfolio generate --dry-run \
   --project stock-assets \
   --plan <plan-file> \
-  --brief-id <brief-id>
+  --brief <brief-id>
 ```
 
 Only after the dry-run passes may Termux run one live internal preview:
@@ -120,7 +120,7 @@ Only after the dry-run passes may Termux run one live internal preview:
 python3 -m stockforge.cli portfolio generate \
   --project stock-assets \
   --plan <plan-file> \
-  --brief-id <brief-id>
+  --brief <brief-id>
 ```
 
 For PNG, the initial provider-native preview may be WEBP/RGB at 1024×1024. This is expected and is not the final PNG contract. Auto-critique may assess preview quality, but PNG format, RGBA/true-alpha, target resolution, and sRGB gates are deferred to finalized-master import after the BiRefNet worker. A preview must not be marked `FAIL_TECHNICAL` merely because it is not yet a finalized PNG.
@@ -132,6 +132,16 @@ The preview is exported to:
 ```
 
 Stop and wait for the human decision. `KEEP` is required before any finalizer preparation or GPU submission. Do not perform blind seed retries and do not revive the retired batch runner.
+
+After the preview is attached to a workflow, the short human-gate command can derive the candidate, artifact, plan, and brief from the persisted preview execution:
+
+```bash
+python3 -m stockforge.cli portfolio workflow-approve-execution \
+  --project stock-assets \
+  --execution <preview-execution-id>
+```
+
+This records the user's KEEP gate and never calls a provider, GPU worker, or finalizer. Use the explicit workflow commands below only when a workflow must be inspected or started manually.
 
 After the preview is attached to a workflow, use the workflow ID emitted by `workflow-start-internal` or `workflow-start-external`:
 
@@ -202,7 +212,7 @@ Stop and wait for the human decision. After KEEP, prepare the matching finalizer
 ```bash
 python3 -m stockforge.cli portfolio workflow-keep \
   --project stock-assets \
-  --execution <import-external-execution-id>
+  --workflow <workflow-id>
 
 python3 -m stockforge.cli portfolio prepare-external-finalizer \
   --project stock-assets \

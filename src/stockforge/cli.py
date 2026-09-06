@@ -718,6 +718,63 @@ def portfolio_workflow_start_internal(
     typer.echo(json.dumps(workflow.to_dict(), indent=2))
 
 
+@portfolio_app.command("workflow-approve-execution")
+def portfolio_workflow_approve_execution(
+    project: str = typer.Option(..., "--project", "-p"),
+    execution: str = typer.Option(..., "--execution"),
+    reject: bool = typer.Option(False, "--reject"),
+) -> None:
+    """Create and immediately attest the workflow for one preview execution.
+
+    This is the short human-gate command: it derives the portfolio candidate,
+    format, artifact, brief, and plan from the persisted execution. It never
+    calls a provider, GPU worker, or finalizer.
+    """
+    try:
+        record, project_root = _portfolio_project(project)
+        database = JobDatabase(ConfigManager().initialize().database)
+        database.initialize()
+        execution_record = database.get_execution(execution)
+        if execution_record is None or execution_record.project_id != record["id"]:
+            raise PortfolioError("Execution is invalid for this project.")
+        if not execution_record.artifact_ids:
+            raise PortfolioError("Execution has no preview artifact.")
+        portfolio = execution_record.parameters.get("portfolio")
+        if not isinstance(portfolio, dict):
+            raise PortfolioError("Execution has no persisted portfolio context.")
+        lane_key = portfolio.get("lane_key")
+        brief_id = portfolio.get("brief_id")
+        if not isinstance(lane_key, str) or not isinstance(brief_id, str):
+            raise PortfolioError("Execution portfolio context lacks lane_key or brief_id.")
+        delivery_format = portfolio.get("delivery_format")
+        if delivery_format not in {"jpeg", "png"}:
+            asset_spec = portfolio.get("asset_spec")
+            delivery_format = asset_spec.get("delivery_format") if isinstance(asset_spec, dict) else None
+        if delivery_format not in {"jpeg", "png"}:
+            raise PortfolioError("Execution portfolio context lacks a JPEG/PNG delivery format.")
+        candidate_id = str(portfolio.get("candidate_id") or f"{lane_key.replace('_', '-')}-{brief_id.rsplit('--', 1)[-1]}")
+        plans = sorted((project_root / "portfolio-plans").glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True)
+        plan_path = next((item for item in plans if brief_id in item.read_text(encoding="utf-8")), None)
+        if plan_path is None:
+            raise PortfolioError(f"No saved plan contains brief {brief_id!r}.")
+        workflow = start_internal(
+            project=project,
+            project_id=str(record["id"]),
+            candidate_id=candidate_id,
+            delivery_format=delivery_format,
+            plan=str(plan_path),
+            brief=brief_id,
+            execution_id=execution,
+            artifact_id=execution_record.artifact_ids[0],
+            preview_path=None,
+            project_root=project_root,
+        )
+        workflow = attest_keep(project_root=project_root, workflow_id=workflow.workflow_id, keep=not reject)
+    except (PortfolioError, WorkflowError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(workflow.to_dict(), indent=2))
+
+
 @portfolio_app.command("workflow-start-external")
 def portfolio_workflow_start_external(
     project: str = typer.Option(..., "--project", "-p"),
