@@ -79,7 +79,7 @@ def scan_library(root: Path, *, perceptual_floor: float = 0.90) -> LibrarySimila
                 composition=composition,
             )
             if (
-                image_result.classification != "distinct"
+                perceptual_similarity >= perceptual_floor
                 or composition.classification != "layout_distinct"
             ):
                 candidates.append(LibrarySimilarityCandidate(
