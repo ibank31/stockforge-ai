@@ -41,7 +41,8 @@ from .portfolio import PortfolioError, build_brief, lane_for, list_lanes, metada
 from .portfolio_io import PortfolioPlanError, jpeg_metadata_preflight, load_project_plan, normalize_historical_plan_reference, portfolio_snapshot, preview_preflight, select_brief
 from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
-from .learning_loop import critique_image, save_critique, summarize_learning_memory
+from .learning_loop import critique_image, save_critique, summarize_learning_memory, load_critique
+from .generation_feedback import build_feedback_plan
 from .intelligence_pipeline import IntelligencePipelineError, build_intelligence_plan
 from .library_similarity import LibrarySimilarityError, scan_library
 from .reference_intelligence import ReferenceIntelligenceError, analyze_and_plan
@@ -1971,6 +1972,30 @@ def portfolio_intelligence_plan(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(output + "\n", encoding="utf-8")
         typer.echo(f"Intelligence plan written: {output_path}")
+        return
+    typer.echo(output)
+
+
+@portfolio_app.command("feedback-plan")
+def portfolio_feedback_plan(
+    critique_path: Path = typer.Option(..., "--critique", "-c", exists=True, dir_okay=False, readable=True),
+    project_root: Path | None = typer.Option(None, "--project-root"),
+    output_path: Path | None = typer.Option(None, "--output", "-o"),
+) -> None:
+    """Turn a persisted critique into explicit constraints for the next generation."""
+    try:
+        critique = load_critique(critique_path)
+        plan = build_feedback_plan(
+            critique,
+            project_root=str(project_root) if project_root is not None else None,
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    output = json.dumps(plan.to_dict(), indent=2)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output + "\n", encoding="utf-8")
+        typer.echo(f"Feedback plan written: {output_path}")
         return
     typer.echo(output)
 
