@@ -44,6 +44,7 @@ from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .learning_loop import critique_image, save_critique, summarize_learning_memory
 from .intelligence_pipeline import IntelligencePipelineError, build_intelligence_plan
 from .library_similarity import LibrarySimilarityError, scan_library
+from .reference_intelligence import ReferenceIntelligenceError, analyze_and_plan
 from .artifact import sha256_file
 from .external_import import ExternalImportError, import_external_image
 from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_external_finalizer
@@ -1991,6 +1992,26 @@ def portfolio_similarity_scan(
         typer.echo(f"Similarity scan written: {output_path}")
         return
     typer.echo(payload)
+
+
+@portfolio_app.command("reference-analyze")
+def portfolio_reference_analyze(
+    image: Path = typer.Option(..., "--image", "-i", exists=True, dir_okay=False, readable=True),
+    target_layout: str | None = typer.Option(None, "--target-layout"),
+    output_path: Path | None = typer.Option(None, "--output", "-o"),
+) -> None:
+    """Decompose a reference image into measurable signals and a variation plan."""
+    try:
+        payload = analyze_and_plan(image, target_layout=target_layout)
+    except (ReferenceIntelligenceError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    rendered = json.dumps(payload, indent=2)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(rendered + "\n", encoding="utf-8")
+        typer.echo(f"Reference analysis written: {output_path}")
+        return
+    typer.echo(rendered)
 
 
 if __name__ == "__main__":
