@@ -42,6 +42,7 @@ from .portfolio_io import PortfolioPlanError, jpeg_metadata_preflight, load_proj
 from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .learning_loop import critique_image, save_critique, summarize_learning_memory
+from .intelligence_pipeline import IntelligencePipelineError, build_intelligence_plan
 from .artifact import sha256_file
 from .external_import import ExternalImportError, import_external_image
 from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_external_finalizer
@@ -1954,3 +1955,23 @@ def kaggle_output(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> 
 
 if __name__ == "__main__":
     app()
+
+
+@portfolio_app.command("intelligence-plan")
+def portfolio_intelligence_plan(
+    input_path: Path = typer.Option(..., "--input", "-i", exists=True, readable=True),
+    output_path: Path | None = typer.Option(None, "--output", "-o"),
+) -> None:
+    """Build an evidence-backed market-to-prompt plan without calling a provider."""
+    try:
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        plan = build_intelligence_plan(payload)
+    except (OSError, json.JSONDecodeError, IntelligencePipelineError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    output = json.dumps(plan.to_dict(), indent=2, default=str)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output + "\n", encoding="utf-8")
+        typer.echo(f"Intelligence plan written: {output_path}")
+        return
+    typer.echo(output)
