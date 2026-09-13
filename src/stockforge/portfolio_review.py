@@ -13,6 +13,7 @@ from typing import Iterable, Literal
 from .artifact import Artifact
 from .dedupe_pipeline import DedupePipelineError, compare_images
 from .image_quality import inspect_quality
+from .microstock_similarity import combine_similarity, compare_composition, composition_fingerprint
 
 
 ReviewDecision = Literal["REJECT", "REVIEW"]
@@ -25,6 +26,9 @@ class SimilarityFinding:
     classification: str
     similarity: float | None
     detail: str
+    composition_similarity: float | None = None
+    composition_classification: str | None = None
+    risk: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,16 +98,38 @@ def evaluate_portfolio_candidate(
             continue
 
         similarity = result.comparison.similarity if result.comparison is not None else 1.0
+        try:
+            composition = compare_composition(
+                composition_fingerprint(candidate),
+                composition_fingerprint(comparison_path),
+            )
+            combined = combine_similarity(
+                perceptual_similarity=similarity,
+                perceptual_classification=result.classification,
+                composition=composition,
+            )
+            composition_similarity = round(composition.similarity, 4)
+            composition_classification = composition.classification
+            risk = combined.risk
+        except (OSError, ValueError):
+            composition_similarity = None
+            composition_classification = "unavailable"
+            risk = "UNKNOWN"
         findings.append(SimilarityFinding(
             artifact.id,
             artifact.relative_path,
             result.classification,
             round(similarity, 4),
-            "Average-hash similarity signal; human visual comparison remains required.",
+            "Perceptual and coarse composition signals; human visual comparison remains required.",
+            composition_similarity,
+            composition_classification,
+            risk,
         ))
         if result.classification in {"exact_duplicate", "duplicate"}:
             reasons.append(f"duplicate of existing project artifact {artifact.id}")
-        elif result.classification == "similar":
+        elif risk == "HIGH":
+            reasons.append(f"near-identical composition to existing project artifact {artifact.id}; hold for human distinctness review")
+        elif result.classification == "similar" or risk == "MEDIUM":
             reasons.append(f"similar to existing project artifact {artifact.id}; hold for human distinctness review")
 
     decision: ReviewDecision = "REJECT" if any(
