@@ -1952,11 +1952,6 @@ def kaggle_output(kernel: str | None = typer.Option(None, "--kernel", "-k")) -> 
     """Download the latest kernel output through the Kaggle API."""
     raise typer.Exit(code=kaggle_remote("output", kernel))
 
-
-if __name__ == "__main__":
-    app()
-
-
 @portfolio_app.command("intelligence-plan")
 def portfolio_intelligence_plan(
     input_path: Path = typer.Option(..., "--input", "-i", exists=True, readable=True),
@@ -1975,3 +1970,7 @@ def portfolio_intelligence_plan(
         typer.echo(f"Intelligence plan written: {output_path}")
         return
     typer.echo(output)
+
+
+if __name__ == "__main__":
+    app()
