@@ -45,6 +45,7 @@ from .learning_loop import critique_image, save_critique, summarize_learning_mem
 from .intelligence_pipeline import IntelligencePipelineError, build_intelligence_plan
 from .library_similarity import LibrarySimilarityError, scan_library
 from .reference_intelligence import ReferenceIntelligenceError, analyze_and_plan
+from .reference_to_concept import ReferenceConceptError, build_reference_concept_plan
 from .artifact import sha256_file
 from .external_import import ExternalImportError, import_external_image
 from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_external_finalizer
@@ -1970,6 +1971,35 @@ def portfolio_intelligence_plan(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(output + "\n", encoding="utf-8")
         typer.echo(f"Intelligence plan written: {output_path}")
+        return
+    typer.echo(output)
+
+
+@portfolio_app.command("reference-plan")
+def portfolio_reference_plan(
+    input_path: Path = typer.Option(..., "--input", "-i", exists=True, readable=True),
+    image: Path = typer.Option(..., "--image", exists=True, dir_okay=False, readable=True),
+    target_layout: str | None = typer.Option(None, "--target-layout"),
+    output_path: Path | None = typer.Option(None, "--output", "-o"),
+) -> None:
+    """Combine market evidence and reference constraints into differentiated prompts."""
+    try:
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        plan = build_reference_concept_plan(payload, image, target_layout=target_layout)
+    except (
+        OSError,
+        json.JSONDecodeError,
+        IntelligencePipelineError,
+        ReferenceConceptError,
+        ReferenceIntelligenceError,
+        ValueError,
+    ) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    output = json.dumps(plan.to_dict(), indent=2, default=str)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output + "\n", encoding="utf-8")
+        typer.echo(f"Reference concept plan written: {output_path}")
         return
     typer.echo(output)
 
