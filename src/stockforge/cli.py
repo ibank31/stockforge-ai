@@ -43,6 +43,7 @@ from .format_router import FormatRoutingError, route_from_dict
 from .local_vector_build import LocalVectorBuildError, build_local_native_vector
 from .learning_loop import critique_image, save_critique, summarize_learning_memory
 from .intelligence_pipeline import IntelligencePipelineError, build_intelligence_plan
+from .library_similarity import LibrarySimilarityError, scan_library
 from .artifact import sha256_file
 from .external_import import ExternalImportError, import_external_image
 from .external_finalizer_prep import ExternalFinalizerPreparationError, prepare_external_finalizer
@@ -1970,6 +1971,26 @@ def portfolio_intelligence_plan(
         typer.echo(f"Intelligence plan written: {output_path}")
         return
     typer.echo(output)
+
+
+@portfolio_app.command("similarity-scan")
+def portfolio_similarity_scan(
+    root: Path = typer.Option(..., "--root", "-r", exists=True, file_okay=False, readable=True),
+    output_path: Path | None = typer.Option(None, "--output", "-o"),
+    perceptual_floor: float = typer.Option(0.90, "--perceptual-floor", min=0.0, max=1.0),
+) -> None:
+    """Scan raster assets across project directories for duplicate/layout risk."""
+    try:
+        scan = scan_library(root, perceptual_floor=perceptual_floor)
+    except (LibrarySimilarityError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    payload = json.dumps(scan.to_dict(), indent=2)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(payload + "\n", encoding="utf-8")
+        typer.echo(f"Similarity scan written: {output_path}")
+        return
+    typer.echo(payload)
 
 
 if __name__ == "__main__":
