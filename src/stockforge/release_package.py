@@ -14,6 +14,7 @@ from .adobe_png_gate import inspect_transparent_png
 from .database import Database
 from .native_vector import inspect_native_svg
 from .portfolio_review import evaluate_portfolio_candidate
+from .post_generation_verification import verify_generated_candidate
 
 
 class ReleasePackageError(RuntimeError):
@@ -145,10 +146,21 @@ def build_release_package(
     target_dir.mkdir(parents=True, exist_ok=True)
     package_path = target_dir / f"stockforge-{execution.id}.zip"
     portfolio = execution.parameters.get("portfolio")
+    reference_path_value = execution.parameters.get("reference_path")
+    post_generation_reports = []
     if portfolio is not None and not isinstance(portfolio, dict):
         raise ReleasePackageError("Execution portfolio context is invalid.")
     technical_reports = []
     portfolio_reviews = []
+    if isinstance(reference_path_value, str) and reference_path_value.strip():
+        reference_path = Path(reference_path_value).expanduser().resolve()
+        if not reference_path.is_file():
+            raise ReleasePackageError("Execution reference image is missing for post-generation verification.")
+        for artifact, source in artifacts:
+            verification = verify_generated_candidate(reference_path, source)
+            post_generation_reports.append({"artifact_id": artifact.id, "file": package_file(artifact, source), "verification": verification.to_dict()})
+            if verification.decision == "BLOCK":
+                raise ReleasePackageError("POST_GENERATION_SIMILARITY_BLOCK: generated output is too visually similar to its reference.")
     if portfolio is not None:
         project_artifacts = database.list_artifacts(project_id)
         for artifact, source in artifacts:
@@ -179,6 +191,7 @@ def build_release_package(
         "portfolio": portfolio,
         "technical_reports": technical_reports,
         "portfolio_reviews": portfolio_reviews,
+        "post_generation_verification": post_generation_reports,
         "artifacts": [
             {
                 "id": artifact.id,
