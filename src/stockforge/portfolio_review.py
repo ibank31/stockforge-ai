@@ -1,9 +1,4 @@
-"""Deterministic post-generation screening for StockForge portfolio assets.
-
-This module is intentionally conservative.  It combines local pixel-quality
-signals and project-local perceptual similarity into a review decision, but it
-never infers marketplace acceptance, legal clearance, or semantic correctness.
-"""
+"""Deterministic post-generation screening for StockForge assets."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -13,7 +8,7 @@ from typing import Iterable, Literal
 from .artifact import Artifact
 from .dedupe_pipeline import DedupePipelineError, compare_images
 from .image_quality import inspect_quality
-
+from .similarity_risk import analyze_similarity_risk
 
 ReviewDecision = Literal["REJECT", "REVIEW"]
 
@@ -33,39 +28,20 @@ class PortfolioReviewReport:
     quality: dict[str, object]
     similarities: tuple[SimilarityFinding, ...]
     reasons: tuple[str, ...]
-    notice: str = (
-        "Deterministic screening only. Human visual, IP, metadata, and "
-        "marketplace review remain required."
-    )
+    notice: str = "Deterministic screening only. Human visual, IP, metadata, and marketplace review remain required."
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "decision": self.decision,
-            "quality": self.quality,
-            "similarities": [asdict(item) for item in self.similarities],
-            "reasons": list(self.reasons),
-            "notice": self.notice,
-        }
+        return {"decision": self.decision, "quality": self.quality,
+                "similarities": [asdict(item) for item in self.similarities],
+                "reasons": list(self.reasons), "notice": self.notice}
 
 
-def evaluate_portfolio_candidate(
-    source: Path,
-    *,
-    project_root: Path,
-    current_artifact_id: str,
-    project_artifacts: Iterable[Artifact],
-) -> PortfolioReviewReport:
-    """Screen one generated asset against local quality and existing project files.
-
-    The work is CPU-only.  A hard technical quality failure or an exact/perceptual
-    duplicate rejects the candidate.  Everything else remains human review,
-    including a visually distinct image: no local screen can certify semantic
-    adherence, rights, or marketplace suitability.
-    """
-    candidate = Path(source).resolve()
-    root = Path(project_root).resolve()
+def evaluate_portfolio_candidate(source: Path, *, project_root: Path,
+                                 current_artifact_id: str,
+                                 project_artifacts: Iterable[Artifact]) -> PortfolioReviewReport:
+    """Screen quality, exact/perceptual duplicates, and V2 similarity risk."""
+    candidate, root = Path(source).resolve(), Path(project_root).resolve()
     quality = inspect_quality(candidate)
-    quality_payload = quality.to_dict()
     reasons: list[str] = []
     if not quality.ready_for_review:
         reasons.append("deterministic image-quality screen failed")
@@ -83,33 +59,33 @@ def evaluate_portfolio_candidate(
             continue
         try:
             result = compare_images(candidate, comparison_path)
+            similarity = result.comparison.similarity if result.comparison else 1.0
+            risk = analyze_similarity_risk(comparison_path, candidate)
         except (DedupePipelineError, OSError, ValueError) as exc:
-            findings.append(SimilarityFinding(
-                artifact.id,
-                artifact.relative_path,
-                "unavailable",
-                None,
-                f"Similarity screen unavailable: {type(exc).__name__}",
-            ))
+            findings.append(SimilarityFinding(artifact.id, artifact.relative_path, "unavailable", None,
+                f"Similarity screen unavailable: {type(exc).__name__}"))
             continue
 
-        similarity = result.comparison.similarity if result.comparison is not None else 1.0
-        findings.append(SimilarityFinding(
-            artifact.id,
-            artifact.relative_path,
-            result.classification,
-            round(similarity, 4),
-            "Average-hash similarity signal; human visual comparison remains required.",
-        ))
-        if result.classification in {"exact_duplicate", "duplicate"}:
+        classification = result.classification
+        detail = (
+            f"AHash={similarity:.4f}; V2 risk={risk.score:.2f}/100 ({risk.level}). "
+            f"{risk.recommendation}"
+        )
+        findings.append(SimilarityFinding(artifact.id, artifact.relative_path, classification,
+                                          round(similarity, 4), detail))
+        if classification in {"exact_duplicate", "duplicate"}:
             reasons.append(f"duplicate of existing project artifact {artifact.id}")
-        elif result.classification == "similar":
+        elif risk.level == "blocked":
+            reasons.append(f"V2 similarity risk blocked against existing project artifact {artifact.id}")
+        elif risk.level == "high":
+            reasons.append(f"high V2 similarity risk against existing project artifact {artifact.id}; regenerate with stronger transformation")
+        elif classification == "similar":
             reasons.append(f"similar to existing project artifact {artifact.id}; hold for human distinctness review")
 
     decision: ReviewDecision = "REJECT" if any(
-        reason.startswith("deterministic image-quality") or reason.startswith("duplicate")
+        reason.startswith(("deterministic image-quality", "duplicate", "V2 similarity risk blocked"))
         for reason in reasons
     ) else "REVIEW"
     if not reasons:
-        reasons.append("technical screen completed; semantic and commercial review still required")
-    return PortfolioReviewReport(decision, quality_payload, tuple(findings), tuple(reasons))
+        reasons.append("technical and V2 similarity screens completed; semantic and commercial review still required")
+    return PortfolioReviewReport(decision, quality.to_dict(), tuple(findings), tuple(reasons))
