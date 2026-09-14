@@ -29,6 +29,8 @@ def test_v2_plan_reuses_existing_production_contracts(tmp_path: Path) -> None:
     )
     plan = build_v2_generation_plan(profile, opportunity, seed=42)
 
+    assert plan.anti_similarity.decision == "REVIEW"
+    assert len(plan.anti_similarity.changed_dimensions) >= 3
     assert plan.asset_spec.subject == opportunity.proposed_subject
     assert plan.generation_request.seed == 42
     assert plan.generation_request.parameters["stockforge_v2"] is True
