@@ -12,6 +12,7 @@ from pathlib import Path
 
 import typer
 
+from .auto_crop import AutoCropError, CropBox, crop_reference, suggest_crop_candidates
 from .creative_opportunity import CreativeOpportunityError, build_creative_opportunity
 from .reference_intelligence import CreativeDistancePlan, ReferenceIntelligenceError, profile_reference_image
 from .v2_pipeline import V2PipelineError, build_v2_generation_plan
@@ -21,6 +22,47 @@ app = typer.Typer(help="StockForge V2 reference intelligence and creative planni
 
 def _json(value: object) -> None:
     typer.echo(json.dumps(value, indent=2, ensure_ascii=False))
+
+
+@app.command("autocrop")
+def autocrop(
+    reference: Path = typer.Option(..., "--reference", exists=True, readable=True),
+    limit: int = typer.Option(5, "--limit", min=1, max=10),
+) -> None:
+    """Suggest visually distinct crop regions from a screenshot; human confirmation is required."""
+    try:
+        candidates = suggest_crop_candidates(reference, limit=limit)
+    except AutoCropError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _json({
+        "reference": str(reference.resolve()),
+        "decision": "REVIEW_REQUIRED",
+        "candidates": [candidate.to_dict() for candidate in candidates],
+        "notice": "Auto-crop is a visual heuristic, not semantic object detection. Confirm or adjust before analysis.",
+    })
+
+
+@app.command("crop")
+def crop(
+    reference: Path = typer.Option(..., "--reference", exists=True, readable=True),
+    destination: Path = typer.Option(..., "--output"),
+    left: int = typer.Option(..., "--left", min=0),
+    top: int = typer.Option(..., "--top", min=0),
+    right: int = typer.Option(..., "--right", min=1),
+    bottom: int = typer.Option(..., "--bottom", min=1),
+) -> None:
+    """Apply one human-confirmed crop while preserving the original screenshot."""
+    try:
+        output = crop_reference(reference, destination, CropBox(left, top, right, bottom))
+    except AutoCropError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _json({
+        "reference": str(reference.resolve()),
+        "crop": CropBox(left, top, right, bottom).to_dict(),
+        "output": str(output),
+        "decision": "CROP_CONFIRMED",
+    })
+
 
 
 @app.command("profile")
