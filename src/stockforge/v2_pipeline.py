@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .anti_similarity import AntiSimilarityAssessment, require_generation_distance
 from .asset_prompt_compiler import compile_asset_prompt
 from .asset_spec import AssetSpec
 from .creative_opportunity import CreativeOpportunity
@@ -26,6 +27,7 @@ class V2GenerationPlan:
     prompt: str
     negative_prompt: str
     generation_request: GenerationRequest
+    anti_similarity: AntiSimilarityAssessment
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -36,6 +38,13 @@ class V2GenerationPlan:
             "prompt": self.prompt,
             "negative_prompt": self.negative_prompt,
             "generation_request": self.generation_request.to_dict(),
+            "anti_similarity": {
+                "changed_dimensions": list(self.anti_similarity.changed_dimensions),
+                "unchanged_dimensions": list(self.anti_similarity.unchanged_dimensions),
+                "risk": self.anti_similarity.risk,
+                "decision": self.anti_similarity.decision,
+                "rationale": list(self.anti_similarity.rationale),
+            },
         }
 
 
@@ -59,6 +68,7 @@ def build_v2_generation_plan(
     if opportunity.creative_distance.to_dict()["change_subject"] is False and not profile.subject:
         raise V2PipelineError("Reference subject must be explicit before allowing subject retention.")
 
+    anti_similarity = require_generation_distance(profile, opportunity)
     visual_dna = extract_visual_dna(profile)
     spec = AssetSpec(
         asset_id=(asset_id or opportunity.opportunity_id).strip(),
@@ -125,4 +135,5 @@ def build_v2_generation_plan(
         prompt=package.prompt,
         negative_prompt=package.negative_prompt,
         generation_request=request,
+        anti_similarity=anti_similarity,
     )
