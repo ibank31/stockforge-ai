@@ -18,7 +18,7 @@ def brief(tmp_path: Path):
         proposed_subject="ceramic jar", proposed_composition="asymmetric composition",
         proposed_viewpoint="high angle", proposed_color_direction="earth palette",
         proposed_context="clean kitchen", proposed_use_case="packaging",
-        differentiation_rationale=("new subject", "new composition"),
+        differentiation_rationale=("new subject", "new composition", "new context"),
         creative_distance=CreativeDistancePlan(),
     )
     return build_generation_brief(profile, opportunity)
