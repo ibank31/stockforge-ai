@@ -10,6 +10,7 @@ from .asset_spec import AssetSpec
 from .creative_opportunity import CreativeOpportunity
 from .generation import GenerationRequest
 from .reference_intelligence import ReferenceProfile
+from .visual_dna import VisualDNA, extract_visual_dna
 
 
 class V2PipelineError(ValueError):
@@ -19,6 +20,7 @@ class V2PipelineError(ValueError):
 @dataclass(frozen=True, slots=True)
 class V2GenerationPlan:
     reference_profile: ReferenceProfile
+    visual_dna: VisualDNA
     opportunity: CreativeOpportunity
     asset_spec: AssetSpec
     prompt: str
@@ -28,6 +30,7 @@ class V2GenerationPlan:
     def to_dict(self) -> dict[str, Any]:
         return {
             "reference_profile": self.reference_profile.to_dict(),
+            "visual_dna": self.visual_dna.to_dict(),
             "opportunity": self.opportunity.to_dict(),
             "asset_spec": self.asset_spec.to_dict(),
             "prompt": self.prompt,
@@ -56,6 +59,7 @@ def build_v2_generation_plan(
     if opportunity.creative_distance.to_dict()["change_subject"] is False and not profile.subject:
         raise V2PipelineError("Reference subject must be explicit before allowing subject retention.")
 
+    visual_dna = extract_visual_dna(profile)
     spec = AssetSpec(
         asset_id=(asset_id or opportunity.opportunity_id).strip(),
         market_opportunity_id=opportunity.opportunity_id,
@@ -91,6 +95,7 @@ def build_v2_generation_plan(
         extra_constraints=(
             f"Reference context only: sha256={profile.visual.sha256}.",
             f"Creative context: {opportunity.proposed_context}.",
+            f"Reference visual DNA: palette={visual_dna.palette_family}; texture={visual_dna.texture_profile}; density={visual_dna.visual_density}.",
             "Reference pixels are not a generation input and must not be reproduced.",
         ),
         tags=("stockforge_v2", "reference_intelligence"),
@@ -107,12 +112,14 @@ def build_v2_generation_plan(
         parameters={
             "stockforge_v2": True,
             "reference_sha256": profile.visual.sha256,
+            "visual_dna": visual_dna.to_dict(),
             "creative_distance": opportunity.creative_distance.to_dict(),
             "opportunity_id": opportunity.opportunity_id,
         },
     )
     return V2GenerationPlan(
         reference_profile=profile,
+        visual_dna=visual_dna,
         opportunity=opportunity,
         asset_spec=spec,
         prompt=package.prompt,
