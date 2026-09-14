@@ -8,9 +8,7 @@ from stockforge.reference_intelligence import CreativeDistancePlan, profile_refe
 
 
 class FakeTransport:
-    def __init__(self):
-        self.calls = []
-
+    def __init__(self): self.calls = []
     def generate(self, prompt, *, negative_prompt, parameters):
         self.calls.append((prompt, negative_prompt, parameters))
         return "/tmp/generated.png"
@@ -22,13 +20,10 @@ def test_generation_integration_preserves_v2_traceability(tmp_path: Path):
     profile = profile_reference_image(source, subject="old vase")
     opportunity = build_creative_opportunity(
         profile, opportunity_id="run-001", market_intent="home decor",
-        proposed_subject="modern ceramic planter",
-        proposed_composition="offset hero composition",
-        proposed_viewpoint="high three-quarter angle",
-        proposed_color_direction="muted terracotta",
-        proposed_context="minimal interior shelf",
-        proposed_use_case="editorial",
-        differentiation_rationale=("new subject", "new context"),
+        proposed_subject="modern ceramic planter", proposed_composition="offset hero composition",
+        proposed_viewpoint="high three-quarter angle", proposed_color_direction="muted terracotta",
+        proposed_context="minimal interior shelf", proposed_use_case="editorial",
+        differentiation_rationale=("new subject", "new context", "new composition"),
         creative_distance=CreativeDistancePlan(),
     )
     brief = build_generation_brief(profile, opportunity)
