@@ -1,6 +1,7 @@
 """Centralized security boundary for untrusted raster image ingestion."""
 from __future__ import annotations
 import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
@@ -56,7 +57,8 @@ def secure_raster_image(source: Path, *, max_bytes: int = DEFAULT_MAX_BYTES, max
 
 def sanitized_copy(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    tmp = destination.with_suffix(destination.suffix + ".tmp")
+    with tempfile.NamedTemporaryFile(dir=destination.parent, suffix=destination.suffix, delete=False) as handle:
+        tmp = Path(handle.name)
     with Image.open(source) as image:
         image.load()
         clean = ImageOps.exif_transpose(image)
