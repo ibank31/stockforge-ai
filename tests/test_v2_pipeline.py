@@ -33,5 +33,7 @@ def test_v2_plan_reuses_existing_production_contracts(tmp_path: Path) -> None:
     assert plan.generation_request.seed == 42
     assert plan.generation_request.parameters["stockforge_v2"] is True
     assert plan.generation_request.parameters["reference_sha256"] == profile.visual.sha256
+    assert plan.generation_request.parameters["visual_dna"]["palette_family"]
+    assert plan.visual_dna.palette_family
     assert "reusable insulated drink tumbler" in plan.prompt
     assert "Reference pixels are not a generation input" not in plan.prompt
