@@ -5,7 +5,7 @@ import pytest
 
 from stockforge.anti_similarity import AntiSimilarityError, require_generation_distance
 from stockforge.creative_opportunity import build_creative_opportunity
-from stockforge.reference_intelligence import CreativeDistancePlan, profile_reference_image
+from stockforge.reference_intelligence import CreativeDistancePlan, ReferenceIntelligenceError, profile_reference_image
 
 
 def _profile(tmp_path: Path):
@@ -30,8 +30,8 @@ def test_blocks_insufficient_creative_distance(tmp_path):
         change_subject=True, change_composition=True, change_viewpoint=False,
         change_color_direction=False, change_context=False, change_use_case=False,
     )
-    with pytest.raises(AntiSimilarityError):
-        require_generation_distance(profile, _opportunity(profile, distance))
+    with pytest.raises(ReferenceIntelligenceError):
+        _opportunity(profile, distance)
 
 
 def test_allows_review_when_multiple_dimensions_change(tmp_path):
