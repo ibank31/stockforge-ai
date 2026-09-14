@@ -96,7 +96,7 @@ def build_v2_generation_plan(
             f"Reference context only: sha256={profile.visual.sha256}.",
             f"Creative context: {opportunity.proposed_context}.",
             f"Reference visual DNA: palette={visual_dna.palette_family}; texture={visual_dna.texture_profile}; density={visual_dna.visual_density}.",
-            "Reference pixels are not a generation input and must not be reproduced.",
+            "Do not reproduce the reference image, its exact composition, or its distinctive visual identity.",
         ),
         tags=("stockforge_v2", "reference_intelligence"),
     )
