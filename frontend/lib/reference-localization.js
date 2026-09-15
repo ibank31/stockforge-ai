@@ -86,14 +86,15 @@ function base64(bytes) {
 
 async function runLocator(env, imageBytes, mimeType, retry = false) {
   const image = base64(imageBytes);
+  const schemaContract = "Return ONLY one JSON object matching this exact shape: {\"reference_type\":\"SOCIAL_MEDIA_POST|EMAIL_SCREENSHOT|MARKETPLACE_SCREENSHOT|PRODUCT_PAGE|RAW_ASSET|UNKNOWN\",\"confidence\":0.0,\"presentation_elements\":[],\"evidence_elements\":[],\"asset_candidates\":[{\"label\":\"string\",\"confidence\":0.0,\"bbox_normalized\":{\"x\":0.0,\"y\":0.0,\"width\":0.0,\"height\":0.0},\"why_asset\":\"string\"}],\"primary_asset\":{\"label\":\"string\",\"confidence\":0.0,\"bbox_normalized\":{\"x\":0.0,\"y\":0.0,\"width\":0.0,\"height\":0.0},\"why_asset\":\"string\"}}. All bbox values must be numbers from 0 to 1, width and height must be greater than 0, and primary_asset must have confidence >= 0.5 when a reusable asset is visible.";
   return env.AI.run(MODEL, {
     messages: [
-      { role: "system", content: "Strict visual locator. Return a valid JSON object only." },
+      { role: "system", content: `Strict StockForge spatial locator. ${schemaContract} Do not emit markdown, prose, explanations, or omitted required fields.` },
       { role: "user", content: prompt(retry) },
     ],
     image,
     response_format: { type: "json_object" },
-    max_tokens: 1800,
+    max_tokens: 2500,
     temperature: retry ? 0 : 0.02,
     chat_template_kwargs: { enable_thinking: false },
   });
