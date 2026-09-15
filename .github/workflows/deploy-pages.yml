@@ -65,3 +65,19 @@ jobs:
       - name: Deploy Pages front door
         if: steps.credential.outputs.configured == 'true'
         run: wrangler pages deploy frontend --project-name "$PAGES_PROJECT" --branch main
+      - name: Smoke test page.dev
+        if: steps.credential.outputs.configured == 'true'
+        run: |
+          BASE_URL="https://${PAGES_PROJECT}.pages.dev"
+          curl -fsS "$BASE_URL/api/health" -o health.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+          if (body.status !== 'ok') {
+            console.error(body);
+            process.exit(1);
+          }
+          console.log(JSON.stringify(body, null, 2));
+          NODE
+          curl -fsS "$BASE_URL/" | grep -q "StockForge V2"
+          echo "page.dev smoke test passed"
