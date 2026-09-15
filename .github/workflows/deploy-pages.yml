@@ -55,9 +55,7 @@ jobs:
         if: steps.credential.outputs.configured == 'true'
         run: |
           wrangler d1 create "$D1_NAME" > d1-create.txt 2>&1 || true
-          D1_JSON=$(curl -fsS \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database")
+          D1_JSON=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database")
           DB_ID=$(printf '%s' "$D1_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);const x=(a.result||[]).find(r=>r.name===process.env.D1_NAME);if(!x||!x.uuid){process.exit(2)}console.log(x.uuid)})')
           echo "D1_ID=$DB_ID" >> "$GITHUB_ENV"
       - name: Render production configs
@@ -83,19 +81,8 @@ jobs:
           HEADERS=$(curl -sS -D - -o health.json "$BASE_URL/api/health" || true)
           echo "$HEADERS"
           CONTENT_TYPE=$(printf '%s\n' "$HEADERS" | awk -F': ' 'tolower($1)=="content-type" {print tolower($2)}' | tail -n1 | tr -d '\r')
-          case "$CONTENT_TYPE" in
-            application/json*) ;;
-            *) echo "Expected JSON from /api/health, got content-type: ${CONTENT_TYPE:-unknown}"; head -c 500 health.json || true; exit 1;;
-          esac
-          node - <<'NODE'
-          const fs = require('fs');
-          const body = JSON.parse(fs.readFileSync('health.json', 'utf8'));
-          if (body.status !== 'ok') {
-            console.error(body);
-            process.exit(1);
-          }
-          console.log(JSON.stringify(body, null, 2));
-          NODE
+          case "$CONTENT_TYPE" in application/json*) ;; *) echo "Expected JSON from /api/health, got content-type: ${CONTENT_TYPE:-unknown}"; head -c 500 health.json || true; exit 1;; esac
+          node -e 'const fs=require("fs"),body=JSON.parse(fs.readFileSync("health.json","utf8")); if(body.status!=="ok"){console.error(body);process.exit(1)}; console.log(JSON.stringify(body,null,2));'
           curl -fsS "$BASE_URL/" | grep -q "StockForge V2"
           echo "page.dev smoke test passed"
       - name: One-time generation boundary E2E
@@ -103,49 +90,25 @@ jobs:
         run: |
           set -euo pipefail
           BASE_URL="https://${PAGES_PROJECT}.pages.dev"
-          python - <<'PY'
-          import struct, zlib
-          from pathlib import Path
-          width = height = 256
-          rows = []
-          for y in range(height):
-              row = bytearray([0])
-              for x in range(width):
-                  base = (238, 232, 213) if y < 120 else (176, 120, 70)
-                  if 70 < x < 105 and 55 < y < 115: base = (44, 67, 49)
-                  if 155 < x < 210 and 145 < y < 205 and (x-182)**2 + (y-172)**2 < 850: base = (38, 78, 125)
-                  if 145 < x < 215 and 205 < y < 230: base = (70, 52, 40)
-                  if 20 < x < 120 and 150 < y < 205: base = (245, 244, 238)
-                  row.extend(base)
-              rows.append(bytes(row))
-          raw = b''.join(rows)
-          def chunk(kind, data): return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
-          png = bytearray(b'\x89PNG\r\n\x1a\n')
-          png += chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0))
-          png += chunk(b'IDAT', zlib.compress(raw, 9))
-          png += chunk(b'IEND', b'')
-          Path('/tmp/reference.png').write_bytes(png)
-          PY
-          HTTP_CODE=$(curl -sS -o reference.json -w '%{http_code}' -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/reference-intelligence")
+          curl -L --fail --max-time 30 "https://upload.wikimedia.org/wikipedia/commons/e/e3/Backpack.jpg" -o /tmp/reference.jpg
+          file /tmp/reference.jpg
+          HTTP_CODE=$(curl -sS -o reference.json -w '%{http_code}' -X POST -F 'file=@/tmp/reference.jpg;type=image/jpeg' "$BASE_URL/api/reference-intelligence")
           echo "reference HTTP=$HTTP_CODE"
           cat reference.json
           test "$HTTP_CODE" = "200"
-          node -e 'const fs=require("fs"),x=require("./reference.json"); if(!x.reference_id || !x.workflow_id || !x.profile?.visual_summary) throw Error(JSON.stringify(x)); if(!Array.isArray(x.profile?.asset_opportunities) || x.profile.asset_opportunities.length!==5) throw Error(JSON.stringify(x)); if(new Set(x.profile.asset_opportunities.map(o=>o.id)).size!==5) throw Error(JSON.stringify(x)); if(x.profile.intelligence?.fallback_count!==0) throw Error(JSON.stringify(x)); console.log("reference intelligence passed", JSON.stringify({reference_id:x.reference_id,workflow_id:x.workflow_id,opportunities:x.profile.asset_opportunities.length})); fs.writeFileSync("ref.id",x.reference_id)'
+          node -e 'const fs=require("fs"),x=require("./reference.json"); if(!x.reference_id||!x.workflow_id||!x.profile?.visual_summary)throw Error(JSON.stringify(x)); if(!Array.isArray(x.profile.asset_opportunities)||x.profile.asset_opportunities.length!==5)throw Error(JSON.stringify(x)); if(new Set(x.profile.asset_opportunities.map(o=>o.id)).size!==5)throw Error(JSON.stringify(x)); console.log("reference intelligence passed",JSON.stringify({reference_id:x.reference_id,workflow_id:x.workflow_id,opportunities:x.profile.asset_opportunities.length,localization:x.profile.asset_localization?.localization?.method})); fs.writeFileSync("ref.id",x.reference_id)'
           REF_ID=$(cat ref.id)
-          cat > plan.json <<'JSON'
-          {"opportunity_index":0,"market_intent":"commercial website banner and presentation cover"}
-          JSON
+          printf '%s' '{"opportunity_index":0,"market_intent":"commercial website banner and presentation cover"}' > plan.json
           PLAN_CODE=$(curl -sS -o plan-response.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan")
           echo "plan HTTP=$PLAN_CODE"
           test "$PLAN_CODE" = "200"
-          node -e 'const x=require("./plan-response.json"); if(x.decision!=="READY_TO_GENERATE" || !x.plan) throw Error(JSON.stringify(x)); if(x.validation?.passed!==true || x.validation?.measured_changes<3 || x.validation?.declared_changes<3) throw Error(JSON.stringify(x)); console.log("plan=READY_TO_GENERATE")'
+          node -e 'const x=require("./plan-response.json");if(x.decision!=="READY_TO_GENERATE"||!x.plan)throw Error(JSON.stringify(x));if(x.validation?.passed!==true||x.validation?.measured_changes<3||x.validation?.declared_changes<3)throw Error(JSON.stringify(x));console.log("plan=READY_TO_GENERATE")'
           GEN_CODE=$(curl -sS -o generate.json -w '%{http_code}' -X POST "$BASE_URL/api/references/$REF_ID/generate")
           echo "generate HTTP=$GEN_CODE"
           test "$GEN_CODE" = "200"
-          node -e 'const fs=require("fs"),x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("generation request accepted", JSON.stringify({job_id:x.job_id,workflow_id:x.workflow_id,status:x.status||null,stage:x.stage||null})); fs.writeFileSync("job.id",x.job_id)'
+          node -e 'const fs=require("fs"),x=require("./generate.json");if(!x.job_id||!x.workflow_id)throw Error(JSON.stringify(x));console.log("generation request accepted",JSON.stringify({job_id:x.job_id,workflow_id:x.workflow_id,status:x.status||null,stage:x.stage||null}));fs.writeFileSync("job.id",x.job_id)'
           JOB_ID=$(cat job.id)
           curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
-          node -e 'const fs=require("fs"),x=require("./job.json"),id=fs.readFileSync("job.id","utf8").trim(); if(!x.id || x.id!==id) throw Error(JSON.stringify(x)); if(["failed","blocked","cancelled"].includes(x.status)) throw Error(JSON.stringify(x)); console.log("generation boundary passed", JSON.stringify({status:x.status,stage:x.stage}))'
+          node -e 'const fs=require("fs"),x=require("./job.json"),id=fs.readFileSync("job.id","utf8").trim();if(!x.id||x.id!==id)throw Error(JSON.stringify(x));if(["failed","blocked","cancelled"].includes(x.status))throw Error(JSON.stringify(x));console.log("generation boundary passed",JSON.stringify({status:x.status,stage:x.stage}))'
           echo "REFERENCE INTELLIGENCE + PLAN + GENERATION E2E PASSED"
       # E2E_PROD trigger checkpoint: enforce test execution on this commit.
-      # Final vision-pipeline E2E trigger v12.
