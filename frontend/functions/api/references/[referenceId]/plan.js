@@ -92,8 +92,17 @@ function differenceCount(refFacts, opp) {
     return lexicalOverlap(a, b) < 0.80;
   }).length;
 }
+function canonicalDifference(value) {
+  const s = text(value).toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  if (/^subject( treatment)?$|^object( treatment)?$|^asset( treatment)?$/.test(s)) return "subject";
+  if (/^composition$|^framing$|^layout$|^placement$|^arrangement$|^negative space$/.test(s)) return "composition";
+  if (/^viewpoint$|^camera$|^camera angle$|^perspective$|^view$/.test(s)) return "viewpoint";
+  if (/^color( direction)?$|^colour( direction)?$|^palette$|^lighting$|^tone$/.test(s)) return "color_direction";
+  if (/^context$|^setting$|^environment$|^scenario$|^scene$/.test(s)) return "context";
+  return s;
+}
 function validateOpportunity(refFacts, opp) {
-  const explicit = new Set((opp.differences || []).map(v => text(v).toLowerCase().replace(/\s+/g, "_")));
+  const explicit = new Set((opp.differences || []).map(canonicalDifference));
   const diff = differenceCount(refFacts, opp);
   const declared = ["subject", "composition", "viewpoint", "color_direction", "context"].filter(v => explicit.has(v)).length;
   return { passed: diff >= 3 && declared >= 3, measured_changes: diff, declared_changes: declared };
