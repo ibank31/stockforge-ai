@@ -1,0 +1,1 @@
+stockforge-ai[web] @ git+https://github.com/ibank31/stockforge-ai.git@main

@@ -39,7 +39,23 @@ The default generation provider is Hugging Face ZeroGPU. Local ComfyUI is compat
 
 The browser/front door communicates only with the StockForge web API. It must never access SQLite, runtime directories, credentials, provider endpoints, or worker internals directly.
 
-The user's existing `page.dev` hostname is external deployment configuration and is not hard-coded in this repository. A deployment is considered connected only when that front door targets the current StockForge control-plane API.
+The canonical browser deployment is now:
+
+```text
+Cloudflare Pages static front door
+        ↓
+Pages Function /api/* reverse proxy
+        ↓
+Hugging Face CPU control plane
+        ↓
+Durable StockForge queue + worker loop
+        ↓
+Hugging Face ZeroGPU generation Space
+```
+
+The front door code lives under `frontend/`. Its `/api/*` proxy targets `STOCKFORGE_CONTROL_PLANE_URL` when configured, otherwise the canonical control-plane URL used by the deployment workflow. This same-origin proxy prevents browser CORS/provider exposure and keeps the provider endpoint out of the UI call graph.
+
+The user's `page.dev` hostname remains external deployment state. Repository code must not claim that the public hostname is live until the deployment workflow succeeds and the resulting endpoint is verified.
 
 ## Current registered candidates
 
