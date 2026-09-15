@@ -49,7 +49,7 @@ export async function onRequestPost(context) {
     const jobId = id("job");
     const assetToken = token();
     const t = now();
-    await env.DB.prepare(`INSERT INTO jobs_sf (id,reference_id,type,status,stage,prompt,width,height,steps,seed,randomize_seed,event_id,asset_token,result_json,created_at,updated_at,generation_attempts,upscale_attempts,failed_mode,failure_code,retryable,last_workflow_id,last_workflow_created_at) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM jobs_sf WHERE reference_id=? AND type='generation' AND status IN ('queued','dispatching','submitted','generating','ready_upscale','upscale_submitted','succeeded','approved'))`)
+    await env.DB.prepare(`INSERT INTO jobs_sf (id,reference_id,type,status,stage,prompt,width,height,steps,seed,randomize_seed,event_id,asset_token,result_json,created_at,updated_at,generation_attempts,upscale_attempts,failed_mode,failure_code,retryable,last_workflow_id,last_workflow_created_at) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM jobs_sf WHERE reference_id=? AND type='generation' AND status IN ('queued','dispatching','submitted','generating','ready_upscale','upscale_submitted','succeeded','approved'))`)
       .bind(jobId, referenceId, "generation", "queued", "QUEUED", plan.generation_prompt, plan.generation.width, plan.generation.height, plan.generation.steps, plan.generation.seed || 0, plan.generation.randomize_seed ? 1 : 0, null, assetToken, JSON.stringify({ provider: "hf-zerogpu", workflow: "cloudflare-workflow" }), t, t, 0, 0, null, null, 0, null, null, referenceId)
       .run();
 
