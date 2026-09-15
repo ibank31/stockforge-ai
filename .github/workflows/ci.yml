@@ -26,6 +26,9 @@ jobs:
           while IFS= read -r -d '' file; do
             node --check "$file"
           done < <(find frontend/functions -type f -name '*.js' -print0)
+          node --check frontend/lib/reference-forensics.js
+      - name: Validate reference forensics contract
+        run: node --test tests/test_reference_forensics.mjs
       - name: Validate deployment configs exist
         run: |
           test -f frontend/wrangler.toml
