@@ -1,5 +1,6 @@
 const DEFAULT_HF_SPACE = "https://ibank31-stockforge-zerogpu.hf.space";
-const VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf";
+const VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
+const REASONING_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -9,6 +10,31 @@ function json(data, status = 200) {
 function now() { return new Date().toISOString(); }
 function id(prefix) { return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`; }
 function token() { return crypto.randomUUID().replaceAll("-", ""); }
+function cleanText(value, fallback = "") {
+  if (typeof value === "string") return value.replace(/\s+/g, " ").trim() || fallback;
+  if (Array.isArray(value)) return value.map(v => cleanText(v)).filter(Boolean).join("; ") || fallback;
+  return fallback;
+}
+function parseJson(value) {
+  if (value && typeof value === "object") return value;
+  if (typeof value !== "string") return null;
+  let text = value.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  try { return JSON.parse(text); } catch (_) {}
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+  if (first >= 0 && last > first) {
+    try { return JSON.parse(text.slice(first, last + 1)); } catch (_) {}
+  }
+  return null;
+}
+function unwrapResult(raw) {
+  const root = parseJson(raw) || {};
+  if (root.result && typeof root.result === "object") return root.result;
+  if (typeof root.result === "string") return parseJson(root.result) || { visual_summary: root.result };
+  if (root.response && typeof root.response === "object") return root.response;
+  if (typeof root.response === "string") return parseJson(root.response) || { visual_summary: root.response };
+  return root;
+}
 
 async function initDb(db) {
   await db.batch([
@@ -19,134 +45,203 @@ async function initDb(db) {
   ]);
 }
 
-function parseJsonDeep(value, maxDepth = 5) {
-  if (maxDepth < 0) return null;
-  if (value && typeof value === "object") return value;
-  if (typeof value !== "string") return null;
-  let text = value.trim();
-  for (let i = 0; i < 2; i++) {
-    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-    try {
-      const parsed = JSON.parse(text);
-      if (typeof parsed === "string") return parseJsonDeep(parsed, maxDepth - 1);
-      return parsed;
-    } catch (_) {
-      const start = text.indexOf("{");
-      const end = text.lastIndexOf("}");
-      if (start >= 0 && end > start) {
-        try {
-          const parsed = JSON.parse(text.slice(start, end + 1));
-          if (typeof parsed === "string") return parseJsonDeep(parsed, maxDepth - 1);
-          return parsed;
-        } catch (_) {}
-      }
-    }
-    const unescaped = text.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-    if (unescaped === text) break;
-    text = unescaped;
-  }
-  return null;
+function normalizeFacts(raw, fallbackText = "") {
+  const root = unwrapResult(raw);
+  const facts = root.reference_facts || root.visual_facts || {};
+  const scene = cleanText(root.visual_summary || root.description || root.caption || fallbackText, "No visual summary returned.");
+  const visualSignals = Array.isArray(root.commercial_signals) ? root.commercial_signals.map(v => cleanText(v)).filter(Boolean) : [];
+  return {
+    visual_summary: scene,
+    reference_facts: {
+      subject: cleanText(facts.subject || root.subject, "Dominant subject not structurally extracted."),
+      composition: cleanText(facts.composition || root.composition, "Composition not structurally extracted."),
+      viewpoint: cleanText(facts.viewpoint || root.viewpoint, "Viewpoint not structurally extracted."),
+      color_direction: cleanText(facts.color_direction || facts.palette || root.color_direction || root.palette, "Color direction not structurally extracted."),
+      context: cleanText(facts.context || root.context, "Context not structurally extracted."),
+      visible_text_or_brands: cleanText(facts.visible_text_or_brands || facts.text || root.visible_text_or_brands, "No readable brand or text information structurally extracted."),
+      people_or_property: cleanText(facts.people_or_property || root.people_or_property, "No identifiable people or recognizable private property structurally extracted."),
+    },
+    commercial_signals: visualSignals,
+  };
 }
 
-function firstObject(value) {
-  if (!value || typeof value !== "object") return null;
-  if (!Array.isArray(value)) return value;
-  return value.find(item => item && typeof item === "object") || null;
-}
-
-function cleanText(value, fallback = "") {
-  if (typeof value === "string") return value.replace(/\s+/g, " ").trim() || fallback;
-  if (Array.isArray(value)) return value.map(v => cleanText(v)).filter(Boolean).join("; ") || fallback;
-  return fallback;
+function fallbackOpportunities(facts) {
+  const subject = facts.reference_facts.subject;
+  const context = facts.reference_facts.context;
+  const base = [
+    { angle: "isolated commercial communication", composition: "clean hero composition with generous copy space", viewpoint: "three-quarter close view", context: "neutral studio-like commercial setting", use_case: "advertising layout and product messaging" },
+    { angle: "everyday lifestyle utility", composition: "subject integrated into a believable daily scene", viewpoint: "natural eye-level environmental view", context: context || "routine lifestyle context", use_case: "lifestyle marketing and editorial illustration" },
+    { angle: "workflow or process", composition: "multiple contextual elements arranged around the main subject", viewpoint: "slightly elevated documentary view", context: "work or task-oriented environment", use_case: "business process, how-to, or productivity communication" },
+    { angle: "wellness or sustainability interpretation", composition: "balanced still life with supporting natural materials", viewpoint: "top-down or controlled overhead view", context: "wellness, responsible-consumption, or sustainability context", use_case: "wellness, sustainability, or responsible-living campaigns" },
+    { angle: "seasonal or situational adaptation", composition: "dynamic scene with strong directional space for messaging", viewpoint: "wide environmental perspective", context: "specific seasonal, travel, outdoor, or situational context", use_case: "campaign banners, social media, and editorial storytelling" },
+  ];
+  return base.map((x, i) => ({
+    id: `opp_${i + 1}`,
+    title: `${x.angle}: ${subject}`,
+    subject: `${subject} reinterpreted through ${x.angle}`,
+    composition: x.composition,
+    viewpoint: x.viewpoint,
+    color_direction: i % 2 === 0 ? "natural balanced tones with controlled contrast" : "purposeful contemporary palette aligned to the use case",
+    context: x.context,
+    use_case: x.use_case,
+    why_fit: `The concept keeps the reference's visible commercial signal but changes the presentation and buyer job instead of reproducing the source image.`,
+    differences: ["subject treatment", "composition", "viewpoint", "context"],
+    similarity_risk: 0.15,
+    genericity_risk: 0.25,
+    ip_risk: 0,
+    commercial_score: 0.65,
+  }));
 }
 
 function normalizeOpportunity(raw, index) {
-  const item = firstObject(raw) || {};
-  const concept = firstObject(item.concept) || {};
+  const item = raw && typeof raw === "object" ? raw : {};
   return {
     id: cleanText(item.id, `opp_${index + 1}`),
-    title: cleanText(item.title || item.name, `New stock concept ${index + 1}`),
-    subject: cleanText(item.subject || concept.subject || item.asset, "A commercially useful new subject"),
-    composition: cleanText(item.composition || concept.composition, "A deliberate commercial composition with useful negative space"),
-    viewpoint: cleanText(item.viewpoint || concept.viewpoint, "A clearly differentiated camera viewpoint"),
-    color_direction: cleanText(item.color_direction || item.color || concept.color_direction || concept.color, "A distinct color direction appropriate to the new use case"),
-    context: cleanText(item.context || concept.context, "A new commercial context"),
-    use_case: cleanText(item.use_case || item.buyer_job || concept.use_case, "A practical stock-buyer use case"),
-    why_fit: cleanText(item.why_fit || item.rationale || item.buyer_relevance, "Derived from the visible reference and redirected to a new commercial use case."),
+    title: cleanText(item.title || item.name, `Distinct stock opportunity ${index + 1}`),
+    subject: cleanText(item.subject, "New subject treatment derived from the visible reference"),
+    composition: cleanText(item.composition, "Distinct commercial composition"),
+    viewpoint: cleanText(item.viewpoint, "Distinct camera viewpoint"),
+    color_direction: cleanText(item.color_direction || item.color, "Purposeful color direction"),
+    context: cleanText(item.context, "New commercial context"),
+    use_case: cleanText(item.use_case || item.buyer_job, "Specific buyer use case"),
+    why_fit: cleanText(item.why_fit || item.rationale, "Relevant to the visible signal without copying the reference."),
     differences: Array.isArray(item.differences) ? item.differences.map(v => cleanText(v)).filter(Boolean) : [],
+    similarity_risk: Number.isFinite(Number(item.similarity_risk)) ? Number(item.similarity_risk) : 0.25,
+    genericity_risk: Number.isFinite(Number(item.genericity_risk)) ? Number(item.genericity_risk) : 0.25,
+    ip_risk: Number.isFinite(Number(item.ip_risk)) ? Number(item.ip_risk) : 0,
+    commercial_score: Number.isFinite(Number(item.commercial_score)) ? Number(item.commercial_score) : 0.6,
   };
 }
 
-function normalizeAnalysis(raw, fallbackText = "") {
-  const root = parseJsonDeep(raw) || {};
-  const nested = root?.visual_summary && typeof root.visual_summary === "string" && root.visual_summary.trim().startsWith("{")
-    ? (parseJsonDeep(root.visual_summary) || root)
-    : root;
-  const source = nested?.visual_summary && typeof nested.visual_summary === "string" ? nested : root;
-  const opportunitiesRaw = Array.isArray(source.asset_opportunities)
-    ? source.asset_opportunities
-    : Array.isArray(source.opportunities)
-      ? source.opportunities
-      : [];
-  const referenceFacts = source.reference_facts || source.visual_facts || {};
-  const analysis = {
-    schema_version: 2,
-    visual_summary: cleanText(source.visual_summary, cleanText(fallbackText, "No structured visual summary returned.")),
-    reference_facts: {
-      subject: cleanText(referenceFacts.subject || source.subject, "Dominant subject not structurally extracted."),
-      composition: cleanText(referenceFacts.composition || source.composition, "Composition not structurally extracted."),
-      viewpoint: cleanText(referenceFacts.viewpoint || source.viewpoint, "Viewpoint not structurally extracted."),
-      color_direction: cleanText(referenceFacts.color_direction || referenceFacts.palette || source.color_direction || source.palette, "Color direction not structurally extracted."),
-      context: cleanText(referenceFacts.context || source.context, "Context not structurally extracted."),
-    },
-    commercial_signals: Array.isArray(source.commercial_signals)
-      ? source.commercial_signals.map(v => cleanText(v)).filter(Boolean)
-      : [],
-    asset_opportunities: opportunitiesRaw.slice(0, 5).map(normalizeOpportunity),
-  };
-  if (analysis.asset_opportunities.length < 5 && Array.isArray(source.asset_opportunities)) {
-    analysis.asset_opportunities = source.asset_opportunities.map(normalizeOpportunity).slice(0, 5);
-  }
-  return analysis;
+function enforceDistinctness(opportunities) {
+  const seen = new Set();
+  return opportunities.filter((item) => {
+    const key = [item.subject, item.composition, item.viewpoint, item.context].map(v => v.toLowerCase()).join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return item.ip_risk < 0.8 && item.genericity_risk < 0.85 && item.similarity_risk < 0.85;
+  });
 }
 
-async function visionAnalyze(env, imageBytes) {
+async function analyzeVision(env, imageBytes) {
   if (!env.AI) throw new Error("Cloudflare Workers AI binding is unavailable; cannot build reference intelligence.");
-  const prompt = `You are the Reference Intelligence engine for a commercial stock-asset factory. Analyze the supplied image only.
-Return ONE JSON OBJECT and nothing else. Never wrap the JSON in markdown. Do not repeat or reproduce logos, creator names, account names, earnings claims, or readable text from the image.
-Schema:
+  const prompt = `You are the visual forensics layer of a commercial stock-asset factory. Analyze only what is visible in the supplied image.
+Do not invent market performance, sales data, brands, identities, or facts not supported by the image.
+Return concise factual observations. Do NOT generate creative opportunities yet.
+Return JSON with exactly this shape:
 {
-  "visual_summary": "one concise factual description of the visible image",
+  "visual_summary": "one factual sentence",
   "reference_facts": {
-    "subject": "dominant visible subject",
-    "composition": "layout, framing, placement, negative space",
-    "viewpoint": "camera/viewpoint",
-    "color_direction": "dominant palette and lighting",
-    "context": "visible scene/context"
+    "subject": "dominant visible subject and important attributes",
+    "composition": "framing, placement, orientation, negative space, depth",
+    "viewpoint": "camera angle and distance",
+    "color_direction": "palette, lighting, contrast",
+    "context": "location or situational context that is actually visible",
+    "visible_text_or_brands": "readable text, logos or brands if visibly present; otherwise say none",
+    "people_or_property": "identifiable people, recognizable private property, artwork or distinctive objects if visibly present; otherwise say none"
   },
-  "commercial_signals": ["3-5 observable buyer/use-case signals, clearly phrased as visual inference, not sales facts"],
-  "asset_opportunities": [
-    {
-      "title": "distinct new stock concept",
-      "subject": "new subject or subject treatment",
-      "composition": "new composition",
-      "viewpoint": "new viewpoint",
-      "color_direction": "new color direction",
-      "context": "new context",
-      "use_case": "specific stock buyer use case",
-      "why_fit": "why this is relevant to the reference's visible commercial signal without copying it",
-      "differences": ["subject", "composition", "viewpoint", "context"]
-    }
-  ]
-}
-Requirements: provide exactly 5 opportunities. Each opportunity must materially change at least 3 of these dimensions: subject, composition, viewpoint, color_direction, context. Keep opportunities tightly relevant to what is visibly present in the reference. Do not invent market performance data.`;
+  "commercial_signals": ["2-5 visual inferences about plausible stock buyer jobs, clearly marked as inference"]
+}`;
   const result = await env.AI.run(VISION_MODEL, {
     image: Array.from(new Uint8Array(imageBytes)),
     prompt,
-    max_tokens: 1800,
+    max_tokens: 900,
+    temperature: 0.1,
   });
-  const rawText = typeof result === "string" ? result : (result?.description || result?.response || JSON.stringify(result));
-  return normalizeAnalysis(rawText, rawText);
+  const rawText = typeof result === "string" ? result : (result?.response || result?.result || result?.description || JSON.stringify(result));
+  return normalizeFacts(rawText, rawText);
+}
+
+async function reasonOpportunities(env, facts) {
+  const schema = {
+    type: "object",
+    properties: {
+      asset_opportunities: {
+        type: "array",
+        minItems: 5,
+        maxItems: 5,
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            title: { type: "string" },
+            subject: { type: "string" },
+            composition: { type: "string" },
+            viewpoint: { type: "string" },
+            color_direction: { type: "string" },
+            context: { type: "string" },
+            use_case: { type: "string" },
+            why_fit: { type: "string" },
+            differences: { type: "array", items: { type: "string" } },
+            similarity_risk: { type: "number" },
+            genericity_risk: { type: "number" },
+            ip_risk: { type: "number" },
+            commercial_score: { type: "number" }
+          },
+          required: ["id", "title", "subject", "composition", "viewpoint", "color_direction", "context", "use_case", "why_fit", "differences", "similarity_risk", "genericity_risk", "ip_risk", "commercial_score"]
+        }
+      }
+    },
+    required: ["asset_opportunities"]
+  };
+  const prompt = `You are the opportunity strategist for a professional stock-asset factory. The image has already been visually analyzed.
+Your job is NOT to copy the reference. Convert the visible signal into five genuinely different commercial concepts that could be produced as separate stock assets.
+Adobe Stock currently emphasizes meaningful concept diversification, commercially relevant unique value, and avoiding merely flipped, recolored, cropped, or compositionally similar iterations. Do not use artist names, real people names, fictional characters, copyrighted works, brands, logos, or government agencies in concepts. Do not invent market statistics.
+
+Reference intelligence:
+${JSON.stringify(facts)}
+
+Create exactly five opportunities. Across the five, vary the buyer job and concept, not just style. Each must materially change at least three dimensions: subject treatment, composition, viewpoint, color direction, context.
+Reject ideas that are generic enough to fit thousands of unrelated references. A good opportunity should name a concrete buyer need or communication job.
+If the reference contains a brand/logo/person/private property, use it only as a compliance warning and design a new concept that avoids reproducing it.
+Return ONLY JSON matching this schema:
+${JSON.stringify(schema)}`;
+  const result = await env.AI.run(REASONING_MODEL, {
+    prompt,
+    max_tokens: 2600,
+    temperature: 0.25,
+    response_format: {
+      type: "json_schema",
+      json_schema: schema,
+    },
+  });
+  const rawText = typeof result === "string" ? result : (result?.response || result?.result || JSON.stringify(result));
+  const root = unwrapResult(rawText);
+  const rawOpps = Array.isArray(root.asset_opportunities) ? root.asset_opportunities : [];
+  return rawOpps.map(normalizeOpportunity);
+}
+
+function buildAnalysis(facts, reasoned) {
+  const fallback = fallbackOpportunities(facts);
+  const merged = enforceDistinctness(reasoned);
+  const selected = [...merged, ...fallback].slice(0, 5);
+  while (selected.length < 5) selected.push(fallback[selected.length]);
+  return {
+    schema_version: 3,
+    visual_summary: facts.visual_summary,
+    reference_facts: facts.reference_facts,
+    commercial_signals: facts.commercial_signals,
+    asset_opportunities: selected.map(normalizeOpportunity),
+    intelligence: {
+      architecture: "vision_forensics -> commercial_reasoning -> deterministic_distinctness_guard",
+      reasoned_count: reasoned.length,
+      fallback_count: Math.max(0, 5 - merged.length),
+      review_required: true,
+    },
+  };
+}
+
+async function visionAnalyze(env, imageBytes) {
+  const facts = await analyzeVision(env, imageBytes);
+  let reasoned = [];
+  try {
+    reasoned = await reasonOpportunities(env, facts);
+  } catch (_) {
+    reasoned = [];
+  }
+  const analysis = buildAnalysis(facts, reasoned);
+  if (analysis.asset_opportunities.length < 5) throw new Error("Reference intelligence could not construct five reviewable opportunities");
+  return analysis;
 }
 
 async function sha256Hex(bytes) {
@@ -172,9 +267,6 @@ export async function onRequestPost(context) {
     const bytes = await file.arrayBuffer();
     const hash = await sha256Hex(bytes);
     const analysis = await visionAnalyze(env, bytes);
-    if (!analysis.asset_opportunities || analysis.asset_opportunities.length < 5) {
-      return json({ detail: "Reference intelligence did not return the required 5 structured opportunities", analysis }, 502);
-    }
 
     await env.ASSET_STORE.put(r2Key, bytes, { httpMetadata: { contentType: file.type } });
     const workflowId = id("wf");
@@ -183,7 +275,7 @@ export async function onRequestPost(context) {
       env.DB.prepare(`INSERT INTO references_sf (id,token,r2_key,filename,mime_type,sha256,bytes,analysis_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)`)
         .bind(referenceId, accessToken, r2Key, file.name || "reference", file.type, hash, file.size, JSON.stringify(analysis), timestamp),
       env.DB.prepare(`INSERT INTO workflows_sf (id,reference_id,status,stage,progress,message,updated_at) VALUES (?,?,?,?,?,?,?)`)
-        .bind(workflowId, referenceId, "ready", "ANALYZED", 100, "Reference intelligence is ready; choose a synchronized creative opportunity.", timestamp),
+        .bind(workflowId, referenceId, "ready", "ANALYZED", 100, "Reference intelligence is ready; review differentiated commercial opportunities.", timestamp),
     ]);
 
     return json({
@@ -192,7 +284,7 @@ export async function onRequestPost(context) {
       file: `/api/assets/${referenceId}?kind=reference&token=${accessToken}`,
       profile: analysis,
       decision: "REVIEW_REQUIRED",
-      notice: "Opportunities are derived from this reference. Commercial interpretation remains reviewable and human-controlled.",
+      notice: "Opportunities are derived from visible reference signals, filtered for distinctness and policy risk, and remain human-reviewable.",
     });
   } catch (error) {
     return json({ detail: error instanceof Error ? error.message : String(error) }, 500);
