@@ -2,105 +2,37 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { locatePrimaryAsset } from "../frontend/lib/reference-localization.js";
 
-const validPayload = (overrides = {}) => ({
-  reference_type: "RAW_ASSET",
-  confidence: 0.95,
-  asset_candidates: [{ label: "camera", confidence: 0.95, bbox_normalized: { x: 0.1, y: 0.2, width: 0.6, height: 0.5 } }],
-  primary_asset: { label: "camera", confidence: 0.95, bbox_normalized: { x: 0.1, y: 0.2, width: 0.6, height: 0.5 } },
-  ...overrides,
-});
-
-function mockEnv(response) {
-  return { AI: { async run() { return response; } } };
+function env() {
+  const calls = [];
+  return { calls, AI: { async run(model, input) {
+    calls.push({ model, input });
+    if (input.task === "query") return { answer: "green travel mug" };
+    if (input.task === "detect") return { objects: [{ x_min: 0.27, y_min: 0.31, x_max: 0.51, y_max: 0.73 }] };
+    throw new Error("unexpected task");
+  } };
 }
 
-test("dynamic primary asset localization", async () => {
-  const env = mockEnv({ response: JSON.stringify({ reference_type: "SOCIAL_MEDIA_POST", confidence: 0.96, presentation_elements: ["social chrome"], evidence_elements: ["caption"], asset_candidates: [{ label: "green travel mug", confidence: 0.94, bbox_normalized: { x: 0.27, y: 0.31, width: 0.24, height: 0.42 }, why_asset: "standalone reusable object" }], primary_asset: { label: "green travel mug", confidence: 0.94, bbox_normalized: { x: 0.27, y: 0.31, width: 0.24, height: 0.42 }, why_asset: "most salient reusable asset" }, primary_asset_candidate: "green travel mug" }) });
-  const result = await locatePrimaryAsset(env, Uint8Array.from([1,2,3]).buffer, "image/png");
+test("Moondream dynamically identifies and localizes the primary asset", async () => {
+  const e = env();
+  const result = await locatePrimaryAsset(e, Uint8Array.from([1,2,3]).buffer, "image/png");
   assert.equal(result.stage, "ASSET_LOCALIZATION");
   assert.equal(result.primary_asset.label, "green travel mug");
   assert.deepEqual(result.localization.primary_bbox, { x: 0.27, y: 0.31, width: 0.24, height: 0.42 });
+  assert.equal(result.localization.method, "moondream_query_detect");
+  assert.equal(e.calls[0].model, "@cf/moondream/moondream3.1-9B-A2B");
+  assert.equal(e.calls[0].input.task, "query");
+  assert.match(e.calls[0].input.image, /^data:image\/png;base64,/);
+  assert.equal(e.calls[1].input.task, "detect");
+  assert.equal(e.calls[1].input.target, "green travel mug");
 });
 
-test("Workers AI JSON mode object response is accepted", async () => {
-  const env = mockEnv({ response: validPayload({ reference_type: "MARKETPLACE_SCREENSHOT" }) });
-  const result = await locatePrimaryAsset(env, Uint8Array.from([1,2,3]).buffer, "image/webp");
-  assert.equal(result.primary_asset.label, "camera");
-  assert.equal(result.reference_type, "MARKETPLACE_SCREENSHOT");
+test("localization fails closed when detection returns no objects", async () => {
+  const e = { AI: { async run(_model, input) { if (input.task === "query") return { answer: "camera" }; return { objects: [] }; } } };
+  await assert.rejects(() => locatePrimaryAsset(e, Uint8Array.from([1]).buffer, "image/png"), /ASSET_LOCALIZATION_FAILED/);
 });
 
-test("nested Workers AI response object is accepted", async () => {
-  const env = mockEnv({ result: { response: validPayload({ reference_type: "PRODUCT_PAGE" }) } });
-  const result = await locatePrimaryAsset(env, Uint8Array.from([1,2,3]).buffer, "image/jpeg");
-  assert.equal(result.primary_asset.label, "camera");
-  assert.equal(result.reference_type, "PRODUCT_PAGE");
-});
-
-test("missing bbox fails closed", async () => {
-  const env = mockEnv({ response: JSON.stringify({ reference_type: "RAW_ASSET", confidence: 0.9, asset_candidates: [], primary_asset: { label: "thing", confidence: 0.9, bbox_normalized: null } }) });
-  await assert.rejects(() => locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png"), /ASSET_LOCALIZATION_FAILED/);
-});
-
-test("valid primary asset remains usable when candidate list is omitted", async () => {
-  const env = mockEnv({ response: JSON.stringify({
-    reference_type: "EMAIL_SCREENSHOT",
-    confidence: 0.35,
-    asset_candidates: [],
-    primary_asset: {
-      label: "illustrated school backpack",
-      confidence: 0.91,
-      bbox_normalized: { x: 0.31, y: 0.24, width: 0.36, height: 0.49 },
-      why_asset: "the reusable visual subject",
-    },
-  }) });
-  const result = await locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png");
-  assert.equal(result.primary_asset.label, "illustrated school backpack");
-  assert.equal(result.asset_candidates.length, 1);
-  assert.deepEqual(result.localization.primary_bbox, { x: 0.31, y: 0.24, width: 0.36, height: 0.49 });
-});
-
-test("primary asset can be recovered from an object primary_asset_candidate", async () => {
-  const env = mockEnv({ response: JSON.stringify({
-    reference_type: "RAW_ASSET",
-    confidence: 0.9,
-    asset_candidates: [],
-    primary_asset: "camera",
-    primary_asset_candidate: {
-      label: "camera",
-      confidence: 0.88,
-      bbox: { xmin: 0.1, ymin: 0.2, xmax: 0.7, ymax: 0.7 },
-    },
-  }) });
-  const result = await locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png");
-  assert.equal(result.primary_asset.label, "camera");
-  assert.deepEqual(result.localization.primary_bbox, { x: 0.1, y: 0.2, width: 0.6, height: 0.49999999999999994 });
-});
-
-test("best valid candidate can recover an invalid primary asset", async () => {
-  const env = mockEnv({ response: JSON.stringify({
-    reference_type: "SOCIAL_MEDIA_POST",
-    confidence: 0.9,
-    asset_candidates: [
-      { label: "irrelevant", confidence: 0.3, bbox_normalized: { x: 0.1, y: 0.1, width: 0.1, height: 0.1 } },
-      { label: "green travel mug", confidence: 0.91, bbox_normalized: { x: 0.2, y: 0.3, width: 0.3, height: 0.4 } },
-    ],
-    primary_asset: { label: "green travel mug", confidence: 0.2, bbox_normalized: null },
-  }) });
-  const result = await locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png");
-  assert.equal(result.primary_asset.label, "green travel mug");
-  assert.equal(result.primary_asset.confidence, 0.91);
-});
-
-test("vision image uses the native Workers AI image input", async () => {
-  let captured;
-  const env = { AI: { async run(model, input) {
-    captured = { model, input };
-    return { response: JSON.stringify(validPayload()) };
-  } } };
-  await locatePrimaryAsset(env, Uint8Array.from([1,2,3]).buffer, "image/png");
-  assert.equal(captured.model, "@cf/google/gemma-4-26b-a4b-it");
-  assert.match(captured.input.image, /^[A-Za-z0-9+/]+=*$/);
-  assert.equal(captured.input.image.includes("data:image/png;base64,"), false);
-  assert.equal(typeof captured.input.prompt, "string");
-  assert.match(captured.input.prompt, /spatial asset locator/i);
+test("detection coordinates are normalized to the image contract", async () => {
+  const e = { AI: { async run(_model, input) { if (input.task === "query") return { answer: "backpack" }; return { objects: [{ x_min: 0, y_min: 0.1, x_max: 1, y_max: 1 }] }; } } };
+  const result = await locatePrimaryAsset(e, Uint8Array.from([1]).buffer, "image/webp");
+  assert.deepEqual(result.primary_asset.bbox_normalized, { x: 0, y: 0.1, width: 1, height: 0.9 });
 });
