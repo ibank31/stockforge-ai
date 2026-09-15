@@ -47,6 +47,7 @@ def test_remote_provider_creates_missing_output_directory(tmp_path: Path):
     )
     assert provider.output_dir == output_dir.resolve()
     assert output_dir.is_dir()
+    assert (output_dir / ".remote-gradio").is_dir()
 
 
 def test_remote_provider_uses_live_generate_remote_contract(
@@ -85,6 +86,70 @@ def test_remote_provider_uses_live_generate_remote_contract(
             ]
         },
     }
+
+
+def test_remote_provider_reuses_persisted_event_after_restart(tmp_path: Path, monkeypatch):
+    first = RemoteGradioProvider(
+        provider_id="huggingface-zerogpu",
+        base_url="https://example.invalid",
+        output_dir=tmp_path,
+    )
+    monkeypatch.setattr(
+        first,
+        "_request_json",
+        lambda method, path, payload: {"event_id": "event-restart"},
+    )
+    request = GenerationRequest(prompt="durable restart test")
+    first.submit(request, provider_job_id="job-restart")
+
+    second = RemoteGradioProvider(
+        provider_id="huggingface-zerogpu",
+        base_url="https://example.invalid",
+        output_dir=tmp_path,
+    )
+
+    def unexpected_request(*_args, **_kwargs):
+        raise AssertionError("restart recovery must not submit the remote job twice")
+
+    monkeypatch.setattr(second, "_request_json", unexpected_request)
+    recovered = second.submit(request, provider_job_id="job-restart")
+
+    assert recovered.provider_job_id == "job-restart"
+    assert second._events["job-restart"] == "event-restart"
+
+
+def test_remote_provider_persists_and_reloads_output_refs(tmp_path: Path, monkeypatch):
+    provider = RemoteGradioProvider(
+        provider_id="huggingface-zerogpu",
+        base_url="https://example.invalid",
+        output_dir=tmp_path,
+    )
+    monkeypatch.setattr(
+        provider,
+        "_request_text",
+        lambda method, path: (
+            "event: complete\n"
+            'data: [{"url":"https://example/result.png","orig_name":"result.png"}, 7, 1.25]\n'
+        ),
+    )
+    monkeypatch.setattr(provider, "_download", lambda url, target: target.write_bytes(b"png"))
+    provider._events["job-output"] = "event-output"
+    provider._save_event("job-output", "event-output")
+
+    completed = provider._poll("job-output")
+    assert completed.state == "completed"
+    assert provider.output_refs("job-output") == (
+        {"filename": "job-output-0.png", "subfolder": "", "type": "output"},
+    )
+
+    restarted = RemoteGradioProvider(
+        provider_id="huggingface-zerogpu",
+        base_url="https://example.invalid",
+        output_dir=tmp_path,
+    )
+    assert restarted.output_refs("job-output") == (
+        {"filename": "job-output-0.png", "subfolder": "", "type": "output"},
+    )
 
 
 def test_active_zerogpu_app_registers_generate_remote_endpoint():
