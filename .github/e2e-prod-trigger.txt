@@ -1,1 +1,1 @@
-Production E2E trigger for reference intelligence and generation boundary validation.
+Production E2E trigger: semantic opportunity difference labels regression.
