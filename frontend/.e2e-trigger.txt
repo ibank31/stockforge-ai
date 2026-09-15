@@ -1,3 +1,4 @@
 E2E_PROD trigger for generation-boundary verification.
 Vision fallback contract checkpoint: multimodal Gemma.
 Opportunity difference contract checkpoint: four canonical dimensions.
+Remote dispatcher checkpoint: production deploy via workflow_dispatch.
