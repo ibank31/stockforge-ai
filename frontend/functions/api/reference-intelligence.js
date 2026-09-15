@@ -2,7 +2,7 @@ import { analyzeReferenceAssetV2 } from "../../lib/reference-analysis-v2.js";
 
 const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-function json(data,status=200){return Response.json(data,{status,headers:{"cache-control":"no-store"}})}
+function json(data,status=200){return Response.json(data,{status,headers:{"cache-control":"no-store","x-stockforge-reference-analysis":"v2-multimodal"}})}
 function id(prefix){return `${prefix}_${crypto.randomUUID().replaceAll("-","")}`} function token(){return crypto.randomUUID().replaceAll("-","")}
 async function initDb(db){await db.batch([db.prepare(`CREATE TABLE IF NOT EXISTS references_sf (id TEXT PRIMARY KEY, token TEXT NOT NULL, r2_key TEXT NOT NULL, filename TEXT, mime_type TEXT NOT NULL, sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, analysis_json TEXT, created_at TEXT NOT NULL)`),db.prepare(`CREATE TABLE IF NOT EXISTS workflows_sf (id TEXT PRIMARY KEY, reference_id TEXT NOT NULL, status TEXT NOT NULL, stage TEXT NOT NULL, progress INTEGER NOT NULL, message TEXT, updated_at TEXT NOT NULL)`)])}
 async function sha256Hex(bytes){const b=await crypto.subtle.digest("SHA-256",bytes);return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
