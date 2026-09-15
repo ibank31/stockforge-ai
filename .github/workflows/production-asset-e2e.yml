@@ -48,7 +48,6 @@ jobs:
           test "$GEN_CODE" = "200"
           JOB_ID=$(node -e 'const x=require("./generate.json"); if(!x.job_id)process.exit(1); process.stdout.write(x.job_id)')
           echo "JOB_ID=$JOB_ID"
-          FINAL_STATUS=""
           for i in $(seq 1 90); do
             curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
             STATUS=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.status||""))')
@@ -62,7 +61,13 @@ jobs:
           test "$STATUS" = "ready_upscale"
           UPSCALE_CODE=$(curl -sS -o upscale.json -w '%{http_code}' -X POST "$BASE_URL/api/jobs/$JOB_ID/upscale")
           echo "upscale HTTP=$UPSCALE_CODE"
-          test "$UPSCALE_CODE" = "200"
+          if [ "$UPSCALE_CODE" != "200" ]; then
+            echo "UPSCALE RESPONSE:"
+            cat upscale.json
+            echo "JOB AFTER UPSCALE FAILURE:"
+            curl -sS "$BASE_URL/api/jobs/$JOB_ID" || true
+            exit 1
+          fi
           for i in $(seq 1 90); do
             curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
             STATUS=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.status||""))')
