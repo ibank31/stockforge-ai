@@ -63,12 +63,7 @@ function normalize(value) {
     .map(assetCandidate)
     .filter(candidate => candidate.label && candidate.bbox_normalized)
     .slice(0, 8);
-
-  // A model may identify the primary asset correctly without repeating it in the
-  // optional candidate list. Preserve that evidence; an absent/invalid primary
-  // bbox still fails closed below.
   if (primary.label && primary.bbox_normalized && !candidates.some(candidate => sameCandidate(candidate, primary))) candidates.unshift(primary);
-
   return {
     reference_type: TYPES.has(raw.reference_type) ? raw.reference_type : "UNKNOWN",
     confidence: score(raw.confidence) || 0,
@@ -95,8 +90,9 @@ export async function locatePrimaryAsset(env, imageBytes, mimeType) {
   const result = await env.AI.run(MODEL, {
     messages: [
       { role: "system", content: "Strict visual locator. JSON only." },
-      { role: "user", content: [{ type: "text", text: prompt() }, { type: "image_url", image_url: { url: dataUrl(imageBytes, mimeType) } }] },
+      { role: "user", content: prompt() },
     ],
+    image: dataUrl(imageBytes, mimeType),
     max_tokens: 1800,
     temperature: 0.02,
     chat_template_kwargs: { enable_thinking: false },
