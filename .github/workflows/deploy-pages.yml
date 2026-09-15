@@ -89,7 +89,7 @@ jobs:
           curl -fsS "$BASE_URL/" | grep -q "StockForge V2"
           echo "page.dev smoke test passed"
       - name: One-time full page.dev E2E
-        if: steps.credential.outputs.configured == 'true' && github.event_name == 'push' && github.event.head_commit.message == 'test: full page.dev e2e'
+        if: steps.credential.outputs.configured == 'true' && github.event_name == 'push' && github.event.head_commit.message == 'E2E_PROD'
         run: |
           set -euo pipefail
           BASE_URL="https://${PAGES_PROJECT}.pages.dev"
@@ -98,16 +98,8 @@ jobs:
           from pathlib import Path
           Path('/tmp/reference.png').write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='))
           PY
-          curl -fsS -X POST \
-            -F 'file=@/tmp/reference.png;type=image/png' \
-            "$BASE_URL/api/references" > reference.json
-          node - <<'NODE'
-          const fs=require('fs');
-          const x=JSON.parse(fs.readFileSync('reference.json','utf8'));
-          if(!x.reference_id) throw new Error('reference upload failed: '+JSON.stringify(x));
-          fs.writeFileSync('ref.id',x.reference_id);
-          console.log('reference_id='+x.reference_id);
-          NODE
+          curl -fsS -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/references" > reference.json
+          node -e 'const x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); console.log("reference_id="+x.reference_id); require("fs").writeFileSync("ref.id",x.reference_id)'
           REF_ID=$(cat ref.id)
           cat > plan.json <<'JSON'
           {
@@ -126,51 +118,27 @@ jobs:
             "proposed_use_case": "editorial productivity, business planning and website hero banner"
           }
           JSON
-          curl -fsS -X POST -H 'content-type: application/json' --data @plan.json \
-            "$BASE_URL/api/references/$REF_ID/plan" > plan-response.json
-          node - <<'NODE'
-          const fs=require('fs');
-          const x=JSON.parse(fs.readFileSync('plan-response.json','utf8'));
-          if(x.decision!=='READY_TO_GENERATE' || !x.plan) throw new Error('plan failed: '+JSON.stringify(x));
-          console.log('plan=READY_TO_GENERATE');
-          NODE
+          curl -fsS -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan" > plan-response.json
+          node -e 'const x=require("./plan-response.json"); if(x.decision!=="READY_TO_GENERATE" || !x.plan) throw Error(JSON.stringify(x)); console.log("plan=READY_TO_GENERATE")'
           curl -fsS -X POST "$BASE_URL/api/references/$REF_ID/generate" > generate.json
-          node - <<'NODE'
-          const fs=require('fs');
-          const x=JSON.parse(fs.readFileSync('generate.json','utf8'));
-          if(!x.job_id || !x.workflow_id) throw new Error('generate failed: '+JSON.stringify(x));
-          fs.writeFileSync('workflow.id',x.workflow_id);
-          fs.writeFileSync('job.id',x.job_id);
-          console.log('job_id='+x.job_id);
-          console.log('workflow_id='+x.workflow_id);
-          NODE
+          node -e 'const x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("job_id="+x.job_id); console.log("workflow_id="+x.workflow_id); require("fs").writeFileSync("workflow.id",x.workflow_id); require("fs").writeFileSync("job.id",x.job_id)'
           WF_ID=$(cat workflow.id)
           JOB_ID=$(cat job.id)
+          completed=false
           for i in $(seq 1 120); do
             sleep 10
             curl -fsS "$BASE_URL/api/workflows/$WF_ID" > workflow.json
-            node - <<'NODE'
-            const fs=require('fs');
-            const x=JSON.parse(fs.readFileSync('workflow.json','utf8'));
-            console.log(`stage=${x.current_stage} progress=${x.progress} status=${x.status} job=${x.job?.status||'n/a'}`);
-            if(x.status==='blocked' || x.job?.status==='failed') process.exit(2);
-            if(x.job?.status==='succeeded') process.exit(10);
-            NODE
-            rc=$?
-            if [ "$rc" -eq 10 ]; then break; fi
-            if [ "$rc" -eq 2 ]; then echo 'Production E2E failed or blocked'; cat workflow.json; exit 1; fi
+            STATE=$(node -e 'const x=require("./workflow.json"); console.log(`${x.status}|${x.current_stage}|${x.progress}|${x.job?.status||"n/a"}`)')
+            echo "$STATE"
+            STATUS=$(printf '%s' "$STATE" | cut -d'|' -f1)
+            JOB_STATUS=$(printf '%s' "$STATE" | cut -d'|' -f4)
+            if [ "$STATUS" = "blocked" ] || [ "$JOB_STATUS" = "failed" ]; then
+              cat workflow.json
+              exit 1
+            fi
+            if [ "$JOB_STATUS" = "succeeded" ]; then completed=true; break; fi
           done
-          test -f workflow.json
-          node - <<'NODE'
-          const fs=require('fs');
-          const x=JSON.parse(fs.readFileSync('workflow.json','utf8'));
-          if(x.job?.status!=='succeeded') throw new Error('generation pipeline did not reach succeeded state: '+JSON.stringify(x));
-          NODE
+          test "$completed" = true
           curl -fsS -X POST "$BASE_URL/api/jobs/$JOB_ID/qa" > qa.json
-          node - <<'NODE'
-          const fs=require('fs');
-          const x=JSON.parse(fs.readFileSync('qa.json','utf8'));
-          if(!x.technical_qa || !String(x.technical_qa.status).startsWith('PASS')) throw new Error('QA failed: '+JSON.stringify(x));
-          console.log('technical QA passed');
-          NODE
+          node -e 'const x=require("./qa.json"); if(!x.technical_qa || !String(x.technical_qa.status).startsWith("PASS")) throw Error(JSON.stringify(x)); console.log("technical QA passed")'
           echo "FULL PAGE.DEV E2E PASSED"
