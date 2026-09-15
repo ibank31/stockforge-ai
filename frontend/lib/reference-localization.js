@@ -30,21 +30,27 @@ function score(value) {
 }
 
 function bbox(value) {
+  if (Array.isArray(value) && value.length >= 4) {
+    const [x1, y1, x2, y2] = value.map(score);
+    if ([x1, y1, x2, y2].every(Number.isFinite) && x2 > x1 && y2 > y1) {
+      return bbox({ x: x1, y: y1, width: x2 - x1, height: y2 - y1 });
+    }
+  }
   if (!value || typeof value !== "object") return null;
-  const x = score(value.x);
-  const y = score(value.y);
-  const width = score(value.width);
-  const height = score(value.height);
+  const x = score(value.x ?? value.left ?? value.x_min);
+  const y = score(value.y ?? value.top ?? value.y_min);
+  const width = score(value.width ?? ((Number.isFinite(Number(value.x_max)) && Number.isFinite(Number(value.x_min))) ? Number(value.x_max) - Number(value.x_min) : NaN));
+  const height = score(value.height ?? ((Number.isFinite(Number(value.y_max)) && Number.isFinite(Number(value.y_min))) ? Number(value.y_max) - Number(value.y_min) : NaN));
   if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0 || x + width > 1.0001 || y + height > 1.0001) return null;
   return { x, y, width: Math.min(width, 1 - x), height: Math.min(height, 1 - y) };
 }
 
 function assetCandidate(value) {
   return {
-    label: String(value?.label || "").trim(),
-    confidence: score(value?.confidence) || 0,
-    bbox_normalized: bbox(value?.bbox_normalized),
-    why_asset: String(value?.why_asset || "").trim(),
+    label: String(value?.label || value?.name || value?.subject || "").trim(),
+    confidence: score(value?.confidence ?? value?.score) || 0,
+    bbox_normalized: bbox(value?.bbox_normalized || value?.bbox || value?.bounding_box),
+    why_asset: String(value?.why_asset || value?.reason || "").trim(),
   };
 }
 
@@ -58,8 +64,9 @@ function sameCandidate(left, right) {
 
 function normalize(value) {
   const raw = parse(value) || {};
-  const primary = assetCandidate({ ...(raw.primary_asset || {}), label: raw.primary_asset?.label || raw.primary_asset_candidate || "" });
-  const candidates = (Array.isArray(raw.asset_candidates) ? raw.asset_candidates : [])
+  const primaryRaw = raw.primary_asset || raw.primary_asset_candidate || raw.primary || {};
+  const primary = assetCandidate({ ...primaryRaw, label: primaryRaw?.label || raw.primary_asset_candidate || raw.primary_subject || "" });
+  const candidates = (Array.isArray(raw.asset_candidates) ? raw.asset_candidates : Array.isArray(raw.candidates) ? raw.candidates : [])
     .map(assetCandidate)
     .filter(candidate => candidate.label && candidate.bbox_normalized)
     .slice(0, 8);
@@ -74,8 +81,8 @@ function normalize(value) {
   };
 }
 
-function prompt() {
-  return `You are the spatial asset locator for a commercial visual-asset factory. Analyze ANY supplied image; never assume a fixed subject. Separate presentation/UI/evidence from the actual reusable visual asset. Identify up to 8 plausible reusable asset candidates and give a TIGHT normalized bounding box for each. Exclude UI, text, platform chrome, margins, unrelated background, watermarks and sales-proof elements unless they are themselves the deliberate standalone asset. Coordinates: x=left,y=top,width,height, all 0..1 relative to the full image. Select ONE primary asset using visual salience and standalone commercial reuse potential. For multi-object references, a coherent asset set may be a candidate. For raw assets, the box can cover most of the canvas. If no real asset can be located confidently, use null primary bbox; never invent facts. Return ONLY JSON with reference_type, confidence, presentation_elements, evidence_elements, asset_candidates, primary_asset, primary_asset_candidate.`;
+function prompt(retry = false) {
+  return `You are the spatial asset locator for a commercial visual-asset factory. Analyze ANY supplied image; never assume a fixed subject. Separate presentation/UI/evidence from the actual reusable visual asset. Identify up to 8 plausible reusable asset candidates and give a TIGHT normalized bounding box for each. Exclude UI, text, platform chrome, margins, unrelated background, watermarks and sales-proof elements unless they are themselves the deliberate standalone asset. Coordinates: x=left,y=top,width,height, all 0..1 relative to the full image. Select ONE primary asset using visual salience and standalone commercial reuse potential. For multi-object references, a coherent asset set may be a candidate. For raw assets, the box can cover most of the canvas. If no real asset can be located confidently, use null primary bbox; never invent facts. IMPORTANT: primary_asset must be an object with label, confidence and bbox_normalized; bbox_normalized MUST be an object with numeric x,y,width,height, not an array. Return ONLY a JSON object, no markdown.${retry ? " Previous localization was rejected, so be especially strict about providing a valid primary_asset bbox." : ""} Return ONLY JSON with reference_type, confidence, presentation_elements, evidence_elements, asset_candidates, primary_asset, primary_asset_candidate.`;
 }
 
 function dataUrl(bytes, mime) {
@@ -85,19 +92,26 @@ function dataUrl(bytes, mime) {
   return `data:${mime};base64,${btoa(binary)}`;
 }
 
-export async function locatePrimaryAsset(env, imageBytes, mimeType) {
-  if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
-  const result = await env.AI.run(MODEL, {
+async function runLocator(env, imageBytes, mimeType, retry = false) {
+  return env.AI.run(MODEL, {
     messages: [
-      { role: "system", content: "Strict visual locator. JSON only." },
-      { role: "user", content: prompt() },
+      { role: "system", content: "Strict visual locator. Return a valid JSON object only." },
+      { role: "user", content: prompt(retry) },
     ],
     image: dataUrl(imageBytes, mimeType),
+    response_format: { type: "json_object" },
     max_tokens: 1800,
-    temperature: 0.02,
+    temperature: retry ? 0 : 0.02,
     chat_template_kwargs: { enable_thinking: false },
   });
-  const output = normalize(responseText(result));
+}
+
+export async function locatePrimaryAsset(env, imageBytes, mimeType) {
+  if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
+  let output = normalize(responseText(await runLocator(env, imageBytes, mimeType, false)));
+  if (!(output.primary_asset.confidence >= 0.5 && output.primary_asset.label && output.primary_asset.bbox_normalized && output.asset_candidates.length)) {
+    output = normalize(responseText(await runLocator(env, imageBytes, mimeType, true)));
+  }
   if (!(output.primary_asset.confidence >= 0.5 && output.primary_asset.label && output.primary_asset.bbox_normalized && output.asset_candidates.length)) throw new Error("ASSET_LOCALIZATION_FAILED");
   return {
     schema_version: 1,
