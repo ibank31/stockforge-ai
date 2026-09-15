@@ -1,6 +1,6 @@
 const DEFAULT_HF_SPACE = "https://ibank31-stockforge-zerogpu.hf.space";
-const VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
-const REASONING_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const VISION_MODEL = "@cf/google/gemma-4-26b-a4b-it";
+const REASONING_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -53,7 +53,7 @@ function normalizeFacts(raw, fallbackText = "") {
   return {
     visual_summary: scene,
     reference_facts: {
-      subject: cleanText(facts.subject || root.subject, "Dominant subject not structurally extracted."),
+      subject: cleanText(facts.subject || root.subject, "Dominant visible subject not structurally extracted."),
       composition: cleanText(facts.composition || root.composition, "Composition not structurally extracted."),
       viewpoint: cleanText(facts.viewpoint || root.viewpoint, "Viewpoint not structurally extracted."),
       color_direction: cleanText(facts.color_direction || facts.palette || root.color_direction || root.palette, "Color direction not structurally extracted."),
@@ -69,11 +69,11 @@ function fallbackOpportunities(facts) {
   const subject = facts.reference_facts.subject;
   const context = facts.reference_facts.context;
   const base = [
-    { angle: "isolated commercial communication", composition: "clean hero composition with generous copy space", viewpoint: "three-quarter close view", context: "neutral studio-like commercial setting", use_case: "advertising layout and product messaging" },
-    { angle: "everyday lifestyle utility", composition: "subject integrated into a believable daily scene", viewpoint: "natural eye-level environmental view", context: context || "routine lifestyle context", use_case: "lifestyle marketing and editorial illustration" },
-    { angle: "workflow or process", composition: "multiple contextual elements arranged around the main subject", viewpoint: "slightly elevated documentary view", context: "work or task-oriented environment", use_case: "business process, how-to, or productivity communication" },
-    { angle: "wellness or sustainability interpretation", composition: "balanced still life with supporting natural materials", viewpoint: "top-down or controlled overhead view", context: "wellness, responsible-consumption, or sustainability context", use_case: "wellness, sustainability, or responsible-living campaigns" },
-    { angle: "seasonal or situational adaptation", composition: "dynamic scene with strong directional space for messaging", viewpoint: "wide environmental perspective", context: "specific seasonal, travel, outdoor, or situational context", use_case: "campaign banners, social media, and editorial storytelling" },
+    { angle: "isolated commercial communication", composition: "clean hero composition with generous copy space", viewpoint: "three-quarter close view", context: "neutral commercial setting", use_case: "advertising layout and product messaging" },
+    { angle: "everyday lifestyle utility", composition: "subject integrated into a believable daily scene", viewpoint: "natural eye-level environmental view", context: context || "routine lifestyle context", use_case: "lifestyle marketing communication" },
+    { angle: "workflow or process", composition: "supporting elements arranged around the main subject", viewpoint: "slightly elevated documentary view", context: "work or task-oriented environment", use_case: "business process or productivity communication" },
+    { angle: "wellness or sustainability", composition: "balanced still life with contextual natural materials", viewpoint: "controlled overhead view", context: "wellness or responsible-consumption context", use_case: "wellness or sustainability campaigns" },
+    { angle: "situational campaign", composition: "wide environmental scene with deliberate copy space", viewpoint: "wide environmental perspective", context: "specific seasonal or situational context", use_case: "campaign banners and editorial storytelling" },
   ];
   return base.map((x, i) => ({
     id: `opp_${i + 1}`,
@@ -84,7 +84,7 @@ function fallbackOpportunities(facts) {
     color_direction: i % 2 === 0 ? "natural balanced tones with controlled contrast" : "purposeful contemporary palette aligned to the use case",
     context: x.context,
     use_case: x.use_case,
-    why_fit: `The concept keeps the reference's visible commercial signal but changes the presentation and buyer job instead of reproducing the source image.`,
+    why_fit: "Controlled fallback concept only; it keeps the visible commercial signal while changing presentation and buyer job.",
     differences: ["subject treatment", "composition", "viewpoint", "context"],
     similarity_risk: 0.15,
     genericity_risk: 0.25,
@@ -147,63 +147,50 @@ Return JSON with exactly this shape:
     prompt,
     max_tokens: 900,
     temperature: 0.1,
+    chat_template_kwargs: { enable_thinking: false },
   });
   const rawText = typeof result === "string" ? result : (result?.response || result?.result || result?.description || JSON.stringify(result));
   return normalizeFacts(rawText, rawText);
 }
 
 async function reasonOpportunities(env, facts) {
-  const schema = {
-    type: "object",
-    properties: {
-      asset_opportunities: {
-        type: "array",
-        minItems: 5,
-        maxItems: 5,
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            title: { type: "string" },
-            subject: { type: "string" },
-            composition: { type: "string" },
-            viewpoint: { type: "string" },
-            color_direction: { type: "string" },
-            context: { type: "string" },
-            use_case: { type: "string" },
-            why_fit: { type: "string" },
-            differences: { type: "array", items: { type: "string" } },
-            similarity_risk: { type: "number" },
-            genericity_risk: { type: "number" },
-            ip_risk: { type: "number" },
-            commercial_score: { type: "number" }
-          },
-          required: ["id", "title", "subject", "composition", "viewpoint", "color_direction", "context", "use_case", "why_fit", "differences", "similarity_risk", "genericity_risk", "ip_risk", "commercial_score"]
-        }
-      }
-    },
-    required: ["asset_opportunities"]
-  };
   const prompt = `You are the opportunity strategist for a professional stock-asset factory. The image has already been visually analyzed.
-Your job is NOT to copy the reference. Convert the visible signal into five genuinely different commercial concepts that could be produced as separate stock assets.
-Adobe Stock currently emphasizes meaningful concept diversification, commercially relevant unique value, and avoiding merely flipped, recolored, cropped, or compositionally similar iterations. Do not use artist names, real people names, fictional characters, copyrighted works, brands, logos, or government agencies in concepts. Do not invent market statistics.
+Your job is NOT to copy the reference. Convert the visible signal into exactly five genuinely different commercial concepts that could be produced as separate stock assets.
+Adobe Stock emphasizes meaningful concept diversification and commercially relevant unique value. Avoid merely flipped, recolored, cropped, or compositionally similar iterations.
+Do not use artist names, real people names, fictional characters, copyrighted works, brands, logos, government agencies, or invented market statistics.
+If the reference contains a brand, logo, person, artwork, or recognizable private property, treat it as a compliance warning and design a new concept that avoids reproducing it.
+Each concept must materially change at least three dimensions: subject treatment, composition, viewpoint, color direction, context.
+Each must identify a concrete buyer communication job and be specific enough that it would not fit thousands of unrelated references.
 
 Reference intelligence:
 ${JSON.stringify(facts)}
 
-Create exactly five opportunities. Across the five, vary the buyer job and concept, not just style. Each must materially change at least three dimensions: subject treatment, composition, viewpoint, color direction, context.
-Reject ideas that are generic enough to fit thousands of unrelated references. A good opportunity should name a concrete buyer need or communication job.
-If the reference contains a brand/logo/person/private property, use it only as a compliance warning and design a new concept that avoids reproducing it.
-Return ONLY JSON matching this schema:
-${JSON.stringify(schema)}`;
+Return ONLY valid JSON. No markdown, no explanation. Use exactly this structure:
+{
+  "asset_opportunities": [
+    {
+      "id": "opp_1",
+      "title": "short concept title",
+      "subject": "specific subject treatment",
+      "composition": "specific composition",
+      "viewpoint": "specific viewpoint",
+      "color_direction": "specific color and lighting direction",
+      "context": "specific commercial context",
+      "use_case": "specific buyer communication job",
+      "why_fit": "why this is commercially useful and distinct",
+      "differences": ["difference 1", "difference 2", "difference 3"],
+      "similarity_risk": 0.0,
+      "genericity_risk": 0.0,
+      "ip_risk": 0.0,
+      "commercial_score": 0.0
+    }
+  ]
+}`;
   const result = await env.AI.run(REASONING_MODEL, {
     prompt,
-    max_tokens: 2600,
-    temperature: 0.25,
-    response_format: {
-      type: "json_schema",
-      json_schema: schema,
-    },
+    max_tokens: 2800,
+    temperature: 0.2,
+    chat_template_kwargs: { enable_thinking: false },
   });
   const rawText = typeof result === "string" ? result : (result?.response || result?.result || JSON.stringify(result));
   const root = unwrapResult(rawText);
@@ -217,13 +204,15 @@ function buildAnalysis(facts, reasoned) {
   const selected = [...merged, ...fallback].slice(0, 5);
   while (selected.length < 5) selected.push(fallback[selected.length]);
   return {
-    schema_version: 3,
+    schema_version: 4,
     visual_summary: facts.visual_summary,
     reference_facts: facts.reference_facts,
     commercial_signals: facts.commercial_signals,
     asset_opportunities: selected.map(normalizeOpportunity),
     intelligence: {
-      architecture: "vision_forensics -> commercial_reasoning -> deterministic_distinctness_guard",
+      architecture: "gemma4_vision_forensics -> gemma4_commercial_reasoning -> deterministic_distinctness_guard",
+      vision_model: VISION_MODEL,
+      reasoning_model: REASONING_MODEL,
       reasoned_count: reasoned.length,
       fallback_count: Math.max(0, 5 - merged.length),
       review_required: true,
