@@ -38,6 +38,8 @@ jobs:
           node --check deploy/pipeline-worker/src/index.js
           node --check 'frontend/functions/api/jobs/[jobId]/upscale.js'
           node --check 'frontend/functions/api/references/[referenceId]/generate.js'
+          node --check frontend/functions/api/reference-intelligence.js
+          node --check frontend/lib/reference-intelligence.js
       - name: Install Wrangler
         if: steps.credential.outputs.configured == 'true'
         run: npm install --global wrangler@4
@@ -103,20 +105,25 @@ jobs:
           import struct, zlib
           from pathlib import Path
 
-          width = height = 64
+          width = height = 256
           rows = []
           for y in range(height):
               row = bytearray([0])
               for x in range(width):
-                  if x < width // 2 and y < height // 2:
-                      rgb = (33, 58, 83)
-                  elif x >= width // 2 and y < height // 2:
-                      rgb = (238, 232, 213)
-                  elif x < width // 2 and y >= height // 2:
-                      rgb = (196, 125, 72)
+                  # Warm wall, green plant, blue mug, notebook and wooden table.
+                  if y < 120:
+                      base = (238, 232, 213)
                   else:
-                      rgb = (62, 69, 77)
-                  row.extend(rgb)
+                      base = (176, 120, 70)
+                  if 70 < x < 105 and 55 < y < 115:
+                      base = (44, 67, 49)
+                  if 155 < x < 210 and 145 < y < 205 and (x-182)**2 + (y-172)**2 < 850:
+                      base = (38, 78, 125)
+                  if 145 < x < 215 and 205 < y < 230:
+                      base = (70, 52, 40)
+                  if 20 < x < 120 and 150 < y < 205:
+                      base = (245, 244, 238)
+                  row.extend(base)
               rows.append(bytes(row))
 
           raw = b''.join(rows)
@@ -129,11 +136,11 @@ jobs:
           png += chunk(b'IEND', b'')
           Path('/tmp/reference.png').write_bytes(png)
           PY
-          HTTP_CODE=$(curl -sS -o reference.json -w '%{http_code}' -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/references")
+          HTTP_CODE=$(curl -sS -o reference.json -w '%{http_code}' -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/reference-intelligence")
           echo "reference HTTP=$HTTP_CODE"
           cat reference.json
           test "$HTTP_CODE" = "200"
-          node -e 'const x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); if(!x.workflow_id) throw Error(JSON.stringify(x)); if(!x.profile?.visual_summary) throw Error(JSON.stringify(x)); if(!Array.isArray(x.profile?.asset_opportunities) || x.profile.asset_opportunities.length!==5) throw Error(JSON.stringify(x)); console.log("reference intelligence passed", JSON.stringify({reference_id:x.reference_id,workflow_id:x.workflow_id,opportunities:x.profile.asset_opportunities.length})); require("fs").writeFileSync("ref.id",x.reference_id)'
+          node -e 'const x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); if(!x.workflow_id) throw Error(JSON.stringify(x)); if(!x.profile?.visual_summary) throw Error(JSON.stringify(x)); if(!Array.isArray(x.profile?.asset_opportunities) || x.profile.asset_opportunities.length!==5) throw Error(JSON.stringify(x)); if(x.profile.intelligence?.fallback_count!==0) throw Error(JSON.stringify(x)); console.log("reference intelligence passed", JSON.stringify({reference_id:x.reference_id,workflow_id:x.workflow_id,opportunities:x.profile.asset_opportunities.length})); require("fs").writeFileSync("ref.id",x.reference_id)'
           REF_ID=$(cat ref.id)
           cat > plan.json <<'JSON'
           {
