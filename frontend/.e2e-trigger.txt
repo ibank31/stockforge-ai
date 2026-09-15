@@ -1,1 +1,2 @@
 E2E_PROD trigger for generation-boundary verification.
+Vision fallback contract checkpoint: multimodal Gemma.
