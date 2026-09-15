@@ -9,7 +9,6 @@ on:
 
 jobs:
   deploy:
-    if: ${{ (secrets.CLOUDFLARE_API_TOKEN != '' || secrets.CF_API_TOKEN != '') && (secrets.CLOUDFLARE_ACCOUNT_ID != '' || secrets.CF_ACCOUNT_ID != '') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,11 +20,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check deployment credentials
+        id: credential
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare deployment credentials are configured."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare deployment credentials are not configured; skipping remote deploy."
+          fi
+
       - name: Install Wrangler
+        if: steps.credential.outputs.configured == 'true'
         run: npm install --global wrangler@4
 
       - name: Ensure Pages project exists
+        if: steps.credential.outputs.configured == 'true'
         run: wrangler pages project create "$PAGES_PROJECT" --production-branch main || true
 
       - name: Deploy Pages front door
+        if: steps.credential.outputs.configured == 'true'
         run: wrangler pages deploy frontend --project-name "$PAGES_PROJECT" --branch main
