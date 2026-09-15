@@ -32,3 +32,21 @@ test("valid primary asset remains usable when candidate list is omitted", async 
   assert.equal(result.asset_candidates.length, 1);
   assert.deepEqual(result.localization.primary_bbox, { x: 0.31, y: 0.24, width: 0.36, height: 0.49 });
 });
+
+test("vision image is bound separately from the chat message", async () => {
+  let captured;
+  const env = { AI: { async run(model, input) {
+    captured = { model, input };
+    return { response: JSON.stringify({
+      reference_type: "RAW_ASSET",
+      confidence: 0.95,
+      asset_candidates: [{ label: "camera", confidence: 0.95, bbox_normalized: { x: 0.1, y: 0.2, width: 0.6, height: 0.5 } }],
+      primary_asset: { label: "camera", confidence: 0.95, bbox_normalized: { x: 0.1, y: 0.2, width: 0.6, height: 0.5 } },
+    }) };
+  } } };
+  await locatePrimaryAsset(env, Uint8Array.from([1,2,3]).buffer, "image/png");
+  assert.equal(captured.model, "@cf/google/gemma-4-26b-a4b-it");
+  assert.match(captured.input.image, /^data:image\/png;base64,/);
+  assert.equal(captured.input.messages[1].content, "You are the spatial asset locator for a commercial visual-asset factory. Analyze ANY supplied image; never assume a fixed subject. Separate presentation/UI/evidence from the actual reusable visual asset. Identify up to 8 plausible reusable asset candidates and give a TIGHT normalized bounding box for each. Exclude UI, text, platform chrome, margins, unrelated background, watermarks and sales-proof elements unless they are themselves the deliberate standalone asset. Coordinates: x=left,y=top,width,height, all 0..1 relative to the full image. Select ONE primary asset using visual salience and standalone commercial reuse potential. For multi-object references, a coherent asset set may be a candidate. For raw assets, the box can cover most of the canvas. If no real asset can be located confidently, use null primary bbox; never invent facts. Return ONLY JSON with reference_type, confidence, presentation_elements, evidence_elements, asset_candidates, primary_asset, primary_asset_candidate.");
+  assert.equal("image_url" in captured.input.messages[1], false);
+});
