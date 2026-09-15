@@ -15,7 +15,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
   async run(event, step) {
     const jobId = String(event.payload?.jobId || "");
     if (!jobId) throw new Error("jobId is required");
-    if (!this.env.DB || !this.env.ASSETS) throw new Error("D1/R2 bindings are missing");
+    if (!this.env.DB || !this.env.ASSET_STORE) throw new Error("D1/R2 bindings are missing");
 
     const job = await step.do("load generation job", async () => {
       const row = await this.env.DB.prepare(`SELECT * FROM jobs_sf WHERE id=?`).bind(jobId).first();
@@ -52,7 +52,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
       if (!response.ok) throw new Error(`Unable to fetch generated artifact: HTTP ${response.status}`);
       const body = await response.arrayBuffer();
       const key = `artifacts/${jobId}/raw.png`;
-      await this.env.ASSETS.put(key, body, { httpMetadata: { contentType: "image/png" } });
+      await this.env.ASSET_STORE.put(key, body, { httpMetadata: { contentType: "image/png" } });
       return { key, sha256: await sha256Hex(body), seed: generationValues?.[1] ?? null, gpu_seconds: generationValues?.[2] ?? null };
     });
 
@@ -80,7 +80,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
       const body = await response.arrayBuffer();
       const key = `artifacts/${jobId}/final.jpg`;
       const hash = await sha256Hex(body);
-      await this.env.ASSETS.put(key, body, { httpMetadata: { contentType: "image/jpeg" } });
+      await this.env.ASSET_STORE.put(key, body, { httpMetadata: { contentType: "image/jpeg" } });
       return { key, sha256: hash, width: upscaleValues?.[2] ?? null, height: upscaleValues?.[3] ?? null, scale: upscaleValues?.[1] ?? 4, bytes: body.byteLength };
     });
 
