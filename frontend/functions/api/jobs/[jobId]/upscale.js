@@ -9,7 +9,8 @@ async function finalizeWithFreeResizer(env, job) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) throw new Error("Invalid source dimensions");
   const targetWidth = width * 4;
   const targetHeight = height * 4;
-  const sourceUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/api/assets/${job.id}?kind=raw&token=${job.asset_token}`;
+  const baseUrl = "https://stockforge-ai.pages.dev";
+  const sourceUrl = `${baseUrl}/api/assets/${job.id}?kind=raw&token=${encodeURIComponent(job.asset_token || "")}`;
   const transformUrl = `https://wsrv.nl/?url=${encodeURIComponent(sourceUrl)}&w=${targetWidth}&h=${targetHeight}&fit=inside&output=jpg&q=95&sharp=3&il`;
   const response = await fetch(transformUrl, { headers: { "user-agent": "StockForge/1.0 finalizer" } });
   if (!response.ok) throw new Error(`Free resizer failed: HTTP ${response.status}`);
