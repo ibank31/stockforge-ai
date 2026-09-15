@@ -1,5 +1,4 @@
 const MODEL = "@cf/moondream/moondream3.1-9B-A2B";
-
 function dataUrl(bytes, mime) { const data = new Uint8Array(bytes); let binary = ""; for (let index = 0; index < data.length; index += 0x8000) binary += String.fromCharCode(...data.subarray(index, Math.min(index + 0x8000, data.length))); return `data:${mime};base64,${btoa(binary)}`; }
 function cleanSubject(value) { return String(value || "").replace(/\s+/g, " ").replace(/^['"`]+|['"`]+$/g, "").trim().slice(0, 120); }
 function normalizeBox(value) { const x = Number(value?.x_min), y = Number(value?.y_min), x2 = Number(value?.x_max), y2 = Number(value?.y_max); if (![x,y,x2,y2].every(Number.isFinite) || x < 0 || y < 0 || x2 <= x || y2 <= y || x2 > 1.001 || y2 > 1.001) return null; return { x, y, width: Math.min(x2 - x, 1 - x), height: Math.min(y2 - y, 1 - y) }; }
@@ -10,10 +9,13 @@ async function detect(env, image, target) { const result = await env.AI.run(MODE
 export async function locatePrimaryAsset(env, imageBytes, mimeType) {
   if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
   const image = dataUrl(imageBytes, mimeType);
-  let subject = await querySubject(env, image);
-  if (!subject) subject = "main reusable visual asset";
-  let objects = await detect(env, image, subject);
-  if (!objects.length && subject !== "main reusable visual asset") objects = await detect(env, image, "main reusable visual asset");
+  const subject = (await querySubject(env, image)) || "main reusable visual asset";
+  const targets = [subject, "main object", "main product", "object", "product", "visual asset"];
+  let objects = [];
+  for (const target of [...new Set(targets)]) {
+    objects = await detect(env, image, target);
+    if (objects.length) break;
+  }
   if (!objects.length) throw new Error("ASSET_LOCALIZATION_FAILED");
   objects.sort((left, right) => area(right.bbox_normalized) - area(left.bbox_normalized));
   const primary = objects[0];
