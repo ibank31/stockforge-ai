@@ -29,6 +29,10 @@ jobs:
           node --check frontend/lib/reference-analysis-v2.js
       - name: Validate reference forensics contract
         run: node --test tests/test_reference_forensics.mjs
+      - name: Validate reference localization contract
+        run: node --test tests/test_reference_localization.mjs
+      - name: Validate reference analysis contract
+        run: node --test tests/test_reference_analysis_v2.mjs
       - name: Validate deployment configs exist
         run: |
           test -f frontend/wrangler.toml
