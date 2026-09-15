@@ -30,5 +30,14 @@ jobs:
         run: |
           test -f frontend/wrangler.toml
           test -f frontend/migrations/0001_stockforge.sql
+          test -f frontend/migrations/0002_pipeline_resilience.sql
           test -f deploy/pipeline-worker/wrangler.toml
           test -f deploy/pipeline-worker/src/index.js
+      - name: Validate pipeline contracts
+        run: |
+          grep -q 'ready_upscale' deploy/pipeline-worker/src/index.js
+          grep -q 'mode === "upscale"' deploy/pipeline-worker/src/index.js
+          grep -q 'retryable' frontend/functions/api/jobs/'[jobId]'/retry.js
+          grep -q 'job_events_sf' frontend/functions/api/jobs/'[jobId]'/events.js
+          grep -q 'READY_UPLOAD_ADOBE' frontend/functions/api/jobs/'[jobId]'/release.js
+          grep -q 'category' frontend/functions/api/jobs/'[jobId]'/release.js
