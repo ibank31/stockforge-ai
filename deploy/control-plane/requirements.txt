@@ -1,5 +1,1 @@
-fastapi>=0.115,<1.0
-uvicorn>=0.30,<1.0
-python-multipart>=0.0.9,<1.0
-pillow>=11.0,<13.0
--e git+https://github.com/ibank31/stockforge-ai.git@main#egg=stockforge-ai&subdirectory=.
+stockforge-ai[web] @ git+https://github.com/ibank31/stockforge-ai.git@main
