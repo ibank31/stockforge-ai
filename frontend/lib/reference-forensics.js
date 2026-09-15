@@ -176,11 +176,9 @@ async function runModel(env, dataUrl, prompt) {
   const result = await env.AI.run(FORENSICS_MODEL, {
     messages: [
       { role: "system", content: "You are a strict visual forensics system. Output JSON only." },
-      { role: "user", content: [
-        { type: "text", text: prompt },
-        { type: "image_url", image_url: { url: dataUrl } },
-      ] },
+      { role: "user", content: prompt },
     ],
+    image: dataUrl,
     max_tokens: 1600,
     temperature: 0.05,
     chat_template_kwargs: { enable_thinking: false },
