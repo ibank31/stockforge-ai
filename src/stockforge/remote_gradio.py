@@ -21,7 +21,12 @@ class RemoteGradioError(ProviderRuntimeError):
 
 
 class RemoteGradioProvider(GenerationProvider):
-    """Call a Gradio worker using POST -> event_id -> SSE completion."""
+    """Call a Gradio worker using POST -> event_id -> SSE completion.
+
+    Remote event identities and materialized output references are persisted on
+    disk so a control-plane worker restart can resume polling instead of losing
+    the Gradio event ID that belongs to a durable StockForge execution.
+    """
 
     def __init__(
         self,
@@ -38,6 +43,8 @@ class RemoteGradioProvider(GenerationProvider):
         self.base_url = base_url.rstrip("/")
         self.output_dir = Path(output_dir).resolve()
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.state_dir = self.output_dir / ".remote-gradio"
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.token = token
         self.api_name = api_name.strip("/")
         self.timeout_seconds = timeout_seconds
@@ -88,23 +95,29 @@ class RemoteGradioProvider(GenerationProvider):
         if existing is not None:
             return existing
 
-        payload = {
-            "data": [
-                request.prompt,
-                request.width,
-                request.height,
-                request.steps,
-                request.seed or 0,
-                request.seed is None,
-                durable_id,
-            ]
-        }
-        event = self._request_json(
-            "POST", f"/gradio_api/call/{self.api_name}", payload
-        )
-        event_id = str(event.get("event_id") or "")
-        if not event_id:
-            raise RemoteGradioError("Remote worker did not return event_id")
+        persisted_event = self._load_event(durable_id)
+        if persisted_event:
+            event_id = persisted_event
+        else:
+            payload = {
+                "data": [
+                    request.prompt,
+                    request.width,
+                    request.height,
+                    request.steps,
+                    request.seed or 0,
+                    request.seed is None,
+                    durable_id,
+                ]
+            }
+            event = self._request_json(
+                "POST", f"/gradio_api/call/{self.api_name}", payload
+            )
+            event_id = str(event.get("event_id") or "")
+            if not event_id:
+                raise RemoteGradioError("Remote worker did not return event_id")
+            self._save_event(durable_id, event_id)
+
         self._events[durable_id] = event_id
         job = ProviderJob(durable_id, "submitted")
         self._jobs[durable_id] = job
@@ -112,10 +125,18 @@ class RemoteGradioProvider(GenerationProvider):
 
     def status(self, provider_job_id: str) -> ProviderJob:
         cached = self._jobs.get(provider_job_id)
+        if cached is not None and cached.state in {
+            "completed",
+            "succeeded",
+            "failed",
+            "cancelled",
+        }:
+            return cached
+        if cached is None and self._load_event(provider_job_id):
+            cached = ProviderJob(provider_job_id, "submitted")
+            self._jobs[provider_job_id] = cached
         if cached is None:
             raise RemoteGradioError(f"Unknown provider job: {provider_job_id}")
-        if cached.state in {"completed", "succeeded", "failed", "cancelled"}:
-            return cached
         return self._poll(provider_job_id)
 
     def wait(
@@ -148,12 +169,20 @@ class RemoteGradioProvider(GenerationProvider):
         )
 
     def output_refs(self, provider_job_id: str) -> tuple[dict[str, Any], ...]:
-        return self._outputs.get(provider_job_id, ())
+        cached = self._outputs.get(provider_job_id)
+        if cached is not None:
+            return cached
+        persisted = self._load_outputs(provider_job_id)
+        if persisted is not None:
+            self._outputs[provider_job_id] = persisted
+            return persisted
+        return ()
 
     def _poll(self, durable_id: str) -> ProviderJob:
-        event_id = self._events.get(durable_id)
+        event_id = self._events.get(durable_id) or self._load_event(durable_id)
         if not event_id:
             raise RemoteGradioError(f"No remote event identity for job: {durable_id}")
+        self._events[durable_id] = event_id
         response = self._request_text(
             "GET", f"/gradio_api/call/{self.api_name}/{event_id}"
         )
@@ -164,6 +193,7 @@ class RemoteGradioProvider(GenerationProvider):
                 raise RemoteGradioError("Gradio completed without output data")
             refs = self._materialize_outputs(values[0], durable_id)
             self._outputs[durable_id] = refs
+            self._save_outputs(durable_id, refs)
             result = GenerationResult(
                 status="succeeded",
                 artifact_ids=(f"provider:{durable_id}:0",),
@@ -254,6 +284,45 @@ class RemoteGradioProvider(GenerationProvider):
     def _add_auth(self, request: urllib.request.Request) -> None:
         if self.token:
             request.add_header("Authorization", f"Bearer {self.token}")
+
+    def _state_path(self, kind: str, provider_job_id: str) -> Path:
+        digest = hashlib.sha256(provider_job_id.encode("utf-8")).hexdigest()
+        return self.state_dir / f"{kind}-{digest}.json"
+
+    def _save_event(self, provider_job_id: str, event_id: str) -> None:
+        self._state_path("event", provider_job_id).write_text(
+            json.dumps({"provider_job_id": provider_job_id, "event_id": event_id}, sort_keys=True),
+            encoding="utf-8",
+        )
+
+    def _load_event(self, provider_job_id: str) -> str | None:
+        path = self._state_path("event", provider_job_id)
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, TypeError, json.JSONDecodeError):
+            return None
+        event_id = value.get("event_id") if isinstance(value, dict) else None
+        return str(event_id) if event_id else None
+
+    def _save_outputs(
+        self, provider_job_id: str, refs: tuple[dict[str, Any], ...]
+    ) -> None:
+        self._state_path("outputs", provider_job_id).write_text(
+            json.dumps(list(refs), ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+
+    def _load_outputs(
+        self, provider_job_id: str
+    ) -> tuple[dict[str, Any], ...] | None:
+        path = self._state_path("outputs", provider_job_id)
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, TypeError, json.JSONDecodeError):
+            return None
+        if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+            return None
+        return tuple(value)
 
     @staticmethod
     def _last_sse_event(text: str) -> tuple[str, str]:
