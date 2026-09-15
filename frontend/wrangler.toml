@@ -8,7 +8,6 @@ STOCKFORGE_HF_SPACE_URL = "https://ibank31-stockforge-zerogpu.hf.space"
 [ai]
 binding = "AI"
 
-# Production deployment workflow fills these IDs from the account resources.
 [[d1_databases]]
 binding = "DB"
 database_name = "stockforge"
@@ -17,3 +16,7 @@ database_id = "REPLACED_BY_DEPLOY_WORKFLOW"
 [[r2_buckets]]
 binding = "ASSETS"
 bucket_name = "stockforge-assets"
+
+[[services]]
+binding = "STOCKFORGE_WORKFLOW"
+service = "stockforge-pipeline"
