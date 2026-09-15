@@ -101,5 +101,6 @@ test("vision image uses the native Workers AI image input", async () => {
   assert.equal(captured.model, "@cf/google/gemma-4-26b-a4b-it");
   assert.match(captured.input.image, /^[A-Za-z0-9+/]+=*$/);
   assert.equal(captured.input.image.includes("data:image/png;base64,"), false);
-  assert.equal(captured.input.messages.find(message => message.role === "user").content.includes("spatial asset locator"), true);
+  assert.equal(typeof captured.input.prompt, "string");
+  assert.match(captured.input.prompt, /spatial asset locator/i);
 });
