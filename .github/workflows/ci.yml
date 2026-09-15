@@ -33,6 +33,23 @@ jobs:
           test -f frontend/migrations/0002_pipeline_resilience.sql
           test -f deploy/pipeline-worker/wrangler.toml
           test -f deploy/pipeline-worker/src/index.js
+      - name: Validate D1 migrations
+        run: |
+          python - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          con = sqlite3.connect(':memory:')
+          for name in ('0001_stockforge.sql', '0002_pipeline_resilience.sql'):
+              con.executescript(Path('frontend/migrations', name).read_text())
+          columns = {row[1] for row in con.execute('PRAGMA table_info(jobs_sf)')}
+          required = {'generation_attempts','upscale_attempts','failed_mode','failure_code','retryable','last_workflow_id','last_workflow_created_at'}
+          missing = required - columns
+          if missing:
+              raise SystemExit(f'missing jobs_sf columns: {sorted(missing)}')
+          con.execute("INSERT INTO job_events_sf(job_id,event_type,stage,status,message,created_at) VALUES('test','ci','TEST','ok','migration ok','2026-09-15T00:00:00Z')")
+          assert con.execute("SELECT count(*) FROM job_events_sf WHERE job_id='test'").fetchone()[0] == 1
+          print('D1 migrations apply cleanly')
+          PY
       - name: Validate pipeline contracts
         run: |
           grep -q 'ready_upscale' deploy/pipeline-worker/src/index.js
