@@ -44,9 +44,11 @@ jobs:
       - name: Ensure D1 database exists
         if: steps.credential.outputs.configured == 'true'
         run: |
-          wrangler d1 create "$D1_NAME" --json > d1-create.json || true
-          wrangler d1 list --json > d1-list.json
-          DB_ID=$(node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("d1-list.json","utf8"));const rows=Array.isArray(a)?a:(a.result||a);const x=rows.find(r=>r.name===process.env.D1_NAME);if(!x||!x.uuid){process.exit(2)}console.log(x.uuid)')
+          wrangler d1 create "$D1_NAME" > d1-create.txt 2>&1 || true
+          D1_JSON=$(curl -fsS \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database")
+          DB_ID=$(printf '%s' "$D1_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);const x=(a.result||[]).find(r=>r.name===process.env.D1_NAME);if(!x||!x.uuid){process.exit(2)}console.log(x.uuid)})')
           echo "D1_ID=$DB_ID" >> "$GITHUB_ENV"
       - name: Render production configs
         if: steps.credential.outputs.configured == 'true'
