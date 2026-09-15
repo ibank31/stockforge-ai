@@ -1,83 +1,47 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b10">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090b10">
 <title>StockForge V2</title>
 <style>
-:root{color-scheme:dark;--bg:#090b10;--card:#111722;--line:#263143;--text:#eef2f7;--muted:#9aa7b8;--accent:#6ea8fe;--ok:#55d187;--warn:#f0b35b;--bad:#ff7272}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#090b10,#0d1119);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:1050px;margin:auto;padding:22px 16px 60px}h1{font-size:30px;margin:0 0 6px}h2{font-size:19px;margin:0 0 14px}.sub{color:var(--muted);margin:0 0 20px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 10px 30px #0004}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}label{display:block;color:var(--muted);font-size:13px;font-weight:650}input,textarea,button{width:100%;margin-top:6px;border-radius:10px;border:1px solid #344154;background:#0c1119;color:var(--text);padding:11px;font:inherit}textarea{min-height:90px;resize:vertical}button{background:#1d5fd1;border-color:#3676e5;font-weight:750;cursor:pointer}button.secondary{background:#202938;border-color:#344154}button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}.status{font-weight:750;margin:10px 0}.muted{color:var(--muted)}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}pre{white-space:pre-wrap;word-break:break-word;background:#080b10;border:1px solid var(--line);padding:12px;border-radius:10px;max-height:380px;overflow:auto}.preview img{display:block;max-width:100%;max-height:520px;margin-top:12px;border-radius:12px;border:1px solid var(--line)}progress{width:100%;height:18px}.pill{display:inline-block;padding:4px 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:12px}.small{font-size:12px;color:var(--muted)}
+:root{color-scheme:dark;--bg:#090b10;--card:#111722;--line:#263143;--text:#eef2f7;--muted:#9aa7b8;--accent:#6ea8fe;--ok:#55d187;--warn:#f0b35b;--bad:#ff7272}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#090b10,#0d1119);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:1050px;margin:auto;padding:22px 16px 60px}h1{font-size:30px;margin:0 0 6px}h2{font-size:19px;margin:0 0 14px}.sub{color:var(--muted);margin:0 0 20px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 10px 30px #0004}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}label{display:block;color:var(--muted);font-size:13px;font-weight:650}input,textarea,button{width:100%;margin-top:6px;border-radius:10px;border:1px solid #344154;background:#0c1119;color:var(--text);padding:11px;font:inherit}textarea{min-height:90px;resize:vertical}button{background:#1d5fd1;border-color:#3676e5;font-weight:750;cursor:pointer}button.secondary{background:#202938;border-color:#344154}button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}.status{font-weight:750;margin:10px 0}.muted{color:var(--muted)}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}pre{white-space:pre-wrap;word-break:break-word;background:#080b10;border:1px solid var(--line);padding:12px;border-radius:10px;max-height:380px;overflow:auto}.preview img{display:block;max-width:100%;max-height:520px;margin-top:12px;border-radius:12px;border:1px solid var(--line)}progress{width:100%;height:18px}.small{font-size:12px;color:var(--muted)}.candidate{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:#0c1119}.candidate.selected{outline:2px solid var(--accent)}.candidate h3{margin:0 0 8px;font-size:16px}.candidate p{margin:6px 0}.tag{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:999px;margin:2px 4px 2px 0;font-size:11px;color:var(--muted)}
 </style>
-</head>
-<body>
-<main class="wrap">
+</head><body><main class="wrap">
 <h1>StockForge V2</h1>
-<p class="sub">Reference Intelligence → Creative Opportunity → HF ZeroGPU → Similarity Gate → Technical QA. Satu aset per request, human review tetap wajib.</p>
+<p class="sub">Reference Intelligence → synchronized Creative Opportunity → HF ZeroGPU → Similarity Gate → Technical QA. Satu aset per request. Tidak ada batch generation.</p>
 
-<section class="card">
-<h2>1. Reference</h2>
-<input id="file" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
-<div class="row"><button id="upload" onclick="uploadReference()">Upload &amp; Analyze</button></div>
-<p id="referenceStatus" class="status muted">Belum ada reference.</p>
-<div class="preview" id="referencePreview"></div>
-<pre id="profile">-</pre>
-</section>
+<section class="card"><h2>1. Reference Intelligence</h2>
+<input id="file" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><div class="row"><button id="upload" onclick="uploadReference()">Upload &amp; Analyze Reference</button></div>
+<p id="referenceStatus" class="status muted">Belum ada reference.</p><div class="preview" id="referencePreview"></div><div id="referenceFacts"></div><div id="commercialSignals"></div></section>
 
-<section class="card">
-<h2>2. Creative Opportunity</h2>
-<div class="grid">
-<label>Market intent<input id="market_intent" value="commercial stock asset for sustainability campaign"></label>
-<label>New subject<input id="proposed_subject" value="reusable insulated drink tumbler"></label>
-<label>Composition<input id="proposed_composition" value="clean three-quarter product composition with useful negative space"></label>
-<label>Viewpoint<input id="proposed_viewpoint" value="slightly elevated three-quarter view"></label>
-<label>Color direction<input id="proposed_color_direction" value="muted earth tones with warm natural accents"></label>
-<label>Context<input id="proposed_context" value="minimal premium studio setting"></label>
-<label>Use case<input id="proposed_use_case" value="sustainability marketing and editorial lifestyle design"></label>
-<label>Seed optional<input id="seed" type="number" min="0" placeholder="random"></label>
-</div>
-<label style="margin-top:12px">Differentiation rationale <span class="small">minimal 3 changes</span>
-<textarea id="differentiation_rationale">Change subject: reusable insulated tumbler
-Change composition: three-quarter product composition with negative space
-Change context: sustainability campaign studio setting</textarea></label>
-<button id="plan" onclick="createPlan()" disabled>Build Plan</button>
-<pre id="planResult">Upload reference terlebih dahulu.</pre>
-</section>
+<section class="card"><h2>2. Creative Opportunity</h2>
+<p class="small">Semua kandidat di bawah berasal dari reference yang di-upload. Tidak ada subject/composition default yang ditanam ke UI. Pilih satu kandidat sebelum membuat generation plan.</p>
+<div id="candidates"><p class="muted">Upload reference terlebih dahulu.</p></div>
+<div class="grid" style="margin-top:12px"><label>Market intent override (opsional)<input id="market_intent" placeholder="Kosongkan untuk mengikuti buyer use-case hasil analisis"></label><label>Seed (opsional)<input id="seed" type="number" min="0" placeholder="random"></label></div>
+<button id="plan" onclick="createPlan()" disabled>Build Synchronized Plan</button><pre id="planResult">-</pre></section>
 
-<section class="card">
-<h2>3. Generate</h2>
-<p class="small">Generate hanya satu job. Pipeline memanggil HF ZeroGPU, menyimpan hasil, lalu GPU dilepas. Tidak ada batch generation.</p>
-<button id="generate" onclick="queueGeneration()" disabled>Generate 1 Asset</button>
-<p id="jobStatus" class="status muted">Belum ada job.</p>
-<progress id="progress" max="100" value="0"></progress>
-<pre id="workflowResult">-</pre>
-<pre id="jobResult">-</pre>
-<div class="preview" id="assetPreview"></div>
-</section>
+<section class="card"><h2>3. Generate</h2>
+<p class="small">Generate hanya satu job. Pipeline memanggil HF ZeroGPU, menyimpan hasil, lalu GPU dilepas.</p>
+<button id="generate" onclick="queueGeneration()" disabled>Generate 1 Asset</button><p id="jobStatus" class="status muted">Belum ada job.</p><progress id="progress" max="100" value="0"></progress><pre id="workflowResult">-</pre><pre id="jobResult">-</pre><div class="preview" id="assetPreview"></div></section>
 
-<section class="card">
-<h2>4. Technical QA / Human Review</h2>
-<div class="row"><button id="qa" class="secondary" onclick="runQA()" disabled>Run Technical QA</button><button id="approve" class="secondary" onclick="approveJob()" disabled>Approve for Package</button><button id="release" class="secondary" onclick="releaseJob()" disabled>Create ZIP</button></div>
-<p class="small">Approve bukan upload otomatis ke Adobe Stock. Marketplace submission tetap manual.</p>
-</section>
+<section class="card"><h2>4. Technical QA / Human Review</h2><div class="row"><button id="qa" class="secondary" onclick="runQA()" disabled>Run Technical QA</button><button id="approve" class="secondary" onclick="approveJob()" disabled>Approve for Package</button><button id="release" class="secondary" onclick="releaseJob()" disabled>Create ZIP</button></div><p class="small">Approve bukan upload otomatis ke Adobe Stock. Marketplace submission tetap manual.</p></section>
 </main>
 <script>
-let referenceId=null,workflowId=null,jobId=null,workflowTimer=null,jobTimer=null;
-const $=id=>document.getElementById(id);
-function show(id,v){$(id).textContent=typeof v==='string'?v:JSON.stringify(v,null,2)}
+let referenceId=null,workflowId=null,jobId=null,selectedIndex=null,workflowTimer=null,jobTimer=null;const $=id=>document.getElementById(id);
+const show=(id,v)=>$(id).textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
 async function api(url,options={}){const r=await fetch(url,options);let body;try{body=await r.json()}catch(_){body={detail:await r.text()}}if(!r.ok)throw Error(body.detail||('HTTP '+r.status));return body}
-function val(id){return $(id).value.trim()}
-async function uploadReference(){const file=$('file').files[0];if(!file){show('referenceStatus','Pilih gambar dulu.');return}$('upload').disabled=true;show('referenceStatus','Uploading + visual analysis...');try{const fd=new FormData();fd.append('file',file);const r=await api('/api/references',{method:'POST',body:fd});referenceId=r.reference_id;workflowId=r.workflow_id;show('profile',r.profile);$('referencePreview').innerHTML='<img src="'+r.file+'" alt="reference">';show('referenceStatus','Reference ready: '+referenceId);$('plan').disabled=false;startWorkflowPolling()}catch(e){show('referenceStatus','Error: '+e.message)}finally{$('upload').disabled=false}}
-function planBody(){return{market_intent:val('market_intent'),proposed_subject:val('proposed_subject'),proposed_composition:val('proposed_composition'),proposed_viewpoint:val('proposed_viewpoint'),proposed_color_direction:val('proposed_color_direction'),proposed_context:val('proposed_context'),proposed_use_case:val('proposed_use_case'),change_subject:true,change_composition:true,change_viewpoint:true,change_color_direction:true,change_context:true,change_use_case:true,seed:$('seed').value?Number($('seed').value):null}}
-async function createPlan(){$('plan').disabled=true;show('planResult','Building creative-distance plan...');try{const r=await api('/api/references/'+referenceId+'/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(planBody())});show('planResult',r);$('generate').disabled=false}catch(e){show('planResult','Error: '+e.message);$('generate').disabled=false}finally{$('plan').disabled=false}}
+function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderReference(profile){const f=profile?.reference_facts||{};$('referenceFacts').innerHTML=`<div class="candidate"><h3>Reference facts</h3><p><b>Subject:</b> ${esc(f.subject)}</p><p><b>Composition:</b> ${esc(f.composition)}</p><p><b>Viewpoint:</b> ${esc(f.viewpoint)}</p><p><b>Color:</b> ${esc(f.color_direction)}</p><p><b>Context:</b> ${esc(f.context)}</p><p><b>Summary:</b> ${esc(profile?.visual_summary)}</p></div>`;const s=profile?.commercial_signals||[];$('commercialSignals').innerHTML=s.length?`<div class="candidate"><h3>Observable commercial signals</h3>${s.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:''}
+function renderCandidates(list){if(!Array.isArray(list)||!list.length){$('candidates').innerHTML='<p class="bad">Reference tidak menghasilkan opportunity terstruktur.</p>';return}$('candidates').innerHTML=list.map((o,i)=>`<div class="candidate ${i===selectedIndex?'selected':''}"><h3>${i+1}. ${esc(o.title)}</h3><p><b>Subject:</b> ${esc(o.subject)}</p><p><b>Composition:</b> ${esc(o.composition)}</p><p><b>Viewpoint:</b> ${esc(o.viewpoint)}</p><p><b>Color:</b> ${esc(o.color_direction)}</p><p><b>Context:</b> ${esc(o.context)}</p><p><b>Use case:</b> ${esc(o.use_case)}</p><p><b>Why fit:</b> ${esc(o.why_fit)}</p><p>${(o.differences||[]).map(d=>`<span class="tag">${esc(d)}</span>`).join('')}</p><button onclick="selectOpportunity(${i})">${i===selectedIndex?'Selected':'Select this opportunity'}</button></div>`).join('')}
+function selectOpportunity(i){selectedIndex=i;renderCandidates(window.sfCandidates);$('plan').disabled=false;show('planResult',`Opportunity ${i+1} dipilih. Backend akan memvalidasi hubungan reference → opportunity dan minimal 3 perubahan bermakna.`)}
+async function uploadReference(){const file=$('file').files[0];if(!file){show('referenceStatus','Pilih gambar dulu.');return}$('upload').disabled=true;show('referenceStatus','Uploading + analyzing reference...');try{const fd=new FormData();fd.append('file',file);const r=await api('/api/references',{method:'POST',body:fd});referenceId=r.reference_id;workflowId=r.workflow_id;window.sfCandidates=r.profile?.asset_opportunities||[];selectedIndex=null;renderReference(r.profile);renderCandidates(window.sfCandidates);$('plan').disabled=true;$('generate').disabled=true;$('qa').disabled=true;$('approve').disabled=true;$('release').disabled=true;$('assetPreview').innerHTML='';$('referencePreview').innerHTML='<img src="'+esc(r.file)+'" alt="reference">';show('referenceStatus','Reference analyzed. Pilih 1 dari '+window.sfCandidates.length+' synchronized opportunities.');show('workflowResult',{id:workflowId,status:'ready',current_stage:'ANALYZED',progress:100});startWorkflowPolling()}catch(e){show('referenceStatus','Error: '+e.message)}finally{$('upload').disabled=false}}
+async function createPlan(){if(!referenceId||selectedIndex===null){show('planResult','Pilih opportunity terlebih dahulu.');return}$('plan').disabled=true;show('planResult','Validating reference → opportunity linkage...');try{const body={opportunity_index:selectedIndex};const intent=$('market_intent').value.trim();if(intent)body.market_intent=intent;const seed=$('seed').value;if(seed)body.seed=Number(seed);const r=await api('/api/references/'+referenceId+'/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});show('planResult',r);$('generate').disabled=false;renderCandidates(r.candidates||window.sfCandidates);window.selectedPlan=r.plan}catch(e){show('planResult','Plan blocked: '+e.message);$('generate').disabled=true}finally{$('plan').disabled=false}}
 async function queueGeneration(){$('generate').disabled=true;show('jobStatus','Submitting exactly one generation job to HF ZeroGPU...');try{const r=await api('/api/references/'+referenceId+'/generate',{method:'POST'});jobId=r.job_id;workflowId=r.workflow_id;show('jobStatus','Queued: '+jobId);startJobPolling();startWorkflowPolling()}catch(e){show('jobStatus','Generation error: '+e.message);$('generate').disabled=false}}
 function startWorkflowPolling(){if(workflowTimer)clearInterval(workflowTimer);workflowTimer=setInterval(pollWorkflow,3000);pollWorkflow()}
-async function pollWorkflow(){if(!workflowId)return;try{const r=await api('/api/workflows/'+workflowId);$('progress').value=r.progress||0;show('workflowResult',r);show('jobStatus',(r.current_stage||'UNKNOWN')+' · '+(r.progress||0)+'% · '+(r.status||''));if(['ready','blocked','failed','cancelled'].includes(r.status)){clearInterval(workflowTimer);workflowTimer=null}}catch(e){show('workflowResult','Monitor error: '+e.message)}}
+async function pollWorkflow(){if(!workflowId)return;try{const r=await api('/api/workflows/'+workflowId);$('progress').value=r.progress||0;show('workflowResult',r);if(['ready','blocked','failed','cancelled'].includes(r.status)){clearInterval(workflowTimer);workflowTimer=null}}catch(e){show('workflowResult','Monitor error: '+e.message)}}
 function startJobPolling(){if(jobTimer)clearInterval(jobTimer);jobTimer=setInterval(pollJob,3000);pollJob()}
-async function pollJob(){if(!jobId)return;try{const r=await api('/api/jobs/'+jobId);show('jobResult',r);if(r.result?.final?.final_asset_url){$('assetPreview').innerHTML='<img src="'+r.result.final.final_asset_url+'" alt="generated asset"><p class="small">Final asset · '+(r.result.final.megapixels||'?')+' MP</p>'}if(r.status==='succeeded'){clearInterval(jobTimer);jobTimer=null;$('qa').disabled=false;show('jobStatus','Generation complete · REVIEW_REQUIRED')}else if(r.status==='failed'||r.status==='cancelled'){clearInterval(jobTimer);jobTimer=null;$('generate').disabled=false;show('jobStatus','Generation '+r.status)} }catch(e){show('jobResult','Polling error: '+e.message)}}
+async function pollJob(){if(!jobId)return;try{const r=await api('/api/jobs/'+jobId);show('jobResult',r);const final=r.result?.final;if(final?.final_asset_url){$('assetPreview').innerHTML='<img src="'+esc(final.final_asset_url)+'" alt="generated asset"><p class="small">Final asset · '+(final.megapixels??'?')+' MP</p>'}if(r.status==='succeeded'){clearInterval(jobTimer);jobTimer=null;$('qa').disabled=false;show('jobStatus','Generation complete · REVIEW_REQUIRED')}else if(r.status==='failed'||r.status==='cancelled'){clearInterval(jobTimer);jobTimer=null;$('generate').disabled=false;show('jobStatus','Generation '+r.status)}}catch(e){show('jobResult','Polling error: '+e.message)}}
 async function runQA(){if(!jobId)return;try{const r=await api('/api/jobs/'+jobId+'/qa',{method:'POST'});show('jobResult',r);if(r.technical_qa?.status&&r.technical_qa.status!=='FAIL')$('approve').disabled=false}catch(e){show('jobResult','QA error: '+e.message)}}
-async function approveJob(){try{const r=await api('/api/jobs/'+jobId+'/approve',{method:'POST'});show('jobResult',r);$('release').disabled=false;show('jobStatus','APPROVED for package. Human marketplace upload remains manual.')}catch(e){show('jobStatus','Approval blocked: '+e.message)}}
-async function releaseJob(){try{const r=await api('/api/jobs/'+jobId+'/release',{method:'POST'});show('jobResult',r);if(r.download_url){$('release').outerHTML='<a href="'+r.download_url+'" target="_blank" style="display:block;text-align:center;padding:11px;border-radius:10px;background:#1d5fd1;color:white;text-decoration:none;font-weight:750">Download ZIP</a>'}}catch(e){show('jobStatus','Package error: '+e.message)}}
-</script>
-</body>
-</html>
+async function approveJob(){try{const r=await api('/api/jobs/'+jobId+'/approve',{method:'POST'});show('jobResult',r);$('release').disabled=false;show('jobStatus','APPROVED for package. Marketplace upload remains manual.')}catch(e){show('jobStatus','Approval blocked: '+e.message)}}
+async function releaseJob(){try{const r=await api('/api/jobs/'+jobId+'/release',{method:'POST'});show('jobResult',r);if(r.download_url)$('release').outerHTML='<a href="'+esc(r.download_url)+'" target="_blank" style="display:block;text-align:center;padding:11px;border-radius:10px;background:#1d5fd1;color:white;text-decoration:none;font-weight:750">Download ZIP</a>'}catch(e){show('jobStatus','Package error: '+e.message)}}
+</script></body></html>
