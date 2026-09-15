@@ -37,6 +37,11 @@ export async function onRequestPost(context) {
     if (!planRow) return json({ detail: "Create a creative plan before generation" }, 409);
     const plan = JSON.parse(planRow.plan_json);
 
+    const failed = await env.DB.prepare(`SELECT * FROM jobs_sf WHERE reference_id=? AND type='generation' AND status='failed' ORDER BY created_at DESC LIMIT 1`).bind(referenceId).first();
+    if (failed && Number(failed.retryable) === 1) {
+      return json({ detail: "A retryable generation failure already exists. Use the retry endpoint instead of creating another GPU job.", job_id: failed.id, retryable: true, failure_code: failed.failure_code, retry_endpoint: `/api/jobs/${failed.id}/retry` }, 409);
+    }
+
     const reusable = await env.DB.prepare(`SELECT * FROM jobs_sf WHERE reference_id=? AND type='generation' AND status IN ('queued','dispatching','submitted','generating','ready_upscale','upscale_submitted','succeeded','approved') ORDER BY created_at DESC LIMIT 1`)
       .bind(referenceId).first();
     if (reusable) return reuseJob(env, referenceId, reusable);
