@@ -32,6 +32,11 @@ jobs:
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "Cloudflare deployment credentials are missing; skipping remote deployment."
           fi
+      - name: Validate runtime JavaScript
+        run: |
+          node --check deploy/pipeline-worker/src/index.js
+          node --check 'frontend/functions/api/jobs/[jobId]/upscale.js'
+          node --check 'frontend/functions/api/references/[referenceId]/generate.js'
       - name: Install Wrangler
         if: steps.credential.outputs.configured == 'true'
         run: npm install --global wrangler@4
@@ -88,7 +93,7 @@ jobs:
           NODE
           curl -fsS "$BASE_URL/" | grep -q "StockForge V2"
           echo "page.dev smoke test passed"
-      - name: One-time full page.dev E2E
+      - name: One-time generation boundary E2E
         if: steps.credential.outputs.configured == 'true' && github.event_name == 'push' && github.event.head_commit.message == 'E2E_PROD'
         run: |
           set -euo pipefail
@@ -124,7 +129,7 @@ jobs:
           node -e 'const x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("job_id="+x.job_id); console.log("workflow_id="+x.workflow_id); require("fs").writeFileSync("workflow.id",x.workflow_id); require("fs").writeFileSync("job.id",x.job_id)'
           WF_ID=$(cat workflow.id)
           JOB_ID=$(cat job.id)
-          completed=false
+          ready=false
           for i in $(seq 1 120); do
             sleep 10
             curl -fsS "$BASE_URL/api/workflows/$WF_ID" > workflow.json
@@ -136,9 +141,13 @@ jobs:
               cat workflow.json
               exit 1
             fi
-            if [ "$JOB_STATUS" = "succeeded" ]; then completed=true; break; fi
+            if [ "$JOB_STATUS" = "ready_upscale" ]; then ready=true; break; fi
           done
-          test "$completed" = true
-          curl -fsS -X POST "$BASE_URL/api/jobs/$JOB_ID/qa" > qa.json
-          node -e 'const x=require("./qa.json"); if(!x.technical_qa || !String(x.technical_qa.status).startsWith("PASS")) throw Error(JSON.stringify(x)); console.log("technical QA passed")'
-          echo "FULL PAGE.DEV E2E PASSED"
+          test "$ready" = true
+          curl -fsS "$BASE_URL/api/jobs/$JOB_ID" > job.json
+          RAW_URL=$(node -e 'const x=require("./job.json"); if(x.status!=="ready_upscale" || !x.result?.raw_asset_url) throw Error(JSON.stringify(x)); process.stdout.write(x.result.raw_asset_url)')
+          curl -fsS -D raw.headers -o raw.png "$BASE_URL$RAW_URL"
+          grep -qi '^content-type: image/png' raw.headers
+          test -s raw.png
+          node -e 'const x=require("./job.json"); console.log("raw artifact ready", JSON.stringify({status:x.status,stage:x.stage,raw_asset_url:x.result.raw_asset_url}))'
+          echo "GENERATION BOUNDARY E2E PASSED"
