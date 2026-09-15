@@ -9,42 +9,69 @@ hardware: zerogpu
 
 # StockForge ZeroGPU Runtime
 
-Experimental GPU execution layer for StockForge V5.
+Remote GPU generation worker for the StockForge V2 production call graph.
 
-## Purpose
+## Role
 
-This Space is deliberately separate from the StockForge control plane. The
-Android/Termux client remains responsible for prompt preparation and job
-orchestration; this Space performs image generation only while a ZeroGPU
-allocation is active.
+The Space is deliberately separate from the StockForge control plane. The
+browser and page.dev front door do not call this Space directly. The StockForge
+control plane calls the stable Gradio `generate_remote` endpoint and records the
+provider/event identity in its durable job flow.
+
+Termux is not required for this worker to execute. It is an optional operator
+surface only.
+
+## Remote contract
+
+The machine-to-machine endpoint is:
+
+```text
+POST /gradio_api/call/generate_remote
+        ↓
+{event_id}
+        ↓
+GET /gradio_api/call/generate_remote/{event_id}
+        ↓
+SSE completion
+        ↓
+Gradio FileData output
+```
+
+The request carries seven values:
+
+```text
+prompt
+width
+height
+steps
+seed
+randomize_seed
+stockforge_job_id
+```
+
+`stockforge_job_id` is the durable StockForge execution identity. The worker
+uses it for idempotent caching of completed results.
 
 ## Current model path
 
-The first benchmark uses the official Z-Image-Turbo pipeline configuration
-from `Tongyi-MAI/Z-Image-Turbo`, while replacing the diffusion transformer and
-VAE with the StockForge FP8/AE files from `ibank31/stockforge-models`.
-
-The StockForge Qwen FP8 file is retained as the canonical model artifact, but
-is not manually injected into Transformers in this first runtime revision.
-This avoids an unsafe ad-hoc state-dict loader and lets us validate the GPU
-execution path first.
+The first runtime uses the Z-Image-Turbo pipeline configuration from
+`Tongyi-MAI/Z-Image-Turbo`, with the StockForge FP8/AE files from
+`ibank31/stockforge-models` where configured by the model manifest.
 
 ## Quota strategy
 
-- ZeroGPU `large` only. `xlarge` costs 2x quota.
-- GPU decorator uses a per-request duration estimator.
-- Default generation is 1024x1024 and 8 steps, matching the Turbo workflow.
-- Prompt validation and seed generation happen outside the GPU function.
-- No model download occurs inside the generation function.
-- No `torch.compile`; ZeroGPU does not support it. AOT compilation can be
-  added after the baseline benchmark succeeds.
+- ZeroGPU `large` is the intended free-first runtime.
+- Default generation is 1024×1024 at 8 steps.
+- Prompt validation and seed handling happen outside the GPU function where applicable.
+- Model loading is kept outside the generation call when the runtime permits it.
+- `torch.compile` is not required by the baseline runtime.
 
-## Benchmark goal
+ZeroGPU quota is limited. The control plane must therefore retain durable job
+state and may use another explicitly configured provider when the production
+routing policy selects it.
 
-Measure actual GPU seconds per 1024x1024 / 8-step image. The first successful
-run becomes the baseline for optimizing duration, AOT, and batching.
+## Production rule
 
-## Important
-
-Do not merge this branch into `main` until the Space has produced one real
-image and the measured GPU duration has been recorded.
+This directory defines the remote GPU boundary. It is not a local executor
+instruction and must not reintroduce a Termux dependency into the production
+call graph.
