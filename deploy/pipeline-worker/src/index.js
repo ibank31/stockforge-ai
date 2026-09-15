@@ -5,7 +5,7 @@ const DEFAULT_HF_SPACE = "https://ibank31-stockforge-zerogpu.hf.space";
 function hfBase(env) { return (env.STOCKFORGE_HF_SPACE_URL || DEFAULT_HF_SPACE).replace(/\/$/, ""); }
 async function hfHeaders(env, extra = {}) { const headers = new Headers(extra); if (env.STOCKFORGE_HF_TOKEN) headers.set("authorization", `Bearer ${env.STOCKFORGE_HF_TOKEN}`); return headers; }
 async function gradioSubmit(env, apiName, data) { const response = await fetch(`${hfBase(env)}/gradio_api/call/${apiName}`, { method: "POST", headers: await hfHeaders(env, { "content-type": "application/json" }), body: JSON.stringify({ data }) }); if (!response.ok) throw new Error(`HF ${apiName} submit failed: HTTP ${response.status}`); const body = await response.json(); if (!body.event_id) throw new Error(`HF ${apiName} returned no event_id`); return body.event_id; }
-async function gradioPoll(env, apiName, eventId) { const response = await fetch(`${hfBase(env)}/gradio_api/call/${apiName}/${eventId}`, { headers: await hfHeaders(env) }); if (!response.ok) throw new Error(`HF ${apiName} poll failed: HTTP ${response.status}`); const text = await response.text(); let event = "message"; let data = []; let last = null; for (const line of text.split(/\r?\n/)) { if (line.startsWith("event:")) { if (data.length) last = { event, data: data.join("\n") }; event = line.slice(6).trim(); data = []; } else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^\s/, "")); } if (data.length) last = { event, data: data.join("\n") }; if (!last) return { state: "running" }; if (last.event === "complete") return { state: "completed", values: JSON.parse(last.data) }; if (last.event === "error" || last.event === "exception") return { state: "failed", error: last.data || last.event }; return { state: "running"); }
+async function gradioPoll(env, apiName, eventId) { const response = await fetch(`${hfBase(env)}/gradio_api/call/${apiName}/${eventId}`, { headers: await hfHeaders(env) }); if (!response.ok) throw new Error(`HF ${apiName} poll failed: HTTP ${response.status}`); const text = await response.text(); let event = "message"; let data = []; let last = null; for (const line of text.split(/\r?\n/)) { if (line.startsWith("event:")) { if (data.length) last = { event, data: data.join("\n") }; event = line.slice(6).trim(); data = []; } else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^\s/, "")); } if (data.length) last = { event, data: data.join("\n") }; if (!last) return { state: "running" }; if (last.event === "complete") return { state: "completed", values: JSON.parse(last.data) }; if (last.event === "error" || last.event === "exception") return { state: "failed", error: last.data || last.event }; return { state: "running" }; }
 function parseOutput(values) { const output = values?.[0]; const first = Array.isArray(output) ? output[0] : output; if (!first?.url) throw new Error("Remote worker returned no FileData URL"); return first; }
 async function sha256Hex(arrayBuffer) { const digest = await crypto.subtle.digest("SHA-256", arrayBuffer); return [...new Uint8Array(digest)].map((v) => v.toString(16).padStart(2, "0")).join(""); }
 async function saveJob(env, jobId, patch) { const sets = Object.keys(patch).map((key) => `${key}=?`).join(", "); await env.DB.prepare(`UPDATE jobs_sf SET ${sets}, updated_at=? WHERE id=?`).bind(...Object.values(patch), new Date().toISOString(), jobId).run(); }
@@ -30,8 +30,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     const plan = JSON.parse(planRow.plan_json);
 
     const generationEvent = await step.do("submit ZeroGPU generation", async () => {
-      const existing = job.event_id;
-      if (existing) return existing;
+      if (job.event_id) return job.event_id;
       const remote = await gradioSubmit(this.env, "generate_remote", [plan.generation_prompt, plan.generation.width, plan.generation.height, plan.generation.steps, plan.generation.seed || 0, !!plan.generation.randomize_seed, jobId]);
       await saveJob(this.env, jobId, { status: "submitted", stage: "GENERATING", event_id: remote });
       await saveWorkflowState(this.env, job.reference_id, "running", "GENERATING", 25, "Generation queued on HF ZeroGPU.");
@@ -56,6 +55,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
       await this.env.ASSETS.put(key, body, { httpMetadata: { contentType: "image/png" } });
       return { key, sha256: await sha256Hex(body), seed: generationValues?.[1] ?? null, gpu_seconds: generationValues?.[2] ?? null };
     });
+
     await step.do("mark raw artifact", async () => {
       await saveJob(this.env, jobId, { status: "upscale_queued", stage: "UPSCALING", raw_r2_key: rawMeta.key, result_json: JSON.stringify({ provider: "hf-zerogpu", raw_r2_key: rawMeta.key, raw_sha256: rawMeta.sha256, seed: rawMeta.seed, gpu_seconds: rawMeta.gpu_seconds }) });
       await saveWorkflowState(this.env, job.reference_id, "running", "UPSCALING", 55, "Generation complete; 4x super-resolution running on HF ZeroGPU.");
@@ -113,13 +113,7 @@ export default {
     const body = await request.json();
     const jobId = String(body?.job_id || "");
     if (!jobId) return Response.json({ detail: "job_id is required" }, { status: 400 });
-    const existing = await env.STOCKFORGE_PIPELINE.get(jobId);
-    try {
-      const state = await existing.status();
-      return Response.json({ workflow_instance_id: jobId, status: state?.status || "queued" }, { headers: { "cache-control": "no-store" } });
-    } catch (_) {
-      const instance = await env.STOCKFORGE_PIPELINE.create({ id: jobId, params: { jobId } });
-      return Response.json({ workflow_instance_id: instance.id, status: "queued" }, { headers: { "cache-control": "no-store" } });
-    }
+    const instance = await env.STOCKFORGE_PIPELINE.create({ id: jobId, params: { jobId } });
+    return Response.json({ workflow_instance_id: instance.id, status: "queued" }, { headers: { "cache-control": "no-store" } });
   },
 };
