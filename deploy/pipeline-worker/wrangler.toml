@@ -12,7 +12,7 @@ database_name = "stockforge"
 database_id = "REPLACED_BY_DEPLOY_WORKFLOW"
 
 [[r2_buckets]]
-binding = "ASSETS"
+binding = "ASSET_STORE"
 bucket_name = "stockforge-assets"
 
 [[workflows]]
