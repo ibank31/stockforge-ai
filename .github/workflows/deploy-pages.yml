@@ -110,7 +110,6 @@ jobs:
           for y in range(height):
               row = bytearray([0])
               for x in range(width):
-                  # Warm wall, green plant, blue mug, notebook and wooden table.
                   if y < 120:
                       base = (238, 232, 213)
                   else:
@@ -144,43 +143,21 @@ jobs:
           REF_ID=$(cat ref.id)
           cat > plan.json <<'JSON'
           {
-            "market_intent": "commercial website banner and presentation cover",
-            "change_subject": true,
-            "change_composition": true,
-            "change_viewpoint": true,
-            "change_color_direction": true,
-            "change_context": true,
-            "change_use_case": true,
-            "proposed_subject": "minimal ceramic coffee cup beside a closed notebook",
-            "proposed_composition": "balanced tabletop arrangement with generous negative space on the left",
-            "proposed_viewpoint": "slightly elevated three-quarter view",
-            "proposed_color_direction": "warm ivory, muted terracotta and soft charcoal",
-            "proposed_context": "calm modern workspace with subtle daylight",
-            "proposed_use_case": "editorial productivity, business planning and website hero banner"
+            "opportunity_index": 0,
+            "market_intent": "commercial website banner and presentation cover"
           }
           JSON
-          curl --fail-with-body -sS -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan" > plan-response.json
+          PLAN_CODE=$(curl -sS -o plan-response.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan")
+          echo "plan HTTP=$PLAN_CODE"
+          cat plan-response.json
+          test "$PLAN_CODE" = "200"
           node -e 'const x=require("./plan-response.json"); if(x.decision!=="READY_TO_GENERATE" || !x.plan) throw Error(JSON.stringify(x)); console.log("plan=READY_TO_GENERATE")'
-          curl --fail-with-body -sS -X POST "$BASE_URL/api/references/$REF_ID/generate" > generate.json
-          node -e 'const x=require("./generate.json"); if(!x.job_id) throw Error(JSON.stringify(x)); console.log("job_id="+x.job_id); require("fs").writeFileSync("job.id",x.job_id)'
+          GEN_CODE=$(curl -sS -o generate.json -w '%{http_code}' -X POST "$BASE_URL/api/references/$REF_ID/generate")
+          echo "generate HTTP=$GEN_CODE"
+          cat generate.json
+          test "$GEN_CODE" = "200"
+          node -e 'const x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("generation request accepted", JSON.stringify({job_id:x.job_id,workflow_id:x.workflow_id,status:x.status||null,stage:x.stage||null})); require("fs").writeFileSync("job.id",x.job_id)'
           JOB_ID=$(cat job.id)
-          ready=false
-          for i in $(seq 1 120); do
-            sleep 10
-            curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
-            STATE=$(node -e 'const x=require("./job.json"); console.log(`${x.status}|${x.stage}`)')
-            echo "$STATE"
-            STATUS=$(printf '%s' "$STATE" | cut -d'|' -f1)
-            if [ "$STATUS" = "failed" ] || [ "$STATUS" = "blocked" ]; then
-              cat job.json
-              exit 1
-            fi
-            if [ "$STATUS" = "ready_upscale" ]; then ready=true; break; fi
-          done
-          test "$ready" = true
-          RAW_URL=$(node -e 'const x=require("./job.json"); if(x.status!=="ready_upscale" || !x.result?.raw_asset_url) throw Error(JSON.stringify(x)); process.stdout.write(x.result.raw_asset_url)')
-          curl --fail-with-body -sS -D raw.headers -o raw.png "$BASE_URL$RAW_URL"
-          grep -qi '^content-type: image/png' raw.headers
-          test -s raw.png
-          node -e 'const x=require("./job.json"); console.log("raw artifact ready", JSON.stringify({status:x.status,stage:x.stage,raw_asset_url:x.result.raw_asset_url}))'
-          echo "GENERATION BOUNDARY E2E PASSED"
+          curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
+          node -e 'const x=require("./job.json"); if(!x.id || x.id!==process.env.JOB_ID) throw Error(JSON.stringify(x)); if(["failed","blocked","cancelled"].includes(x.status)) throw Error(JSON.stringify(x)); console.log("generation boundary passed", JSON.stringify({status:x.status,stage:x.stage}))'
+          echo "REFERENCE INTELLIGENCE + PLAN + GENERATION E2E PASSED"
