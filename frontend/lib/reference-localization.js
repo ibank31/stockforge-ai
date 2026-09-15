@@ -77,15 +77,15 @@ function prompt(retry = false) {
   return `You are the spatial asset locator for a commercial visual-asset factory. Analyze ANY supplied image; never assume a fixed subject. Separate presentation/UI/evidence from the actual reusable visual asset. Identify up to 8 plausible reusable asset candidates and give a TIGHT normalized bounding box for each. Exclude UI, text, platform chrome, margins, unrelated background, watermarks and sales-proof elements unless they are themselves the deliberate standalone asset. Coordinates: x=left,y=top,width,height, all 0..1 relative to the full image. Select ONE primary asset using visual salience and standalone commercial reuse potential. For multi-object references, a coherent asset set may be a candidate. For raw assets, the box can cover most of the canvas. If no real asset can be located confidently, use null primary bbox; never invent facts. IMPORTANT: primary_asset MUST be an object with label, confidence and bbox_normalized. bbox_normalized MUST be an object with numeric x,y,width,height, not an array. Every asset_candidate with a label MUST include bbox_normalized. Confidence MUST be 0..1. Return ONLY a JSON object, no markdown.${retry ? " Previous localization was rejected, so be especially strict about providing a valid primary_asset bbox and confidence >= 0.5." : ""} Return ONLY JSON with reference_type, confidence, presentation_elements, evidence_elements, asset_candidates, primary_asset.`;
 }
 
-function dataUrl(bytes, mime) {
+function base64(bytes) {
   const data = new Uint8Array(bytes);
   let binary = "";
   for (let index = 0; index < data.length; index += 0x8000) binary += String.fromCharCode(...data.subarray(index, Math.min(index + 0x8000, data.length)));
-  return `data:${mime};base64,${btoa(binary)}`;
+  return btoa(binary);
 }
 
 async function runLocator(env, imageBytes, mimeType, retry = false) {
-  const image = dataUrl(imageBytes, mimeType);
+  const image = base64(imageBytes);
   return env.AI.run(MODEL, {
     messages: [
       { role: "system", content: "Strict visual locator. Return a valid JSON object only." },
