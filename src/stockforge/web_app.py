@@ -34,6 +34,7 @@ UPLOAD_ROOT = Path("runtime/web-references")
 JOB_DATABASE_PATH = Path("runtime/web-jobs.sqlite")
 PROJECT_ID = "00000000-0000-0000-0000-000000000001"
 PROJECT_NAME = "browser-v2"
+DEFAULT_MAX_REGENERATIONS = 2
 
 app = FastAPI(title="StockForge V2", version="2.0")
 app.mount("/files", StaticFiles(directory=str(UPLOAD_ROOT), check_dir=False), name="files")
@@ -126,6 +127,7 @@ function opportunity(){const value=id=>$(id).value.trim();return {market_intent:
 async function createPlan(){if(!referenceId)return;$('plan').disabled=true;show('planResult','Building anti-similarity plan…');try{const result=await api('/api/references/'+referenceId+'/plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(opportunity())});show('planResult',result);$('generate').disabled=false}catch(e){show('planResult','Error: '+e.message)}finally{$('plan').disabled=false}}
 async function queueGeneration(){if(!referenceId)return;$('generate').disabled=true;try{const result=await api('/api/references/'+referenceId+'/generate',{method:'POST'});jobId=result.job_id;show('jobStatus','Queued: '+jobId);pollTimer=setInterval(pollJob,1500);await pollJob()}catch(e){show('jobStatus','Error: '+e.message);$('generate').disabled=false}}
 async function pollJob(){if(!jobId)return;try{const job=await api('/api/jobs/'+jobId);show('jobResult',job);const status=job.status;show('jobStatus','Job status: '+status);if(status==='succeeded'||status==='failed'||status==='cancelled'){clearInterval(pollTimer);$('generate').disabled=false;const gate=job.result&&job.result.post_generation_verification;if(gate){$('jobStatus').className='status '+(gate.decision==='BLOCK'?'blocked':'review');show('jobStatus',status+' — similarity decision: '+gate.decision+' (human review required)')}}}catch(e){clearInterval(pollTimer);show('jobStatus','Polling error: '+e.message);$('generate').disabled=false}}
+async function regenerate(){if(!jobId)return;try{const result=await api('/api/jobs/'+jobId+'/regenerate',{method:'POST'});jobId=result.job_id;show('jobStatus','Regeneration queued: '+jobId);pollTimer=setInterval(pollJob,1500);await pollJob()}catch(e){show('jobStatus','Regeneration stopped: '+e.message)}}
 </script></body></html>"""
 
 
@@ -215,6 +217,39 @@ def enqueue_generation(reference_id: str) -> dict[str, Any]:
     record["job_id"] = job.id
     _record_path(reference_id).write_text(json.dumps(record, indent=2), encoding="utf-8")
     return {"reference_id": reference_id, "job_id": job.id, "status": job.status, "job_type": job.job_type, "decision": "QUEUED"}
+
+
+@app.post("/api/jobs/{job_id}/regenerate")
+def regenerate_job(job_id: str) -> dict[str, Any]:
+    """Queue one bounded regeneration only after a post-generation BLOCK."""
+    manager = _ensure_job_store()
+    try:
+        parent = manager.database.get_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if parent.project_id != PROJECT_ID or parent.job_type != "v2_generation":
+        raise HTTPException(400, "Only V2 generation jobs can be regenerated.")
+    result = parent.result or {}
+    gate = result.get("post_generation_verification")
+    if parent.status != "succeeded" or not isinstance(gate, dict) or gate.get("decision") != "BLOCK":
+        raise HTTPException(409, "Regeneration is allowed only for a completed job blocked by similarity verification.")
+    parameters = dict(parent.payload.get("parameters") or {})
+    attempt = int(parameters.get("regeneration_attempt", 0))
+    maximum = int(parameters.get("max_regeneration_attempts", DEFAULT_MAX_REGENERATIONS))
+    if maximum < 1 or maximum > DEFAULT_MAX_REGENERATIONS:
+        maximum = DEFAULT_MAX_REGENERATIONS
+    if attempt >= maximum:
+        raise HTTPException(409, f"Regeneration limit reached ({maximum} attempts).")
+    for existing in manager.list(project_id=PROJECT_ID):
+        existing_parameters = dict(existing.payload.get("parameters") or {})
+        if existing_parameters.get("parent_job_id") == job_id and existing.status in {"queued", "running", "succeeded"}:
+            raise HTTPException(409, "A regeneration for this blocked job already exists.")
+    payload = dict(parent.payload)
+    payload["seed"] = (int(payload["seed"]) if payload.get("seed") is not None else 0) + attempt + 1
+    payload["prompt"] = str(payload["prompt"]) + f" Regeneration attempt {attempt + 1}: use a materially different subject, composition, palette, and visual structure."
+    payload["parameters"] = {**parameters, "parent_job_id": job_id, "regeneration_attempt": attempt + 1, "max_regeneration_attempts": maximum}
+    child = manager.create(project_id=PROJECT_ID, job_type="v2_generation", payload=payload, max_attempts=2)
+    return {"reference_id": parameters.get("reference_id"), "job_id": child.id, "parent_job_id": job_id, "regeneration_attempt": attempt + 1, "max_regeneration_attempts": maximum, "status": child.status, "decision": "REGENERATION_QUEUED"}
 
 
 @app.get("/api/jobs/{job_id}")
