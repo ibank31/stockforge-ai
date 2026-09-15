@@ -14,8 +14,6 @@ function parse(value) {
 function responseText(value) {
   if (typeof value === "string") return value;
   if (!value || typeof value !== "object") return "";
-  // Workers AI JSON mode can return `response` as an object, not a JSON string.
-  // Preserve that object so normalize() can consume it directly.
   if (value.primary_asset || value.asset_candidates || value.reference_type) return value;
   for (const candidate of [value.response, value.result, value.output_text, value.choices?.[0]?.message?.content, value.choices?.[0]?.text]) {
     if (typeof candidate === "string" && candidate.trim()) return candidate;
@@ -36,9 +34,7 @@ function score(value) {
 function bbox(value) {
   if (Array.isArray(value) && value.length >= 4) {
     const [x1, y1, x2, y2] = value.map(score);
-    if ([x1, y1, x2, y2].every(Number.isFinite) && x2 > x1 && y2 > y1) {
-      return bbox({ x: x1, y: y1, width: x2 - x1, height: y2 - y1 });
-    }
+    if ([x1, y1, x2, y2].every(Number.isFinite) && x2 > x1 && y2 > y1) return bbox({ x: x1, y: y1, width: x2 - x1, height: y2 - y1 });
   }
   if (!value || typeof value !== "object") return null;
   const x = score(value.x ?? value.left ?? value.x_min);
@@ -50,12 +46,7 @@ function bbox(value) {
 }
 
 function assetCandidate(value) {
-  return {
-    label: String(value?.label || value?.name || value?.subject || "").trim(),
-    confidence: score(value?.confidence ?? value?.score) || 0,
-    bbox_normalized: bbox(value?.bbox_normalized || value?.bbox || value?.bounding_box),
-    why_asset: String(value?.why_asset || value?.reason || "").trim(),
-  };
+  return { label: String(value?.label || value?.name || value?.subject || "").trim(), confidence: score(value?.confidence ?? value?.score) || 0, bbox_normalized: bbox(value?.bbox_normalized || value?.bbox || value?.bounding_box), why_asset: String(value?.why_asset || value?.reason || "").trim() };
 }
 
 function sameCandidate(left, right) {
@@ -70,19 +61,9 @@ function normalize(value) {
   const raw = parse(value) || {};
   const primaryRaw = raw.primary_asset || raw.primary_asset_candidate || raw.primary || {};
   const primary = assetCandidate({ ...primaryRaw, label: primaryRaw?.label || raw.primary_asset_candidate || raw.primary_subject || "" });
-  const candidates = (Array.isArray(raw.asset_candidates) ? raw.asset_candidates : Array.isArray(raw.candidates) ? raw.candidates : [])
-    .map(assetCandidate)
-    .filter(candidate => candidate.label && candidate.bbox_normalized)
-    .slice(0, 8);
+  const candidates = (Array.isArray(raw.asset_candidates) ? raw.asset_candidates : Array.isArray(raw.candidates) ? raw.candidates : []).map(assetCandidate).filter(candidate => candidate.label && candidate.bbox_normalized).slice(0, 8);
   if (primary.label && primary.bbox_normalized && !candidates.some(candidate => sameCandidate(candidate, primary))) candidates.unshift(primary);
-  return {
-    reference_type: TYPES.has(raw.reference_type) ? raw.reference_type : "UNKNOWN",
-    confidence: score(raw.confidence) || 0,
-    presentation_elements: Array.isArray(raw.presentation_elements) ? raw.presentation_elements.slice(0, 12) : [],
-    evidence_elements: Array.isArray(raw.evidence_elements) ? raw.evidence_elements.slice(0, 12) : [],
-    asset_candidates: candidates.slice(0, 8),
-    primary_asset: primary,
-  };
+  return { reference_type: TYPES.has(raw.reference_type) ? raw.reference_type : "UNKNOWN", confidence: score(raw.confidence) || 0, presentation_elements: Array.isArray(raw.presentation_elements) ? raw.presentation_elements.slice(0, 12) : [], evidence_elements: Array.isArray(raw.evidence_elements) ? raw.evidence_elements.slice(0, 12) : [], asset_candidates: candidates.slice(0, 8), primary_asset: primary };
 }
 
 function prompt(retry = false) {
@@ -97,12 +78,12 @@ function dataUrl(bytes, mime) {
 }
 
 async function runLocator(env, imageBytes, mimeType, retry = false) {
+  const imageUrl = dataUrl(imageBytes, mimeType);
   return env.AI.run(MODEL, {
     messages: [
       { role: "system", content: "Strict visual locator. Return a valid JSON object only." },
-      { role: "user", content: prompt(retry) },
+      { role: "user", content: [{ type: "text", text: prompt(retry) }, { type: "image_url", image_url: { url: imageUrl } }] },
     ],
-    image: dataUrl(imageBytes, mimeType),
     response_format: { type: "json_object" },
     max_tokens: 1800,
     temperature: retry ? 0 : 0.02,
@@ -113,19 +94,7 @@ async function runLocator(env, imageBytes, mimeType, retry = false) {
 export async function locatePrimaryAsset(env, imageBytes, mimeType) {
   if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
   let output = normalize(responseText(await runLocator(env, imageBytes, mimeType, false)));
-  if (!(output.primary_asset.confidence >= 0.5 && output.primary_asset.label && output.primary_asset.bbox_normalized && output.asset_candidates.length)) {
-    output = normalize(responseText(await runLocator(env, imageBytes, mimeType, true)));
-  }
+  if (!(output.primary_asset.confidence >= 0.5 && output.primary_asset.label && output.primary_asset.bbox_normalized && output.asset_candidates.length)) output = normalize(responseText(await runLocator(env, imageBytes, mimeType, true)));
   if (!(output.primary_asset.confidence >= 0.5 && output.primary_asset.label && output.primary_asset.bbox_normalized && output.asset_candidates.length)) throw new Error("ASSET_LOCALIZATION_FAILED");
-  return {
-    schema_version: 1,
-    stage: "ASSET_LOCALIZATION",
-    ...output,
-    localization: {
-      method: "vision_bbox_normalized",
-      coordinate_system: "full_image_0_to_1",
-      primary_bbox: output.primary_asset.bbox_normalized,
-      confidence: output.primary_asset.confidence,
-    },
-  };
+  return { schema_version: 1, stage: "ASSET_LOCALIZATION", ...output, localization: { method: "vision_bbox_normalized", coordinate_system: "full_image_0_to_1", primary_bbox: output.primary_asset.bbox_normalized, confidence: output.primary_asset.confidence } };
 }
