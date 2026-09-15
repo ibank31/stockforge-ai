@@ -7,3 +7,6 @@ gradio>=6.25.0,<6.26.0
 spaces>=0.41.0
 sentencepiece>=0.2.0
 comfy-diffusion[comfyui]==2.6.0
+realesrgan==0.3.0
+basicsr==1.4.2
+opencv-python-headless>=4.8,<5.0

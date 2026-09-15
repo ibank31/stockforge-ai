@@ -1,44 +1,81 @@
-const DEFAULT_CONTROL_PLANE = "https://ibank31-stockforge-control.hf.space";
+const DEFAULT_HF_SPACE = "https://ibank31-stockforge-zerogpu.hf.space";
+const VISION_MODEL = "@cf/llava-hf/llava-1.5-7b-hf";
+const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-export async function onRequest(context) {
-  const requestUrl = new URL(context.request.url);
-  const controlPlane = (context.env.STOCKFORGE_CONTROL_PLANE_URL || DEFAULT_CONTROL_PLANE).replace(/\/$/, "");
-  const target = new URL(controlPlane + requestUrl.pathname + requestUrl.search);
-
-  // The browser uses /api/health for the status badge while the FastAPI
-  // control plane exposes deployment health at /health.
-  if (requestUrl.pathname === "/api/health") {
-    target.pathname = "/health";
-  }
-
-  const headers = new Headers(context.request.headers);
-  headers.delete("host");
-  headers.set("x-stockforge-front-door", "cloudflare-pages");
-
-  const init = {
-    method: context.request.method,
-    headers,
-    redirect: "follow",
-  };
-
-  if (context.request.method !== "GET" && context.request.method !== "HEAD") {
-    init.body = context.request.body;
-  }
-
-  try {
-    const response = await fetch(new Request(target.toString(), init));
-    const out = new Response(response.body, response);
-    out.headers.set("cache-control", "no-store");
-    out.headers.set("x-stockforge-control-plane", controlPlane);
-    return out;
-  } catch (error) {
-    return Response.json(
-      {
-        detail: "StockForge control plane is unreachable.",
-        error: error instanceof Error ? error.message : String(error),
-        control_plane: controlPlane,
-      },
-      { status: 502, headers: { "cache-control": "no-store" } },
-    );
-  }
+function json(data, status = 200) {
+  return Response.json(data, { status, headers: { "cache-control": "no-store" } });
 }
+function now() { return new Date().toISOString(); }
+function id(prefix) { return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`; }
+function token() { return crypto.randomUUID().replaceAll("-", ""); }
+function sha256Hex(bytes) {
+  return crypto.subtle.digest("SHA-256", bytes).then(buf => [...new Uint8Array(buf)].map(v => v.toString(16).padStart(2, "0")).join(""));
+}
+function routeParts(pathname) { return pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean); }
+async function initDb(db) {
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS references_sf (id TEXT PRIMARY KEY, token TEXT NOT NULL, r2_key TEXT NOT NULL, filename TEXT, mime_type TEXT NOT NULL, sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, analysis_json TEXT, created_at TEXT NOT NULL)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS workflows_sf (id TEXT PRIMARY KEY, reference_id TEXT NOT NULL, status TEXT NOT NULL, stage TEXT NOT NULL, progress INTEGER NOT NULL, message TEXT, updated_at TEXT NOT NULL)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS jobs_sf (id TEXT PRIMARY KEY, reference_id TEXT NOT NULL, type TEXT NOT NULL, status TEXT NOT NULL, stage TEXT NOT NULL, prompt TEXT, width INTEGER, height INTEGER, steps INTEGER, seed INTEGER, randomize_seed INTEGER, event_id TEXT, raw_r2_key TEXT, final_r2_key TEXT, asset_token TEXT, result_json TEXT, error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS plans_sf (reference_id TEXT PRIMARY KEY, plan_json TEXT NOT NULL, created_at TEXT NOT NULL)`),
+  ]);
+}
+async function ensure(env) { if (!env.DB || !env.ASSETS) throw new Error("Cloudflare D1/R2 bindings are missing"); await initDb(env.DB); }
+async function getReference(env, referenceId) { return env.DB.prepare(`SELECT * FROM references_sf WHERE id=?`).bind(referenceId).first(); }
+async function getJob(env, jobId) { return env.DB.prepare(`SELECT * FROM jobs_sf WHERE id=?`).bind(jobId).first(); }
+async function updateJob(env, jobId, patch) { const sets = Object.keys(patch).map(k => `${k}=?`).join(", "); await env.DB.prepare(`UPDATE jobs_sf SET ${sets}, updated_at=? WHERE id=?`).bind(...Object.values(patch), now(), jobId).run(); }
+async function updateWorkflow(env, referenceId, status, stage, progress, message) { await env.DB.prepare(`UPDATE workflows_sf SET status=?,stage=?,progress=?,message=?,updated_at=? WHERE reference_id=?`).bind(status,stage,progress,message||null,now(),referenceId).run(); }
+function hfBase(env) { return (env.STOCKFORGE_HF_SPACE_URL || DEFAULT_HF_SPACE).replace(/\/$/, ""); }
+async function gradioSubmit(env, apiName, data) { const headers={"content-type":"application/json"}; if(env.STOCKFORGE_HF_TOKEN) headers.authorization=`Bearer ${env.STOCKFORGE_HF_TOKEN}`; const r=await fetch(`${hfBase(env)}/gradio_api/call/${apiName}`,{method:"POST",headers,body:JSON.stringify({data})}); if(!r.ok) throw new Error(`HF ${apiName} submit failed: HTTP ${r.status}`); const body=await r.json(); if(!body.event_id) throw new Error("HF did not return event_id"); return body.event_id; }
+async function gradioPoll(env, apiName, eventId) { const headers={}; if(env.STOCKFORGE_HF_TOKEN) headers.authorization=`Bearer ${env.STOCKFORGE_HF_TOKEN}`; const r=await fetch(`${hfBase(env)}/gradio_api/call/${apiName}/${eventId}`,{headers}); if(!r.ok) throw new Error(`HF ${apiName} poll failed: HTTP ${r.status}`); const text=await r.text(); let event="message"; let data=[]; let last=null; for(const line of text.split(/\r?\n/)){ if(line.startsWith("event:")){ if(data.length) last={event,data:data.join("\n")}; event=line.slice(6).trim(); data=[]; } else if(line.startsWith("data:")) data.push(line.slice(5).replace(/^\s/,"")); } if(data.length) last={event,data:data.join("\n")}; if(!last) return {state:"running"}; if(last.event==="complete") return {state:"completed",values:JSON.parse(last.data)}; if(last.event==="error"||last.event==="exception") return {state:"failed",error:last.data||last.event}; return {state:"running"}; }
+async function visionAnalyze(env, imageBytes) {
+  if(!env.AI) return {visual_summary:"Vision binding unavailable.",asset_opportunities:[]};
+  try {
+    const result=await env.AI.run(VISION_MODEL,{image:Array.from(new Uint8Array(imageBytes)),prompt:"Describe only visible facts in this image, then propose exactly 5 commercially useful NEW stock-asset concepts. Each concept must materially differ from the reference in subject, composition, viewpoint, or context. Return compact JSON with keys visual_summary and asset_opportunities." ,max_tokens:700});
+    const text=typeof result==="string"?result:(result?.description||JSON.stringify(result));
+    try { const parsed=JSON.parse(text.match(/\{[\s\S]*\}/)?.[0]||text); if(Array.isArray(parsed.asset_opportunities)) return parsed; } catch(_) {}
+    return {visual_summary:text.slice(0,4000),asset_opportunities:[]};
+  } catch(error) { return {visual_summary:`Vision analysis unavailable: ${error instanceof Error?error.message:String(error)}`,asset_opportunities:[]}; }
+}
+function planFrom(body,ref,analysis){
+  const changes=[["subject",body.change_subject!==false,body.proposed_subject],["composition",body.change_composition!==false,body.proposed_composition],["viewpoint",body.change_viewpoint!==false,body.proposed_viewpoint],["color",body.change_color_direction!==false,body.proposed_color_direction],["context",body.change_context!==false,body.proposed_context],["use_case",body.change_use_case!==false,body.proposed_use_case]];
+  const active=changes.filter(x=>x[1]).map(x=>`${x[0]}: ${x[2]}`).filter(Boolean); if(active.length<3) throw new Error("At least three meaningful creative changes are required.");
+  const opportunities=Array.isArray(analysis.asset_opportunities)?analysis.asset_opportunities:[]; const subject=body.proposed_subject||opportunities[0]||"a differentiated commercial stock asset";
+  return {schema_version:2,reference_id:ref.id,buyer_job:body.market_intent||"commercial stock asset",concept:{subject,composition:body.proposed_composition,viewpoint:body.proposed_viewpoint,color:body.proposed_color_direction,context:body.proposed_context,use_case:body.proposed_use_case},differentiation_levers:active,reference_summary:analysis.visual_summary||"",candidate_opportunities:opportunities,generation_prompt:`Commercial stock image for ${body.proposed_use_case||body.market_intent||"a practical buyer use case"}. Subject: ${subject}. Composition: ${body.proposed_composition}. Viewpoint: ${body.proposed_viewpoint}. Color direction: ${body.proposed_color_direction}. Context: ${body.proposed_context}. Materially differentiate from the reference by changing ${active.join("; ")}. Clean professional composition, realistic lighting, useful negative space, no logos, brands, watermarks, or readable pseudo-text.`,generation:{width:1024,height:1024,steps:8,seed:body.seed??0,randomize_seed:body.seed==null},gate:{min_changes:3,human_review_required:true}};
+}
+async function handle(context){
+  const {request,env}=context; await ensure(env); const parts=routeParts(new URL(request.url).pathname); const method=request.method;
+  if(method==="GET"&&parts[0]==="health") return json({status:"ok",service:"stockforge-pages-control-plane",providers:{analysis:!!env.AI,generation:hfBase(env),upscale:`${hfBase(env)}/gradio_api/call/upscale_remote`,storage:"R2",state:"D1"}});
+  if(parts[0]==="references"&&parts.length===1&&method==="POST"){
+    const form=await request.formData(); const file=form.get("file"); if(!(file instanceof File)) return json({detail:"file is required"},400); if(!ALLOWED_TYPES.has(file.type)) return json({detail:"Only JPG, PNG and WebP references are accepted"},400); if(file.size>MAX_REFERENCE_BYTES) return json({detail:"Reference exceeds 8 MB"},413);
+    const referenceId=id("ref"),access=token(); const key=`references/${referenceId}${file.type==="image/png"?".png":file.type==="image/webp"?".webp":".jpg"}`; const bytes=await file.arrayBuffer(),hash=await sha256Hex(bytes); await env.ASSETS.put(key,bytes,{httpMetadata:{contentType:file.type}}); const analysis=await visionAnalyze(env,bytes); const workflowId=id("wf"),t=now();
+    await env.DB.batch([env.DB.prepare(`INSERT INTO references_sf (id,token,r2_key,filename,mime_type,sha256,bytes,analysis_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)`).bind(referenceId,access,key,file.name,file.type,file.type?hash:hash,file.size,JSON.stringify(analysis),t),env.DB.prepare(`INSERT INTO workflows_sf (id,reference_id,status,stage,progress,message,updated_at) VALUES (?,?,?,?,?,?,?)`).bind(workflowId,referenceId,"ready","ANALYZING",100,"Reference uploaded and analyzed.",t)]);
+    return json({reference_id:referenceId,workflow_id:workflowId,file:`/api/assets/${referenceId}?kind=reference&token=${access}`,profile:analysis,decision:"REVIEW_REQUIRED",notice:"Reference facts were analyzed. Commercial interpretation must still be verified."});
+  }
+  if(parts[0]==="references"&&parts.length===3&&parts[2]==="plan"&&method==="POST"){
+    const ref=await getReference(env,parts[1]); if(!ref) return json({detail:"Reference not found"},404); const body=await request.json(); const plan=planFrom(body,ref,JSON.parse(ref.analysis_json||"{}")); await env.DB.prepare(`INSERT INTO plans_sf(reference_id,plan_json,created_at) VALUES(?,?,?) ON CONFLICT(reference_id) DO UPDATE SET plan_json=excluded.plan_json`).bind(ref.id,JSON.stringify(plan),now()).run(); await updateWorkflow(env,ref.id,"ready","PLANNED",100,"Creative opportunity and anti-similarity plan ready."); return json({reference_id:ref.id,plan,decision:"READY_TO_GENERATE"});
+  }
+  if(parts[0]==="references"&&parts.length===3&&parts[2]==="generate"&&method==="POST"){
+    const ref=await getReference(env,parts[1]); if(!ref) return json({detail:"Reference not found"},404); const row=await env.DB.prepare(`SELECT plan_json FROM plans_sf WHERE reference_id=?`).bind(ref.id).first(); if(!row) return json({detail:"Create a plan first"},409); const plan=JSON.parse(row.plan_json); const jobId=id("job"),assetToken=token(),created=now(); const eventId=await gradioSubmit(env,"generate_remote",[plan.generation_prompt,plan.generation.width,plan.generation.height,plan.generation.steps,plan.generation.seed||0,!!plan.generation.randomize_seed,jobId]); await env.DB.prepare(`INSERT INTO jobs_sf (id,reference_id,type,status,stage,prompt,width,height,steps,seed,randomize_seed,event_id,asset_token,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(jobId,ref.id,"generation","submitted","GENERATING",plan.generation_prompt,plan.generation.width,plan.generation.height,plan.generation.steps,plan.generation.seed||0,plan.generation.randomize_seed?1:0,eventId,assetToken,created,created).run(); await updateWorkflow(env,ref.id,"running","GENERATING",25,"Generation queued on HF ZeroGPU."); const wf=await env.DB.prepare(`SELECT id FROM workflows_sf WHERE reference_id=?`).bind(ref.id).first(); return json({workflow_id:wf.id,job_id:jobId,status:"submitted",provider:"hf-zerogpu"});
+  }
+  if(parts[0]==="assets"&&parts.length===2&&method==="GET"){
+    const jobId=parts[1],url=new URL(request.url),kind=url.searchParams.get("kind")||"final",supplied=url.searchParams.get("token"); let row=await env.DB.prepare(`SELECT * FROM jobs_sf WHERE id=?`).bind(jobId).first(); if(!row) row=await env.DB.prepare(`SELECT * FROM references_sf WHERE id=?`).bind(jobId).first(); if(!row)return json({detail:"Asset not found"},404); let key,expected;
+    if(row.type){key=kind==="raw"?row.raw_r2_key:row.final_r2_key;expected=row.asset_token;} else {key=kind==="reference"?row.r2_key:row.r2_key;expected=row.token;} if(!key||supplied!==expected)return json({detail:"Asset not found"},404); const obj=await env.ASSETS.get(key); if(!obj)return json({detail:"Asset missing"},404); return new Response(obj.body,{headers:{"content-type":obj.httpMetadata?.contentType||"image/jpeg","cache-control":"private,max-age=3600"}});
+  }
+  if(parts[0]==="workflows"&&parts.length===2&&method==="GET"){
+    const wf=await env.DB.prepare(`SELECT * FROM workflows_sf WHERE id=?`).bind(parts[1]).first(); if(!wf)return json({detail:"Workflow not found"},404); const job=await env.DB.prepare(`SELECT * FROM jobs_sf WHERE reference_id=? ORDER BY created_at DESC LIMIT 1`).bind(wf.reference_id).first(); return json({id:wf.id,reference_id:wf.reference_id,status:wf.status,current_stage:wf.stage,progress:wf.progress,message:wf.message,updated_at:wf.updated_at,job:job?{id:job.id,type:job.type,status:job.status,stage:job.stage}:null,stuck:false});
+  }
+  if(parts[0]==="jobs"&&parts.length===3&&parts[2]==="qa"&&method==="POST"){
+    const job=await getJob(env,parts[1]); if(!job||!job.final_r2_key)return json({detail:"Final asset not ready"},409); const result=job.result_json?JSON.parse(job.result_json):{}; const width=result?.final?.width||result.width,height=result?.final?.height||result.height,mp=(width&&height)?width*height/1000000:0; const pass=mp>=16; const qa={status:pass?"PASS_WITH_VISUAL_REVIEW":"FAIL",dimensions:{width,height},megapixels:mp,format:"JPEG",color_space:"sRGB",resolution_gate:pass}; await updateJob(env,job.id,{result_json:JSON.stringify({...result,technical_qa:qa})}); return json({technical_qa:qa,next:pass?"human_review":"fix"});
+  }
+  if(parts[0]==="jobs"&&parts.length===3&&parts[2]==="approve"&&method==="POST"){
+    const job=await getJob(env,parts[1]); if(!job)return json({detail:"Job not found"},404); const result=job.result_json?JSON.parse(job.result_json):{}; if(result.technical_qa?.status==="FAIL")return json({detail:"Technical QA failed"},409); await updateJob(env,job.id,{status:"approved",stage:"APPROVED"}); await updateWorkflow(env,job.reference_id,"ready","APPROVED",100,"Human reviewer approved the final asset for packaging."); return json({status:"approved",marketplace_submission:"manual_only",human_review:true});
+  }
+  if(parts[0]==="jobs"&&parts.length===3&&parts[2]==="release"&&method==="POST"){
+    const job=await getJob(env,parts[1]); if(!job||job.status!=="approved")return json({detail:"Human approval is required before release"},409); const result=job.result_json?JSON.parse(job.result_json):{}; const planRow=await env.DB.prepare(`SELECT plan_json FROM plans_sf WHERE reference_id=?`).bind(job.reference_id).first(); const concept=JSON.parse(planRow?.plan_json||"{}").concept||{}; const rawKeywords=[concept.subject,concept.use_case,concept.composition,concept.context,concept.color,concept.viewpoint].filter(Boolean).flatMap(s=>String(s).toLowerCase().split(/[^a-z0-9]+/)).filter(w=>w.length>=3); const keywords=[...new Set(rawKeywords)].slice(0,49); const manifest={schema_version:2,status:"READY_UPLOAD_ADOBE",asset:result.final||result,metadata:{title:String(concept.subject||"Stock asset").slice(0,70),keywords,ai_generated:true,metadata_review_required:true},human_approval:true,marketplace_submission:"manual_only"}; await env.ASSETS.put(`artifacts/${job.id}/manifest.json`,JSON.stringify(manifest,null,2),{httpMetadata:{contentType:"application/json"}}); return json({status:"READY_UPLOAD_ADOBE",download_url:result.final?.final_asset_url||result.final_asset_url,manifest_url:`/api/manifest/${job.id}`,manifest});
+  }
+  if(parts[0]==="manifest"&&parts.length===2&&method==="GET"){const job=await getJob(env,parts[1]); if(!job)return json({detail:"Job not found"},404); const obj=await env.ASSETS.get(`artifacts/${job.id}/manifest.json`); if(!obj)return json({detail:"Manifest not released"},404); return new Response(obj.body,{headers:{"content-type":"application/json","cache-control":"private,max-age=3600"}});}
+  return json({detail:"Route not found"},404);
+}
+export async function onRequest(context){try{return await handle(context);}catch(error){return json({detail:error instanceof Error?error.message:String(error)},500);}}

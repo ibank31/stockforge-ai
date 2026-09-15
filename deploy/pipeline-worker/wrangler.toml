@@ -1,0 +1,21 @@
+name = "stockforge-pipeline"
+main = "src/index.js"
+compatibility_date = "2026-09-15"
+
+[vars]
+STOCKFORGE_HF_SPACE_URL = "https://ibank31-stockforge-zerogpu.hf.space"
+PUBLIC_BASE_URL = "https://stockforge-ai.pages.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "stockforge"
+database_id = "REPLACED_BY_DEPLOY_WORKFLOW"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "stockforge-assets"
+
+[[workflows]]
+name = "stockforge-pipeline"
+binding = "STOCKFORGE_PIPELINE"
+class_name = "StockForgePipeline"

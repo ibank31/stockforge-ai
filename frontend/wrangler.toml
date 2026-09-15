@@ -1,0 +1,22 @@
+name = "stockforge-ai"
+compatibility_date = "2026-09-15"
+pages_build_output_dir = "."
+
+[vars]
+STOCKFORGE_HF_SPACE_URL = "https://ibank31-stockforge-zerogpu.hf.space"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "stockforge"
+database_id = "REPLACED_BY_DEPLOY_WORKFLOW"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "stockforge-assets"
+
+[[services]]
+binding = "STOCKFORGE_WORKFLOW"
+service = "stockforge-pipeline"

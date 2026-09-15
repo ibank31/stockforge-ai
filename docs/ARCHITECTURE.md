@@ -1,109 +1,106 @@
 # StockForge Active Architecture
 
-**Updated:** 2026-08-25
+**Updated:** 2026-09-15
 **Branch:** `main`
 
-StockForge adalah control plane ringan berbasis Android/Termux yang mengubah market signal menjadi asset package yang dapat ditinjau. Generator bukan produk akhir; produk akhirnya adalah asset dengan buyer hypothesis, provenance, QC, metadata, dan submission state.
+StockForge adalah remote-first control plane untuk mengubah reference image dan market intent menjadi asset package yang dapat ditinjau. Browser `stockforge-ai.pages.dev` adalah front door dan operator surface. Termux bukan production executor. GPU generation dan production upscaling dikerjakan oleh Hugging Face ZeroGPU; Cloudflare menyimpan state, artifact, dan workflow orchestration.
 
-## End-to-end flow
+## End-to-end production flow
 
 ```text
-Market evidence
+Page.dev upload reference
     ↓
-Market opportunity + buyer job
+Reference Intelligence
     ↓
-AssetSpec
+Creative Opportunity / Asset Concept
     ↓
-Concept variant + prompt package
+Anti-similarity + commercial preflight
     ↓
-Pre-GPU compliance/layout/quota gate
+Durable Cloudflare Workflow
     ↓
-Provider router
-    ├── Remote ZeroGPU / JPEG raster
-    ├── Kaggle finalizer or future provider
-    └── Local native SVG / no GPU
+HF ZeroGPU generation
     ↓
-Generation or local build
+Raw artifact → R2
     ↓
-Artifact + provenance
+HF ZeroGPU 4x Super Resolution
     ↓
-Technical / semantic / commercial QA
+Final JPEG/sRGB master → R2
     ↓
-Enhancement or alpha finalization when verified
+Exact-duplicate gate + technical QA
     ↓
-Similarity and duplicate gate
+Metadata / AI disclosure manifest
     ↓
-Metadata + marketplace compliance
+Human visual / rights review
     ↓
-Human review
+READY_UPLOAD_ADOBE
     ↓
-Review evaluation ledger
-    ↓
-Export / manual submission package
-    ↓
-Evidence and feedback loop
+Manual Adobe Stock submission
 ```
 
-## Core boundaries
+## Control-plane boundaries
 
-### Termux control plane
+### Page.dev / Cloudflare
 
-Termux owns project configuration, typed request construction, persistent job identity, routing policy, provenance, output folders, and human-review packages. It does not download or run heavy model checkpoints.
+Pages Functions own the browser API, reference upload, Workers AI reference analysis, creative planning, D1 job state, R2 artifact storage, and trigger of the durable pipeline Worker through a service binding.
 
-### Asset specification
+Cloudflare Workflows own long-running orchestration so the browser does not need to remain open while generation or upscale is running. The page only polls durable state for display.
 
-`AssetSpec` carries the commercial constraints that must not be hidden in one prompt: buyer job, product kind, delivery format, layout, background/isolation policy, text/branding policy, originality levers, quality gates, and model-neutral capability preferences.
+### HF ZeroGPU
 
-### Format routing
+`ibank31/stockforge-zerogpu` is the production GPU worker. It exposes two machine endpoints:
 
-The router selects one product route, not every possible extension:
+- `generate_remote` — Z-Image Turbo generation.
+- `upscale_remote` — 4x RealESRGAN super-resolution.
 
-| Product kind | Format | Execution | Current status |
-|---|---|---|---|
-| `raster_illustration` | JPEG | Remote raster generation | Verified production path |
-| `native_vector` | SVG | Local editable geometry | Locally verified; portal validation pending |
-| `transparent_cutout` | PNG | Alpha producer/finalizer | Blocked until true-alpha path is verified |
+Both remain behind the same Gradio queue and are invoked remotely by the Cloudflare pipeline. The free lane is quota-limited, not unlimited.
 
-A white-background PNG is not transparent. A raster trace is not a native vector. A square image is not automatically a seamless pattern.
+### Kaggle
 
-### Provider and model separation
+Kaggle remains an R&D / benchmark / diagnostic provider only. It is not a production commercial Adobe Stock executor because current Kaggle Terms restrict the Services to internal, personal, and non-commercial use. Do not route a revenue-generating asset through the Kaggle finalizer.
 
-A model has an identity, revision, license/policy evidence, resource requirements, supported resolutions, and compatibility metadata. A provider supplies compute and execution. The core must not import vendor-specific engines directly; adapters isolate Gradio, ZeroGPU, Kaggle, Diffusers, Comfy-compatible loaders, or future providers.
+### Termux
 
-The remote Gradio contract uses `generate_remote` with seven positional inputs, including durable `stockforge_job_id`, followed by event polling and output ingestion. Provider failures belong to execution records and must not corrupt the logical asset job.
+Termux is optional for maintenance, diagnostics, Git operations, and emergency recovery. A normal production run must work without Termux and without keeping an Android process alive.
 
-### Quality and compliance
+## Storage
 
-Technical checks cover dimensions, file integrity, RGB/sRGB, alpha, decodability, and format-specific structure. Semantic and commercial checks cover subject presence, object count, composition, text/brand risk, thumbnail readability, unique value, buyer-job fit, and duplicate/spam risk. Human review remains mandatory for visual quality, rights, releases, declarations, and final marketplace submission.
+- D1: references, workflow state, plans, generation jobs, artifact checksums, and review state.
+- R2: uploaded references, raw generated artifacts, final masters, and submission manifests.
+- Hugging Face model repository `ibank31/stockforge-models`: canonical model source.
 
-## Evaluation and learning loop
+## Asset and quality gates
 
-A successful generation is not automatically treated as a good result. After human review, `portfolio evaluate` records the execution/artifact identity, buyer job, product kind, delivery format, provider, model, workflow hash, four bounded quality scores, decision, rejection reasons, and marketplace outcome. Records are append-only in `evaluations/generation_evaluations.jsonl` so later engine changes can be compared with the exact production context that created the evidence.
+`AssetSpec` remains the provider-neutral contract for buyer job, product kind, delivery format, layout, background/isolation policy, text/branding policy, originality levers, quality gates, and model-neutral capabilities.
 
-`portfolio learning-summary` produces conservative niche/buyer-job aggregates for reviewed records; `portfolio evaluation-summary` remains a legacy descriptive aggregate. Neither command changes prompts, selects a new provider, predicts sales, or launches generation. Any future learning rule must be proposed and tested against this ledger before it can influence routing.
+Technical QA checks file integrity, dimensions, megapixels, RGB/sRGB, decodability, and format-specific constraints. The production raster lane targets a 16 MP final master after 4x upscale. Exact duplicate detection uses a SHA-256 artifact gate. Semantic similarity to the source reference remains a human-review responsibility because the production system must not pretend a cheap heuristic is equivalent to expert visual judgment.
 
-## Current compute policy
+The system never auto-approves an asset for marketplace submission. AI-generated content must carry the marketplace-required disclosure and the human reviewer remains responsible for visual quality, IP/trademark risk, releases where applicable, metadata accuracy, and final submission.
 
-GPU quota is opportunistic capacity. A GPU call requires a specific buyer hypothesis and must produce a selected master, a meaningful concept experiment, or isolated diagnostic evidence. The system must not spend GPU on blind seed retries, large unreviewed batches, or weak previews.
+## Learning loop
 
-## Active implementation map
+A reviewed result can be recorded in the append-only evaluation ledger. Learning summaries can inform future concept selection and provider policy, but may not silently change production prompts or route jobs without an explicit tested rule.
 
-- `src/stockforge/asset_spec.py` — typed commercial asset contract.
-- `src/stockforge/format_router.py` — product-to-format routing and production blocks.
-- `src/stockforge/native_vector.py` — deterministic editable SVG builder and inspector.
-- `src/stockforge/seamless_pattern.py` — deterministic raster edge-continuity gate.
-- `src/stockforge/png_alpha_finalize.py` — conservative true-alpha normalization; opaque RGB sources are rejected and production routing remains blocked.
-- `src/stockforge/remote_gradio.py` — remote worker adapter.
-- `src/stockforge/recovery_orchestrator.py` — durable execution and artifact ingestion.
-- `src/stockforge/generation_evaluation.py` — append-only human evaluation ledger and legacy summary.
-- `src/stockforge/niche_learning.py` — conservative niche/buyer-job learning summary.
-- `src/stockforge/android_export.py` — minimal review/upload visual export to Android.
-- `deploy/zerogpu/remote_api.py` — machine generation endpoint.
+## Current implementation map
+
+- `frontend/index.html` — Page.dev operator UI.
+- `frontend/functions/api/[[path]].js` — Cloudflare Pages API/control-plane fallback routes.
+- `frontend/functions/api/references/[referenceId]/generate.js` — durable pipeline trigger.
+- `frontend/functions/api/jobs/[jobId].js` — durable job state endpoint.
+- `frontend/functions/api/jobs/[jobId]/qa.js` — technical QA gate.
+- `frontend/functions/api/jobs/[jobId]/approve.js` — explicit human approval gate.
+- `frontend/functions/api/jobs/[jobId]/release.js` — Adobe-ready manifest/package release.
+- `frontend/migrations/0001_stockforge.sql` — D1 schema.
+- `frontend/wrangler.toml` — Pages bindings for D1, R2, Workers AI, and pipeline service.
+- `deploy/pipeline-worker/src/index.js` — durable generation → upscale → QA orchestration.
+- `deploy/pipeline-worker/wrangler.toml` — pipeline Worker + Workflow binding.
+- `deploy/zerogpu/app.py` — GPU generation runtime.
+- `deploy/zerogpu/remote_api.py` — machine generation and upscale endpoints.
+- `deploy/zerogpu/upscale.py` — 4x RealESRGAN finalizer.
+- `src/stockforge/remote_gradio.py` — reusable remote Gradio client for legacy/CLI execution paths.
 
 ## References
 
 - Current state: [`STATUS.md`](STATUS.md)
 - Feature state: [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md)
-- Active JPEG decision: [`research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md`](research/FIRST_SALE_JPEG_NICHE_SHORTLIST_2026-08-25.md)
 - Marketplace standard: [`MARKETPLACE_UPLOAD_READINESS_STANDARD.md`](MARKETPLACE_UPLOAD_READINESS_STANDARD.md)
 - Provider backend contract: [`provider-backends.md`](provider-backends.md)
