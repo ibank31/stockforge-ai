@@ -106,17 +106,23 @@ function usablePrimary(output) {
 
 export async function locatePrimaryAsset(env, imageBytes, mimeType) {
   if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
-  let output = normalize(responseText(await runLocator(env, imageBytes, mimeType, false)));
+  const firstResponse = await runLocator(env, imageBytes, mimeType, false);
+  let output = normalize(responseText(firstResponse));
   if (!usablePrimary(output) && output.asset_candidates.length) {
     const best = [...output.asset_candidates].sort((left, right) => right.confidence - left.confidence)[0];
     if (best.confidence >= 0.5 && best.label && best.bbox_normalized) output.primary_asset = best;
   }
-  if (!usablePrimary(output)) output = normalize(responseText(await runLocator(env, imageBytes, mimeType, true)));
-  if (!usablePrimary(output) && output.asset_candidates.length) {
-    const best = [...output.asset_candidates].sort((left, right) => right.confidence - left.confidence)[0];
-    if (best.confidence >= 0.5 && best.label && best.bbox_normalized) output.primary_asset = best;
+  if (!usablePrimary(output)) {
+    const retryResponse = await runLocator(env, imageBytes, mimeType, true);
+    output = normalize(responseText(retryResponse));
+    if (!usablePrimary(output) && output.asset_candidates.length) {
+      const best = [...output.asset_candidates].sort((left, right) => right.confidence - left.confidence)[0];
+      if (best.confidence >= 0.5 && best.label && best.bbox_normalized) output.primary_asset = best;
+    }
+    if (!usablePrimary(output)) {
+      throw new Error(`ASSET_LOCALIZATION_FAILED:${JSON.stringify({first: responseText(firstResponse), retry: responseText(retryResponse)})}`);
+    }
   }
-  if (!usablePrimary(output)) throw new Error("ASSET_LOCALIZATION_FAILED");
   if (!output.asset_candidates.length) output.asset_candidates = [output.primary_asset];
   return { schema_version: 1, stage: "ASSET_LOCALIZATION", ...output, localization: { method: "vision_bbox_normalized", coordinate_system: "full_image_0_to_1", primary_bbox: output.primary_asset.bbox_normalized, confidence: output.primary_asset.confidence } };
 }
