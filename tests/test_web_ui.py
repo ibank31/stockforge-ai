@@ -22,3 +22,11 @@ def test_browser_flow_keeps_single_job_generation():
     assert "Generate 1 Asset" in HTML
     assert "exactly one generation job" in HTML
     assert "Tidak ada batch generation" in HTML
+
+
+def test_generation_releases_gpu_before_separate_finalization():
+    assert "Finalize 4×" in HTML
+    assert "queueUpscale()" in HTML
+    assert "/api/jobs/'+jobId+'/upscale" in HTML
+    assert "raw intermediate" in HTML
+    assert "finalisasi 4× belum dijalankan" in HTML
