@@ -41,9 +41,11 @@ jobs:
           Path('/tmp/reference.png').write_bytes(png)
           PY
           echo '=== PROD REFERENCE INTELLIGENCE ==='
-          curl -fsS -D /tmp/headers -o /tmp/reference.json -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/reference-intelligence"
+          HTTP_CODE=$(curl -sS -D /tmp/headers -o /tmp/reference.json -w '%{http_code}' -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/reference-intelligence")
+          echo "HTTP=$HTTP_CODE"
           cat /tmp/headers
           cat /tmp/reference.json
+          test "$HTTP_CODE" = "200"
           node - <<'NODE'
           const fs=require('fs');
           const x=JSON.parse(fs.readFileSync('/tmp/reference.json','utf8'));
