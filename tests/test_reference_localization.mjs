@@ -21,8 +21,7 @@ test("Moondream dynamically identifies and localizes the primary asset", async (
   assert.equal(result.localization.method, "moondream_query_detect");
   assert.equal(e.calls[0].model, "@cf/moondream/moondream3.1-9B-A2B");
   assert.equal(e.calls[0].input.task, "query");
-  assert.match(e.calls[0].input.image, /^[A-Za-z0-9+/]+=*$/);
-  assert.equal(e.calls[0].input.image.includes("data:image/png;base64,"), false);
+  assert.match(e.calls[0].input.image, /^data:image\/png;base64,[A-Za-z0-9+/]+=*$/);
   assert.equal(e.calls[1].input.task, "detect");
   assert.equal(e.calls[1].input.target, "green travel mug");
 });
