@@ -100,4 +100,4 @@ jobs:
           test "$BYTES" -gt 100000
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
 
-# Explicit trigger commit for remote full E2E validation.
+# Trigger a fresh full production E2E after the corrected D1 binding fix.
