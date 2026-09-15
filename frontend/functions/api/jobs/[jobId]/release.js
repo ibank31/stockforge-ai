@@ -25,19 +25,20 @@ const CATEGORY_MAP = [
 ];
 
 function cleanText(value) {
-  return String(value || "").replace(/[\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim();
+  return String(value || "").replace(/[\u0000-\u001f]+/gu, " ").replace(/\s+/gu, " ").trim();
 }
 
 function safeFilename(title, jobId) {
-  const stem = cleanText(title).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 24) || "stockforge_asset";
-  return `${stem}_${jobId.slice(-5)}.jpg`.slice(0, 30);
+  const stem = cleanText(title).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_+|_+$/gu, "").slice(0, 18) || "stockforge_asset";
+  const suffix = `_${jobId.slice(-5)}.jpg`;
+  return `${stem}${suffix}`.slice(0, 30);
 }
 
 function uniqueKeywords(values) {
   const out = [];
   const seen = new Set();
   for (const raw of Array.isArray(values) ? values : []) {
-    const word = cleanText(raw).toLowerCase().replace(/,/g, "");
+    const word = cleanText(raw).toLowerCase().replace(/,/gu, "");
     if (!word || seen.has(word)) continue;
     if (word.length > 80) continue;
     seen.add(word);
@@ -49,8 +50,8 @@ function uniqueKeywords(values) {
 
 function fallbackMetadata(concept) {
   const source = [concept.subject, concept.use_case, concept.composition, concept.context, concept.color, concept.viewpoint].filter(Boolean);
-  const fallbackWords = source.flatMap((value) => cleanText(value).toLowerCase().split(/[^a-z0-9]+/)).filter((word) => word.length >= 3);
-  const title = cleanText(concept.subject || "Commercial stock asset").replace(/[,;:]+/g, " ").replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, " ").slice(0, 70).trim();
+  const fallbackWords = source.flatMap((value) => cleanText(value).toLowerCase().split(/[^\p{L}\p{N}]+/u)).filter((word) => [...word].length >= 3);
+  const title = cleanText(concept.subject || "Commercial stock asset").replace(/[,;:]+/gu, " ").replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s+/gu, " ").slice(0, 70).trim();
   return { title: title || "Commercial stock asset", keywords: uniqueKeywords(fallbackWords), source: "deterministic-fallback" };
 }
 
@@ -63,9 +64,9 @@ function pickCategory(concept, metadata) {
 function metadataRisk(metadata) {
   const corpus = `${metadata.title} ${(metadata.keywords || []).join(" ")}`.toLowerCase();
   const blockedPatterns = [
-    /\b(in the style of|style of|inspired by|influenced by|based on the work of)\b/,
-    /\b(logo|trademark|brand name|copyrighted character|fictional character)\b/,
-    /\b(actual news|breaking news|news event)\b/,
+    /\b(in the style of|style of|inspired by|influenced by|based on the work of)\b/i,
+    /\b(logo|trademark|brand name|copyrighted character|fictional character)\b/i,
+    /\b(actual news|breaking news|news event|generative ai)\b/i,
   ];
   return blockedPatterns.some((pattern) => pattern.test(corpus));
 }
@@ -84,7 +85,7 @@ async function generateMetadata(env, concept, summary) {
     });
     const text = response?.response || response?.result || JSON.stringify(response);
     const parsed = JSON.parse(String(text).match(/\{[\s\S]*\}/)?.[0] || text);
-    const title = cleanText(parsed?.title).replace(/[,;:]+/g, " ").replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, " ").slice(0, 70).trim();
+    const title = cleanText(parsed?.title).replace(/[,;:]+/gu, " ").replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s+/gu, " ").slice(0, 70).trim();
     const keywords = uniqueKeywords(parsed?.keywords);
     if (!title || !keywords.length) return fallback;
     return { title, keywords, source: "workers-ai-llama-3.2-1b" };
@@ -93,14 +94,18 @@ async function generateMetadata(env, concept, summary) {
   }
 }
 
+function xmlEscape(value) {
+  return cleanText(value).replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;").replace(/'/gu, "&apos;");
+}
+
 function buildCsv(filename, metadata, category) {
-  const csvTitle = metadata.title.replace(/,/g, " ");
+  const csvTitle = metadata.title.replace(/,/gu, " ");
   return `Filename,Keywords,Title,Category\n${filename},"${metadata.keywords.join(",")}","${csvTitle}",${category.number}\n`;
 }
 
 function buildXmp(metadata, category) {
-  const keywords = metadata.keywords.map((v) => `        <rdf:li>${v.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</rdf:li>`).join("\n");
-  return `<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="StockForge">\n <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">\n  <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" xmlns:xmp="http://ns.adobe.com/xap/1.0/">\n   <dc:title><rdf:Alt><rdf:li xml:lang="x-default">${metadata.title.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</rdf:li></rdf:Alt></dc:title>\n   <dc:subject><rdf:Bag>\n${keywords}\n   </rdf:Bag></dc:subject>\n   <photoshop:Category>${category.number}</photoshop:Category>\n   <xmp:CreatorTool>StockForge AI</xmp:CreatorTool>\n  </rdf:Description>\n </rdf:RDF>\n</x:xmpmeta>\n<?xpacket end="w"?>`;
+  const keywords = metadata.keywords.map((v) => `        <rdf:li>${xmlEscape(v)}</rdf:li>`).join("\n");
+  return `<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="StockForge">\n <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">\n  <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" xmlns:xmp="http://ns.adobe.com/xap/1.0/">\n   <dc:title><rdf:Alt><rdf:li xml:lang="x-default">${xmlEscape(metadata.title)}</rdf:li></rdf:Alt></dc:title>\n   <dc:subject><rdf:Bag>\n${keywords}\n   </rdf:Bag></dc:subject>\n   <photoshop:Category>${category.number}</photoshop:Category>\n   <xmp:CreatorTool>StockForge AI</xmp:CreatorTool>\n  </rdf:Description>\n </rdf:RDF>\n</x:xmpmeta>\n<?xpacket end="w"?>`;
 }
 
 function buildChecklist(metadata, category, result, job) {
@@ -171,7 +176,7 @@ export async function onRequestPost(context) {
 
     const manifestKey = `artifacts/${job.id}/manifest.json`;
     const csvKey = `artifacts/${job.id}/adobe-metadata.csv`;
-    const xmpKey = `artifacts/${job.id}/${filename.replace(/\.jpg$/i, ".xmp")}`;
+    const xmpKey = `artifacts/${job.id}/${filename.replace(/\.jpg$/iu, ".xmp")}`;
     const checklistKey = `artifacts/${job.id}/review-checklist.md`;
     const aiKey = `artifacts/${job.id}/ai-disclosure.txt`;
     await env.ASSET_STORE.put(manifestKey, JSON.stringify(manifest, null, 2), { httpMetadata: { contentType: "application/json" } });
