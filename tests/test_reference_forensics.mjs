@@ -61,6 +61,8 @@ test("reference forensics separates presentation from PNG asset contract", async
   assert.equal(calls.length, 2);
   for (const call of calls) {
     assert.equal(call.model, "@cf/google/gemma-4-26b-a4b-it");
-    assert.equal(call.payload.messages?.[1]?.content?.[1]?.type, "image_url");
+    assert.match(call.payload.image, /^data:image\/png;base64,/);
+    assert.equal(typeof call.payload.messages?.[1]?.content, "string");
+    assert.equal("image_url" in call.payload.messages[1], false);
   }
 });
