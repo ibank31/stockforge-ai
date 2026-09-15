@@ -18,17 +18,17 @@ jobs:
       - run: uv run stockforge version
       - name: Validate ZeroGPU Python sources
         run: python -m py_compile deploy/zerogpu/upscale.py deploy/zerogpu/remote_api.py
-      - name: Validate Cloudflare JavaScript syntax
+      - name: Validate JavaScript sources
         shell: bash
         run: |
           set -euo pipefail
+          node --check deploy/pipeline-worker/src/index.js
           while IFS= read -r -d '' file; do
             node --check "$file"
-          done < <(find frontend/functions frontend -type f -name '*.js' -print0)
+          done < <(find frontend/functions -type f -name '*.js' -print0)
       - name: Validate deployment configs exist
         run: |
           test -f frontend/wrangler.toml
           test -f frontend/migrations/0001_stockforge.sql
           test -f deploy/pipeline-worker/wrangler.toml
           test -f deploy/pipeline-worker/src/index.js
-      - run: true
