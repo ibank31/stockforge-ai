@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS jobs_sf (
   raw_r2_key TEXT,
   final_r2_key TEXT,
   asset_token TEXT,
+  artifact_sha256 TEXT,
   result_json TEXT,
   error TEXT,
   created_at TEXT NOT NULL,
