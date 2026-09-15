@@ -1,0 +1,31 @@
+name: Deploy StockForge Pages front door
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ (secrets.CLOUDFLARE_API_TOKEN != '' || secrets.CF_API_TOKEN != '') && (secrets.CLOUDFLARE_ACCOUNT_ID != '' || secrets.CF_ACCOUNT_ID != '') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+      PAGES_PROJECT: stockforge-ai
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+
+      - name: Ensure Pages project exists
+        run: wrangler pages project create "$PAGES_PROJECT" --production-branch main || true
+
+      - name: Deploy Pages front door
+        run: wrangler pages deploy frontend --project-name "$PAGES_PROJECT" --branch main
