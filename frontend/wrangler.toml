@@ -2,7 +2,7 @@ name = "stockforge-ai"
 compatibility_date = "2026-09-15"
 pages_build_output_dir = "."
 
-# Deployment trigger: remote control plane is deployed by GitHub Actions.
+# Remote control plane deployment + production smoke test.
 [vars]
 STOCKFORGE_HF_SPACE_URL = "https://ibank31-stockforge-zerogpu.hf.space"
 
