@@ -6,25 +6,31 @@ StockForge V2 turns a user-supplied visual reference into a materially different
 
 1. Start the browser API with `stockforge-web`.
 2. Start the queue worker with `stockforge-web-worker` in a second process.
-3. Configure a real ComfyUI-compatible provider before starting the worker:
-
-   ```bash
-   export STOCKFORGE_COMFYUI_URL=http://127.0.0.1:8188
-   stockforge-web-worker
-   ```
-
-   The worker refuses to start without this setting and never uses a fake provider.
+3. The production worker defaults to the public Hugging Face ZeroGPU Space `ibank31/stockforge-zerogpu` through the `generate_remote` Gradio queue endpoint. No local GPU or local ComfyUI endpoint is required.
 4. Upload a JPG, PNG, or WebP reference.
 5. Review the measurable profile and adjust the crop if necessary.
 6. Enter a new commercial direction with at least three explicit creative changes.
 7. Review the generated plan and queue the generation job.
-8. Monitor the job in the browser. The worker carries the durable reference identity through execution and runs post-generation similarity verification.
+8. Monitor the job in the browser. The worker carries the durable reference identity through remote ZeroGPU execution and runs post-generation similarity verification.
 9. If the result is `BLOCK`, use bounded regeneration. At most two regeneration attempts are accepted by default, and duplicate child jobs are rejected.
 10. If the result is `REVIEW`, inspect the generated artifact in the browser.
 11. Run technical QA. A `FAIL` result cannot be approved.
 12. Use **Approve for package** only after human visual, rights, policy, distinctness, and metadata review.
 13. Create and download the review-ready ZIP package.
 14. Review the package contents and upload manually to the selected microstock marketplace.
+
+## Provider configuration
+
+The browser worker uses this provider policy:
+
+- `STOCKFORGE_PROVIDER_MODE=zerogpu` by default.
+- `STOCKFORGE_ZEROGPU_SPACE` defaults to `ibank31/stockforge-zerogpu`.
+- `STOCKFORGE_ZEROGPU_URL` defaults to `https://ibank31-stockforge-zerogpu.hf.space`.
+- `STOCKFORGE_ZEROGPU_API` defaults to `generate_remote`.
+- `STOCKFORGE_HF_TOKEN` is optional. When supplied, the worker authenticates its Hugging Face request; without it, the public Space can still be called subject to Hugging Face's unauthenticated/shared quota rules.
+- `STOCKFORGE_PROVIDER_MODE=comfyui` is retained only as an explicit compatibility path and requires `STOCKFORGE_COMFYUI_URL`.
+
+The worker never silently falls back to a fake provider and never treats queue submission as generation success. A successful production job requires a real remote output that can be downloaded and ingested.
 
 ## Browser API stages
 
@@ -44,7 +50,7 @@ StockForge V2 turns a user-supplied visual reference into a materially different
 
 ## Provider boundary
 
-The repository contains a ComfyUI HTTP adapter and a durable recovery-aware worker. A live generation run requires a reachable ComfyUI endpoint, a valid workflow in `GenerationRequest.parameters["comfyui_workflow"]`, and any required model/runtime configuration. Those external runtime prerequisites cannot be verified in a repository-only test run. The automated suite uses deterministic fake providers to validate queue, recovery, ingestion, similarity, QA, and packaging behavior without consuming GPU credits.
+The repository contains a ComfyUI HTTP adapter and a remote Gradio provider adapter. The live browser path now uses the existing Hugging Face ZeroGPU Space and its stable `generate_remote` endpoint. The ZeroGPU Space uses the StockForge FP8-aware Z-Image runtime and the `ibank31/stockforge-models` model repository. Kaggle remains a separate compute/finalizer layer and is not required for the first V2 generation proof. A live E2E run still requires the remote Space to be reachable and its model/runtime configuration to be healthy.
 
 ## Safety boundary
 
