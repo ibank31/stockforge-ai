@@ -14,3 +14,21 @@ test("missing bbox fails closed", async () => {
   const env = { AI: { async run() { return { response: JSON.stringify({ reference_type: "RAW_ASSET", confidence: 0.9, asset_candidates: [], primary_asset: { label: "thing", confidence: 0.9, bbox_normalized: null } }) }; } } };
   await assert.rejects(() => locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png"), /ASSET_LOCALIZATION_FAILED/);
 });
+
+test("valid primary asset remains usable when candidate list is omitted", async () => {
+  const env = { AI: { async run() { return { response: JSON.stringify({
+    reference_type: "EMAIL_SCREENSHOT",
+    confidence: 0.35,
+    asset_candidates: [],
+    primary_asset: {
+      label: "illustrated school backpack",
+      confidence: 0.91,
+      bbox_normalized: { x: 0.31, y: 0.24, width: 0.36, height: 0.49 },
+      why_asset: "the reusable visual subject",
+    },
+  }) }; } } };
+  const result = await locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png");
+  assert.equal(result.primary_asset.label, "illustrated school backpack");
+  assert.equal(result.asset_candidates.length, 1);
+  assert.deepEqual(result.localization.primary_bbox, { x: 0.31, y: 0.24, width: 0.36, height: 0.49 });
+});

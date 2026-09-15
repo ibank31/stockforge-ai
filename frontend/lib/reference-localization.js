@@ -1,10 +1,117 @@
 const MODEL = "@cf/google/gemma-4-26b-a4b-it";
-const TYPES = new Set(["SOCIAL_MEDIA_POST","EMAIL_SCREENSHOT","MARKETPLACE_SCREENSHOT","PRODUCT_PAGE","RAW_ASSET","UNKNOWN"]);
-function parse(v){if(v&&typeof v==="object")return v;if(typeof v!=="string")return null;const s=v.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/i,"");try{return JSON.parse(s)}catch{}const a=s.indexOf("{"),b=s.lastIndexOf("}");try{return a>=0&&b>a?JSON.parse(s.slice(a,b+1)):null}catch{return null}}
-function text(v){if(typeof v==="string")return v;if(!v||typeof v!=="object")return"";for(const x of[v.response,v.result,v.output_text,v.choices?.[0]?.message?.content,v.choices?.[0]?.text]){if(typeof x==="string"&&x.trim())return x;if(x&&typeof x==="object"){const y=text(x);if(y)return y}}return""}
-function n(v){const x=Number(v);return Number.isFinite(x)?Math.max(0,Math.min(1,x>1?x/100:x)):NaN}
-function bbox(v){if(!v||typeof v!=="object")return null;const x=n(v.x),y=n(v.y),w=n(v.width),h=n(v.height);if(![x,y,w,h].every(Number.isFinite)||w<=0||h<=0||x+w>1.0001||y+h>1.0001)return null;return{x,y,width:Math.min(w,1-x),height:Math.min(h,1-y)}}
-function normalize(v){const r=parse(v)||{};const candidates=(Array.isArray(r.asset_candidates)?r.asset_candidates:[]).map(c=>({label:String(c?.label||"").trim(),confidence:n(c?.confidence)||0,bbox_normalized:bbox(c?.bbox_normalized),why_asset:String(c?.why_asset||"").trim()})).filter(c=>c.label&&c.bbox_normalized).slice(0,8);const p=r.primary_asset||{};return{reference_type:TYPES.has(r.reference_type)?r.reference_type:"UNKNOWN",confidence:n(r.confidence)||0,presentation_elements:Array.isArray(r.presentation_elements)?r.presentation_elements.slice(0,12):[],evidence_elements:Array.isArray(r.evidence_elements)?r.evidence_elements.slice(0,12):[],asset_candidates:candidates,primary_asset:{label:String(p.label||r.primary_asset_candidate||"").trim(),confidence:n(p.confidence)||0,bbox_normalized:bbox(p.bbox_normalized),why_asset:String(p.why_asset||"").trim()}}}
-function prompt(){return `You are the spatial asset locator for a commercial visual-asset factory. Analyze ANY supplied image; never assume a fixed subject. Separate presentation/UI/evidence from the actual reusable visual asset. Identify up to 8 plausible reusable asset candidates and give a TIGHT normalized bounding box for each. Exclude UI, text, platform chrome, margins, unrelated background, watermarks and sales-proof elements unless they are themselves the deliberate standalone asset. Coordinates: x=left,y=top,width,height, all 0..1 relative to the full image. Select ONE primary asset using visual salience and standalone commercial reuse potential. For multi-object references, a coherent asset set may be a candidate. For raw assets, the box can cover most of the canvas. If no real asset can be located confidently, use null primary bbox; never invent facts. Return ONLY JSON with reference_type, confidence, presentation_elements, evidence_elements, asset_candidates, primary_asset, primary_asset_candidate. `}
-function dataUrl(bytes,mime){const u=new Uint8Array(bytes);let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode(...u.subarray(i,Math.min(i+0x8000,u.length)));return`data:${mime};base64,${btoa(s)}`}
-export async function locatePrimaryAsset(env,imageBytes,mimeType){if(!env.AI)throw new Error("REFERENCE_AI_UNAVAILABLE");const r=await env.AI.run(MODEL,{messages:[{role:"system",content:"Strict visual locator. JSON only."},{role:"user",content:[{type:"text",text:prompt()},{type:"image_url",image_url:{url:dataUrl(imageBytes,mimeType)}}]}],max_tokens:1800,temperature:.02,chat_template_kwargs:{enable_thinking:false}});const out=normalize(text(r));if(!(out.confidence>=.5&&out.primary_asset.label&&out.primary_asset.bbox_normalized&&out.asset_candidates.length))throw new Error("ASSET_LOCALIZATION_FAILED");return{schema_version:1,stage:"ASSET_LOCALIZATION",...out,localization:{method:"vision_bbox_normalized",coordinate_system:"full_image_0_to_1",primary_bbox:out.primary_asset.bbox_normalized,confidence:out.primary_asset.confidence}}}
+const TYPES = new Set(["SOCIAL_MEDIA_POST", "EMAIL_SCREENSHOT", "MARKETPLACE_SCREENSHOT", "PRODUCT_PAGE", "RAW_ASSET", "UNKNOWN"]);
+
+function parse(value) {
+  if (value && typeof value === "object") return value;
+  if (typeof value !== "string") return null;
+  const text = value.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  try { return JSON.parse(text); } catch {}
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+  try { return first >= 0 && last > first ? JSON.parse(text.slice(first, last + 1)) : null; } catch { return null; }
+}
+
+function responseText(value) {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "";
+  for (const candidate of [value.response, value.result, value.output_text, value.choices?.[0]?.message?.content, value.choices?.[0]?.text]) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate;
+    if (candidate && typeof candidate === "object") {
+      const nested = responseText(candidate);
+      if (nested) return nested;
+    }
+  }
+  return "";
+}
+
+function score(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(1, number > 1 ? number / 100 : number)) : NaN;
+}
+
+function bbox(value) {
+  if (!value || typeof value !== "object") return null;
+  const x = score(value.x);
+  const y = score(value.y);
+  const width = score(value.width);
+  const height = score(value.height);
+  if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0 || x + width > 1.0001 || y + height > 1.0001) return null;
+  return { x, y, width: Math.min(width, 1 - x), height: Math.min(height, 1 - y) };
+}
+
+function assetCandidate(value) {
+  return {
+    label: String(value?.label || "").trim(),
+    confidence: score(value?.confidence) || 0,
+    bbox_normalized: bbox(value?.bbox_normalized),
+    why_asset: String(value?.why_asset || "").trim(),
+  };
+}
+
+function sameCandidate(left, right) {
+  const a = left.label.toLowerCase();
+  const b = right.label.toLowerCase();
+  const boxA = left.bbox_normalized;
+  const boxB = right.bbox_normalized;
+  return a === b && boxA && boxB && boxA.x === boxB.x && boxA.y === boxB.y && boxA.width === boxB.width && boxA.height === boxB.height;
+}
+
+function normalize(value) {
+  const raw = parse(value) || {};
+  const primary = assetCandidate({ ...(raw.primary_asset || {}), label: raw.primary_asset?.label || raw.primary_asset_candidate || "" });
+  const candidates = (Array.isArray(raw.asset_candidates) ? raw.asset_candidates : [])
+    .map(assetCandidate)
+    .filter(candidate => candidate.label && candidate.bbox_normalized)
+    .slice(0, 8);
+
+  // A model may identify the primary asset correctly without repeating it in the
+  // optional candidate list. Preserve that evidence; an absent/invalid primary
+  // bbox still fails closed below.
+  if (primary.label && primary.bbox_normalized && !candidates.some(candidate => sameCandidate(candidate, primary))) candidates.unshift(primary);
+
+  return {
+    reference_type: TYPES.has(raw.reference_type) ? raw.reference_type : "UNKNOWN",
+    confidence: score(raw.confidence) || 0,
+    presentation_elements: Array.isArray(raw.presentation_elements) ? raw.presentation_elements.slice(0, 12) : [],
+    evidence_elements: Array.isArray(raw.evidence_elements) ? raw.evidence_elements.slice(0, 12) : [],
+    asset_candidates: candidates.slice(0, 8),
+    primary_asset: primary,
+  };
+}
+
+function prompt() {
+  return `You are the spatial asset locator for a commercial visual-asset factory. Analyze ANY supplied image; never assume a fixed subject. Separate presentation/UI/evidence from the actual reusable visual asset. Identify up to 8 plausible reusable asset candidates and give a TIGHT normalized bounding box for each. Exclude UI, text, platform chrome, margins, unrelated background, watermarks and sales-proof elements unless they are themselves the deliberate standalone asset. Coordinates: x=left,y=top,width,height, all 0..1 relative to the full image. Select ONE primary asset using visual salience and standalone commercial reuse potential. For multi-object references, a coherent asset set may be a candidate. For raw assets, the box can cover most of the canvas. If no real asset can be located confidently, use null primary bbox; never invent facts. Return ONLY JSON with reference_type, confidence, presentation_elements, evidence_elements, asset_candidates, primary_asset, primary_asset_candidate.`;
+}
+
+function dataUrl(bytes, mime) {
+  const data = new Uint8Array(bytes);
+  let binary = "";
+  for (let index = 0; index < data.length; index += 0x8000) binary += String.fromCharCode(...data.subarray(index, Math.min(index + 0x8000, data.length)));
+  return `data:${mime};base64,${btoa(binary)}`;
+}
+
+export async function locatePrimaryAsset(env, imageBytes, mimeType) {
+  if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
+  const result = await env.AI.run(MODEL, {
+    messages: [
+      { role: "system", content: "Strict visual locator. JSON only." },
+      { role: "user", content: [{ type: "text", text: prompt() }, { type: "image_url", image_url: { url: dataUrl(imageBytes, mimeType) } }] },
+    ],
+    max_tokens: 1800,
+    temperature: 0.02,
+    chat_template_kwargs: { enable_thinking: false },
+  });
+  const output = normalize(responseText(result));
+  if (!(output.primary_asset.confidence >= 0.5 && output.primary_asset.label && output.primary_asset.bbox_normalized && output.asset_candidates.length)) throw new Error("ASSET_LOCALIZATION_FAILED");
+  return {
+    schema_version: 1,
+    stage: "ASSET_LOCALIZATION",
+    ...output,
+    localization: {
+      method: "vision_bbox_normalized",
+      coordinate_system: "full_image_0_to_1",
+      primary_bbox: output.primary_asset.bbox_normalized,
+      confidence: output.primary_asset.confidence,
+    },
+  };
+}
