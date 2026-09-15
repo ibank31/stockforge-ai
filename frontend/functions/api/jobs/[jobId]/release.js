@@ -30,7 +30,7 @@ async function generateMetadata(env, concept, summary) {
 export async function onRequestPost(context) {
   try {
     const { env, params } = context;
-    if (!env.DB || !env.ASSETS) return json({ detail: "D1/R2 bindings are missing" }, 500);
+    if (!env.DB || !env.ASSET_STORE) return json({ detail: "D1/R2 bindings are missing" }, 500);
     const job = await env.DB.prepare(`SELECT * FROM jobs_sf WHERE id=?`).bind(String(params.jobId || "")).first();
     if (!job) return json({ detail: "Job not found" }, 404);
     if (job.status !== "approved") return json({ detail: "Explicit human approval is required before release" }, 409);
@@ -51,7 +51,7 @@ export async function onRequestPost(context) {
       human_review_required: true,
     };
     const key = `artifacts/${job.id}/manifest.json`;
-    await env.ASSETS.put(key, JSON.stringify(manifest, null, 2), { httpMetadata: { contentType: "application/json" } });
+    await env.ASSET_STORE.put(key, JSON.stringify(manifest, null, 2), { httpMetadata: { contentType: "application/json" } });
     return json({ status: "READY_UPLOAD_ADOBE", download_url: result.final?.final_asset_url || null, manifest_url: `/api/manifest/${job.id}`, manifest });
   } catch (error) { return json({ detail: error instanceof Error ? error.message : String(error) }, 500); }
 }
