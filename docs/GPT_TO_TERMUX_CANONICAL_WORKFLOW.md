@@ -7,7 +7,9 @@
 ## 1. Roles and boundaries
 
 ```text
-page.dev / browser
+Cloudflare Pages / browser
+        ↓
+Pages Function /api/* proxy
         ↓
 StockForge V2 control plane
         ↓
@@ -18,7 +20,7 @@ Remote provider router
         └── Kaggle integrations (secondary/finalization path where explicitly selected)
 ```
 
-The browser talks only to the StockForge web API. Provider endpoints, SQLite, runtime files, credentials, and internal worker state are never exposed directly to the browser.
+The browser talks only to the StockForge web API. The Pages function provides the same-origin `/api/*` boundary. Provider endpoints, SQLite, runtime files, credentials, and internal worker state are never exposed directly to the browser.
 
 GPT makes the commercial and creative decision. The control plane records it. Remote workers perform GPU execution. Adobe upload remains manual.
 
@@ -140,9 +142,13 @@ Do not invent execution IDs, job IDs, result paths, request IDs, or verification
 
 ## 10. Deployment truth boundary
 
-The repository contains the StockForge control-plane application and the ZeroGPU worker definition. The user's `page.dev` hostname/configuration is external deployment state and is deliberately not hard-coded here.
+The canonical browser implementation is stored under `frontend/` and is designed for Cloudflare Pages. Its Pages Function forwards browser `/api/*` requests to the StockForge CPU control plane. The control plane runs the browser API and the durable worker loop; the worker delegates generation to the configured remote ZeroGPU Space.
 
-For a browser deployment to be production-valid, the external page must point to the current StockForge control-plane API and the control-plane environment must point to the intended ZeroGPU Space. A local Cloudflare quick tunnel is a development/debug mechanism, not the canonical production deployment.
+The Pages function supports `STOCKFORGE_CONTROL_PLANE_URL` as an external deployment override. The repository's default target is the canonical StockForge control-plane Space, but the public `page.dev` hostname and Cloudflare project settings remain deployment state outside source code.
+
+GitHub Actions provide automated deployment hooks for both boundaries. They run only when the corresponding deployment credentials are configured as repository secrets. A skipped deployment must not be interpreted as a live production deployment.
+
+A local Cloudflare quick tunnel is a development/debug mechanism, not the canonical production deployment.
 
 ## 11. Current source-of-truth rule
 
