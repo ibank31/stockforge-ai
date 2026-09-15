@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import json
 import uuid
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -22,6 +23,8 @@ from .creative_opportunity import build_creative_opportunity
 from .database import Database
 from .job_database import JobDatabase
 from .job_manager import JobManager
+from .image_qa import ImageQAError, inspect_image
+from .release_package import ReleasePackageError, build_release_package
 from .reference_intelligence import (
     CreativeDistancePlan,
     ReferenceIntelligenceError,
@@ -117,7 +120,7 @@ label{display:block;font-size:.84rem;font-weight:650;color:#526078}input,textare
 <label>Use case<input id="proposed_use_case" value="sustainability campaign"></label><label>Seed (optional)<input id="seed" type="number" min="0"></label></div>
 <label>Why is it materially different? <small>Use at least three separate changes.</small><textarea id="differentiation_rationale">change subject\nchange composition\nchange color</textarea>
 <button id="plan" onclick="createPlan()" disabled>Analyze &amp; create plan</button><pre id="planResult">Upload a reference first.</pre></section>
-<section class="card"><h2>3. Generate and review</h2><button id="generate" onclick="queueGeneration()" disabled>Queue generation</button><p id="jobStatus" class="status">No generation job queued.</p><pre id="jobResult">The similarity gate result will appear here.</pre></section>
+<section class="card"><h2>3. Generate and review</h2><button id="generate" onclick="queueGeneration()" disabled>Queue generation</button><div class="grid"><button id="qa" class="secondary" onclick="runQA()" disabled>Run technical QA</button><button id="approve" class="secondary" onclick="approveJob()" disabled>Approve for package</button><button id="release" onclick="releaseJob()" disabled>Create download package</button></div><p id="jobStatus" class="status">No generation job queued.</p><div id="preview"></div><pre id="jobResult">The similarity gate result will appear here.</pre></section>
 </main><script>
 let referenceId=null, jobId=null, pollTimer=null;
 const $=id=>document.getElementById(id); const show=(id,value)=>$(id).textContent=typeof value==='string'?value:JSON.stringify(value,null,2);
@@ -126,7 +129,11 @@ async function uploadReference(){const file=$('file').files[0];if(!file){show('r
 function opportunity(){const value=id=>$(id).value.trim();return {market_intent:value('market_intent'),proposed_subject:value('proposed_subject'),proposed_composition:value('proposed_composition'),proposed_viewpoint:value('proposed_viewpoint'),proposed_color_direction:value('proposed_color_direction'),proposed_context:value('proposed_context'),proposed_use_case:value('proposed_use_case'),differentiation_rationale:$('differentiation_rationale').value.split('\\n').map(x=>x.trim()).filter(Boolean),seed:$('seed').value?Number($('seed').value):null}}
 async function createPlan(){if(!referenceId)return;$('plan').disabled=true;show('planResult','Building anti-similarity plan…');try{const result=await api('/api/references/'+referenceId+'/plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(opportunity())});show('planResult',result);$('generate').disabled=false}catch(e){show('planResult','Error: '+e.message)}finally{$('plan').disabled=false}}
 async function queueGeneration(){if(!referenceId)return;$('generate').disabled=true;try{const result=await api('/api/references/'+referenceId+'/generate',{method:'POST'});jobId=result.job_id;show('jobStatus','Queued: '+jobId);pollTimer=setInterval(pollJob,1500);await pollJob()}catch(e){show('jobStatus','Error: '+e.message);$('generate').disabled=false}}
-async function pollJob(){if(!jobId)return;try{const job=await api('/api/jobs/'+jobId);show('jobResult',job);const status=job.status;show('jobStatus','Job status: '+status);if(status==='succeeded'||status==='failed'||status==='cancelled'){clearInterval(pollTimer);$('generate').disabled=false;const gate=job.result&&job.result.post_generation_verification;if(gate){$('jobStatus').className='status '+(gate.decision==='BLOCK'?'blocked':'review');show('jobStatus',status+' — similarity decision: '+gate.decision+' (human review required)')}}}catch(e){clearInterval(pollTimer);show('jobStatus','Polling error: '+e.message);$('generate').disabled=false}}
+async function pollJob(){if(!jobId)return;try{const job=await api('/api/jobs/'+jobId);show('jobResult',job);const status=job.status;show('jobStatus','Job status: '+status);if(status==='succeeded'||status==='failed'||status==='cancelled'){clearInterval(pollTimer);$('generate').disabled=false;const gate=job.result&&job.result.post_generation_verification;if(gate){$('jobStatus').className='status '+(gate.decision==='BLOCK'?'blocked':'review');show('jobStatus',status+' — similarity decision: '+gate.decision+' (human review required)')}if(status==='succeeded'){$('qa').disabled=false;renderArtifacts(job.result)}}}catch(e){clearInterval(pollTimer);show('jobStatus','Polling error: '+e.message);$('generate').disabled=false}}
+function renderArtifacts(result){const ids=result.artifact_ids||[];$('preview').innerHTML=ids.map(id=>`<p><a href="/api/artifacts/${id}" target="_blank">Open generated artifact ${id}</a><br><img src="/api/artifacts/${id}" style="max-width:100%;max-height:360px;border-radius:8px"></p>`).join('')}
+async function runQA(){try{const result=await api('/api/jobs/'+jobId+'/qa',{method:'POST'});show('jobResult',result);if(result.technical_qa&&result.technical_qa.status!=='FAIL')$('approve').disabled=false}catch(e){show('jobStatus','QA error: '+e.message)}}
+async function approveJob(){try{const result=await api('/api/jobs/'+jobId+'/approve',{method:'POST'});show('jobResult',result);$('release').disabled=false;show('jobStatus','Approved for package only — manual marketplace upload remains required.')}catch(e){show('jobStatus','Approval blocked: '+e.message)}}
+async function releaseJob(){try{const result=await api('/api/jobs/'+jobId+'/release',{method:'POST'});show('jobResult',result);show('jobStatus','Package ready. Download it for manual review and upload.');$('release').outerHTML=`<a href="${result.download_url}" target="_blank">Download review package</a>`}catch(e){show('jobStatus','Packaging error: '+e.message)}}
 async function regenerate(){if(!jobId)return;try{const result=await api('/api/jobs/'+jobId+'/regenerate',{method:'POST'});jobId=result.job_id;show('jobStatus','Regeneration queued: '+jobId);pollTimer=setInterval(pollJob,1500);await pollJob()}catch(e){show('jobStatus','Regeneration stopped: '+e.message)}}
 </script></body></html>"""
 
@@ -258,4 +265,123 @@ def get_job(job_id: str) -> dict[str, Any]:
         return _ensure_job_store().database.get_job(job_id).to_record()
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from exc
+
+
+def _update_job_result(job_id: str, result: dict[str, Any]) -> dict[str, Any]:
+    manager = _ensure_job_store()
+    job = manager.database.get_job(job_id)
+    merged = {**(job.result or {}), **result}
+    with manager.database.connect() as connection:
+        connection.execute(
+            "UPDATE jobs SET result_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (json.dumps(merged, ensure_ascii=False, sort_keys=True), job_id),
+        )
+    return manager.database.get_job(job_id).to_record()
+
+
+@app.post("/api/jobs/{job_id}/qa")
+def inspect_job_output(job_id: str) -> dict[str, Any]:
+    """Run deterministic technical QA against the worker's registered artifacts."""
+    manager = _ensure_job_store()
+    try:
+        job = manager.database.get_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if job.status != "succeeded" or not job.result:
+        raise HTTPException(409, "Technical QA requires a succeeded generation job.")
+    artifact_ids = job.result.get("artifact_ids", [])
+    if not artifact_ids:
+        raise HTTPException(409, "Generation job has no registered artifacts.")
+    reports = []
+    project_root = UPLOAD_ROOT.parent.resolve()
+    for artifact_id in artifact_ids:
+        artifact = manager.database.get_artifact(artifact_id)
+        if artifact is None:
+            raise HTTPException(500, f"Artifact not found: {artifact_id}")
+        path = (project_root / artifact.relative_path).resolve()
+        try:
+            path.relative_to(project_root)
+            report = asdict(inspect_image(path))
+        except (ValueError, OSError, ImageQAError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        reports.append({"artifact_id": artifact.id, "file": f"/api/artifacts/{artifact.id}", "report": report})
+    status = "FAIL" if any(item["report"]["status"] == "fail" for item in reports) else ("WARN" if any(item["report"]["status"] == "warn" for item in reports) else "PASS")
+    return _update_job_result(job_id, {"technical_qa": {"status": status, "reports": reports, "human_review_required": True}})["result"]
+
+
+@app.get("/api/artifacts/{artifact_id}")
+def download_artifact(artifact_id: str) -> FileResponse:
+    manager = _ensure_job_store()
+    artifact = manager.database.get_artifact(artifact_id)
+    if artifact is None or artifact.project_id != PROJECT_ID:
+        raise HTTPException(404, "Artifact not found.")
+    root = UPLOAD_ROOT.parent.resolve()
+    path = (root / artifact.relative_path).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise HTTPException(404, "Artifact not found.") from exc
+    if not path.is_file():
+        raise HTTPException(404, "Artifact file not found.")
+    return FileResponse(path, media_type=artifact.mime_type or "application/octet-stream", filename=path.name)
+
+
+@app.post("/api/jobs/{job_id}/approve")
+def approve_job_for_release(job_id: str) -> dict[str, Any]:
+    """Record explicit human approval; this does not upload or publish externally."""
+    manager = _ensure_job_store()
+    try:
+        job = manager.database.get_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    result = job.result or {}
+    gate = result.get("post_generation_verification") or {}
+    qa = result.get("technical_qa") or {}
+    if job.status != "succeeded":
+        raise HTTPException(409, "Only succeeded jobs can be approved.")
+    if gate.get("decision") == "BLOCK":
+        raise HTTPException(409, "Blocked output cannot be approved.")
+    if qa.get("status") == "FAIL":
+        raise HTTPException(409, "Technical QA failed; approval is not allowed.")
+    updated = _update_job_result(job_id, {"approval": {"status": "approved_for_release", "human_review_required": True, "notice": "Approved for package preparation only; manual marketplace upload remains required."}})
+    return updated["result"]
+
+
+@app.post("/api/jobs/{job_id}/release")
+def create_release_package(job_id: str) -> dict[str, Any]:
+    manager = _ensure_job_store()
+    try:
+        job = manager.database.get_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if (job.result or {}).get("approval", {}).get("status") != "approved_for_release":
+        raise HTTPException(409, "Explicit human approval is required before packaging.")
+    execution_id = (job.result or {}).get("execution_id")
+    if not execution_id:
+        raise HTTPException(409, "Generation execution is missing.")
+    try:
+        package = build_release_package(database=manager.database, project_id=PROJECT_ID, project_root=UPLOAD_ROOT.parent, execution_id=execution_id)
+    except (ReleasePackageError, OSError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    updated = _update_job_result(job_id, {"release_package": {**package.to_dict(), "download_url": f"/api/jobs/{job_id}/download"}})
+    return updated["result"]["release_package"]
+
+
+@app.get("/api/jobs/{job_id}/download")
+def download_release_package(job_id: str) -> FileResponse:
+    manager = _ensure_job_store()
+    try:
+        job = manager.database.get_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    package = (job.result or {}).get("release_package", {})
+    path = Path(str(package.get("path", ""))).resolve()
+    deliveries = (UPLOAD_ROOT.parent / "deliveries").resolve()
+    try:
+        path.relative_to(deliveries)
+    except ValueError as exc:
+        raise HTTPException(404, "Release package not found.") from exc
+    if not path.is_file():
+        raise HTTPException(404, "Release package not found.")
+    return FileResponse(path, media_type="application/zip", filename=path.name)
 ""
