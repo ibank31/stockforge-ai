@@ -59,4 +59,4 @@ jobs:
           console.log(JSON.stringify({ok:true,reference_id:x.reference_id,workflow_id:x.workflow_id,primary:loc.primary_asset,opportunities:opp.length},null,2));
           NODE
           echo '=== REFERENCE E2E PASSED ==='
-          # E2E_REFERENCE_PROD trigger checkpoint
+          # E2E_REFERENCE_PROD trigger checkpoint v2
