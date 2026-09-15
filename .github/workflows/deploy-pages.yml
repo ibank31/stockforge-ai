@@ -1,10 +1,11 @@
-name: Deploy StockForge Pages front door
+name: Deploy StockForge Cloud control plane
 
 on:
   push:
     branches: [main]
     paths:
       - "frontend/**"
+      - "deploy/pipeline-worker/**"
   workflow_dispatch:
 
 jobs:
@@ -16,52 +17,49 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
       PAGES_PROJECT: stockforge-ai
+      PIPELINE_WORKER: stockforge-pipeline
       D1_NAME: stockforge
       R2_NAME: stockforge-assets
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Check deployment credentials
         id: credential
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare deployment credentials are configured."
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare deployment credentials are not configured; skipping remote deploy."
+            echo "Cloudflare deployment credentials are missing; skipping remote deployment."
           fi
-
       - name: Install Wrangler
         if: steps.credential.outputs.configured == 'true'
         run: npm install --global wrangler@4
-
       - name: Ensure Pages project exists
         if: steps.credential.outputs.configured == 'true'
         run: wrangler pages project create "$PAGES_PROJECT" --production-branch main || true
-
       - name: Ensure R2 bucket exists
         if: steps.credential.outputs.configured == 'true'
         run: wrangler r2 bucket create "$R2_NAME" || true
-
       - name: Ensure D1 database exists
         if: steps.credential.outputs.configured == 'true'
         run: |
           wrangler d1 create "$D1_NAME" --json > d1-create.json || true
-          if ! wrangler d1 list --json > d1-list.json; then
-            echo "Unable to list D1 databases" >&2
-            exit 1
-          fi
+          wrangler d1 list --json > d1-list.json
           DB_ID=$(node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("d1-list.json","utf8"));const rows=Array.isArray(a)?a:(a.result||a);const x=rows.find(r=>r.name===process.env.D1_NAME);if(!x||!x.uuid){process.exit(2)}console.log(x.uuid)')
           echo "D1_ID=$DB_ID" >> "$GITHUB_ENV"
-
-      - name: Render production Wrangler config
+      - name: Render production configs
         if: steps.credential.outputs.configured == 'true'
         run: |
           test -n "$D1_ID"
           sed -i "s/REPLACED_BY_DEPLOY_WORKFLOW/$D1_ID/" frontend/wrangler.toml
-
+          sed -i "s/REPLACED_BY_DEPLOY_WORKFLOW/$D1_ID/" deploy/pipeline-worker/wrangler.toml
+      - name: Apply D1 schema
+        if: steps.credential.outputs.configured == 'true'
+        run: wrangler d1 migrations apply "$D1_NAME" --remote --config frontend/wrangler.toml
+      - name: Deploy durable pipeline Worker
+        if: steps.credential.outputs.configured == 'true'
+        run: wrangler deploy --config deploy/pipeline-worker/wrangler.toml
       - name: Deploy Pages front door
         if: steps.credential.outputs.configured == 'true'
         run: wrangler pages deploy frontend --project-name "$PAGES_PROJECT" --branch main
