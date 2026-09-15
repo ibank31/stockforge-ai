@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 HTML = Path("frontend/index.html").read_text(encoding="utf-8")
 
 
@@ -22,4 +21,4 @@ def test_reference_driven_opportunity_ui_selects_server_candidate():
 def test_browser_flow_keeps_single_job_generation():
     assert "Generate 1 Asset" in HTML
     assert "exactly one generation job" in HTML
-    assert "No batch generation" in HTML
+    assert "Tidak ada batch generation" in HTML
