@@ -1,0 +1,93 @@
+name: Production Asset E2E
+
+on:
+  workflow_run:
+    workflows: ["Deploy StockForge Cloud control plane"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production-asset:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_commit.message == 'E2E_PROD'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Wait for production deployment to settle
+        run: sleep 15
+      - name: Run full generation and finalization E2E
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_URL="https://stockforge-ai.pages.dev"
+          curl -L --fail --max-time 30 "https://upload.wikimedia.org/wikipedia/commons/e/e3/Backpack.jpg" -o reference.jpg
+          HTTP_CODE=$(curl -sS -o reference.json -w '%{http_code}' -X POST -F 'file=@reference.jpg;type=image/jpeg' "$BASE_URL/api/reference-intelligence")
+          echo "reference HTTP=$HTTP_CODE"
+          test "$HTTP_CODE" = "200"
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('reference.json','utf8'));
+          if(!x.reference_id||!x.workflow_id||!Array.isArray(x.profile?.asset_opportunities)||x.profile.asset_opportunities.length!==5) throw Error(JSON.stringify(x));
+          fs.writeFileSync('ref.id',x.reference_id);
+          console.log('reference intelligence OK',x.reference_id,x.profile.asset_localization?.localization?.method);
+          NODE
+          REF_ID=$(cat ref.id)
+          printf '%s' '{"opportunity_index":0,"market_intent":"commercial website banner and presentation cover"}' > plan.json
+          PLAN_CODE=$(curl -sS -o plan.json.out -w '%{http_code}' -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan")
+          echo "plan HTTP=$PLAN_CODE"
+          test "$PLAN_CODE" = "200"
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('plan.json.out','utf8'));
+          if(x.decision!=='READY_TO_GENERATE'||x.validation?.passed!==true||x.validation?.measured_changes<3||x.validation?.declared_changes<3) throw Error(JSON.stringify(x));
+          console.log('plan OK',x.validation);
+          NODE
+          GEN_CODE=$(curl -sS -o generate.json -w '%{http_code}' -X POST "$BASE_URL/api/references/$REF_ID/generate")
+          echo "generate HTTP=$GEN_CODE"
+          test "$GEN_CODE" = "200"
+          JOB_ID=$(node -e 'const x=require("./generate.json"); if(!x.job_id)process.exit(1); process.stdout.write(x.job_id)')
+          echo "JOB_ID=$JOB_ID"
+          FINAL_STATUS=""
+          for i in $(seq 1 90); do
+            curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
+            STATUS=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.status||""))')
+            STAGE=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.stage||""))')
+            echo "generation poll $i status=$STATUS stage=$STAGE"
+            if [ "$STATUS" = "ready_upscale" ]; then break; fi
+            if [[ "$STATUS" =~ ^(failed|blocked|cancelled)$ ]]; then cat job.json; exit 1; fi
+            sleep 10
+          done
+          STATUS=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.status||""))')
+          test "$STATUS" = "ready_upscale"
+          UPSCALE_CODE=$(curl -sS -o upscale.json -w '%{http_code}' -X POST "$BASE_URL/api/jobs/$JOB_ID/upscale")
+          echo "upscale HTTP=$UPSCALE_CODE"
+          test "$UPSCALE_CODE" = "200"
+          for i in $(seq 1 90); do
+            curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
+            STATUS=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.status||""))')
+            STAGE=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.stage||""))')
+            echo "finalization poll $i status=$STATUS stage=$STAGE"
+            if [[ "$STATUS" =~ ^(succeeded|blocked)$ ]]; then break; fi
+            if [ "$STATUS" = "failed" ] || [ "$STATUS" = "cancelled" ]; then cat job.json; exit 1; fi
+            sleep 10
+          done
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('job.json','utf8'));
+          if(x.status!=='succeeded') throw Error(JSON.stringify(x));
+          const r=x.result||{};
+          const f=r.final||{};
+          if(!r.raw_r2_key||!r.raw_asset_url||!f.final_r2_key||!f.final_asset_url) throw Error(JSON.stringify(x));
+          if(Number(f.width)*Number(f.height)<16000000) throw Error(JSON.stringify(x));
+          if(r.similarity_gate?.decision!=='REVIEW_REQUIRED') throw Error(JSON.stringify(x));
+          fs.writeFileSync('final.url',f.final_asset_url);
+          console.log('PRODUCTION ASSET READY',JSON.stringify({job:x.id,status:x.status,stage:x.stage,width:f.width,height:f.height,bytes:f.size_bytes,final_url:f.final_asset_url}));
+          NODE
+          FINAL_URL=$(cat final.url)
+          curl --fail-with-body -sS "$BASE_URL$FINAL_URL" -o final.jpg
+          test -s final.jpg
+          file final.jpg
+          BYTES=$(wc -c < final.jpg)
+          test "$BYTES" -gt 100000
+          echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
