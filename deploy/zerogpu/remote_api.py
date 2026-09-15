@@ -1,8 +1,7 @@
 """Machine-to-machine API layer for the StockForge ZeroGPU worker.
 
-The normal UI remains in app.py. This module adds a stable `generate_remote`
-endpoint with the StockForge request shape so the core can call the Space or a
-compatible Gradio worker without knowing the model implementation.
+The normal UI remains in app.py. This module adds stable machine endpoints for
+image generation and the production 4x super-resolution finalizer.
 """
 
 from __future__ import annotations
@@ -12,6 +11,7 @@ from typing import Any
 import gradio as gr
 
 from app import demo, generate
+from upscale import upscale_remote
 
 _CACHE: dict[str, tuple[Any, int, float]] = {}
 
@@ -53,6 +53,22 @@ with demo:
         [remote_prompt, remote_width, remote_height, remote_steps, remote_seed, remote_randomize, remote_job_id],
         [remote_output, remote_output_seed, remote_gpu_seconds],
         api_name="generate_remote",
+    )
+
+    remote_upscale_url = gr.Textbox(visible=False)
+    remote_upscale_job_id = gr.Textbox(visible=False)
+    remote_upscale_scale = gr.Number(value=4, visible=False)
+    remote_upscale_button = gr.Button(visible=False)
+    remote_upscale_output = gr.Image(visible=False, type="pil")
+    remote_upscale_factor = gr.Number(visible=False)
+    remote_upscale_width = gr.Number(visible=False)
+    remote_upscale_height = gr.Number(visible=False)
+    remote_upscale_seconds = gr.Number(visible=False)
+    remote_upscale_button.click(
+        upscale_remote,
+        [remote_upscale_url, remote_upscale_job_id, remote_upscale_scale],
+        [remote_upscale_output, remote_upscale_factor, remote_upscale_width, remote_upscale_height, remote_upscale_seconds],
+        api_name="upscale_remote",
     )
 
 
