@@ -64,12 +64,19 @@ jobs:
         run: wrangler deploy --config deploy/pipeline-worker/wrangler.toml
       - name: Deploy Pages front door
         if: steps.credential.outputs.configured == 'true'
-        run: wrangler pages deploy frontend --project-name "$PAGES_PROJECT" --branch main
+        working-directory: frontend
+        run: wrangler pages deploy . --project-name "$PAGES_PROJECT" --branch main
       - name: Smoke test page.dev
         if: steps.credential.outputs.configured == 'true'
         run: |
           BASE_URL="https://${PAGES_PROJECT}.pages.dev"
-          curl -fsS "$BASE_URL/api/health" -o health.json
+          HEADERS=$(curl -sS -D - -o health.json "$BASE_URL/api/health" || true)
+          echo "$HEADERS"
+          CONTENT_TYPE=$(printf '%s\n' "$HEADERS" | awk -F': ' 'tolower($1)=="content-type" {print tolower($2)}' | tail -n1 | tr -d '\r')
+          case "$CONTENT_TYPE" in
+            application/json*) ;;
+            *) echo "Expected JSON from /api/health, got content-type: ${CONTENT_TYPE:-unknown}"; head -c 500 health.json || true; exit 1;;
+          esac
           node - <<'NODE'
           const fs = require('fs');
           const body = JSON.parse(fs.readFileSync('health.json', 'utf8'));
