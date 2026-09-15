@@ -101,9 +101,9 @@ jobs:
           python - <<'PY'
           import base64
           from pathlib import Path
-          Path('/tmp/reference.png').write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='))
+          Path('/tmp/reference.png').write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAAEsElEQVR4nO3dwY0cVRRA0RrkMFiwYuEcJgiH4AzQWCNiQIgWGRAC'))
           PY
-          curl -fsS -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/references" > reference.json
+          curl --fail-with-body -sS -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/references" > reference.json
           node -e 'const x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); console.log("reference_id="+x.reference_id); require("fs").writeFileSync("ref.id",x.reference_id)'
           REF_ID=$(cat ref.id)
           cat > plan.json <<'JSON'
@@ -123,30 +123,27 @@ jobs:
             "proposed_use_case": "editorial productivity, business planning and website hero banner"
           }
           JSON
-          curl -fsS -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan" > plan-response.json
+          curl --fail-with-body -sS -X POST -H 'content-type: application/json' --data @plan.json "$BASE_URL/api/references/$REF_ID/plan" > plan-response.json
           node -e 'const x=require("./plan-response.json"); if(x.decision!=="READY_TO_GENERATE" || !x.plan) throw Error(JSON.stringify(x)); console.log("plan=READY_TO_GENERATE")'
-          curl -fsS -X POST "$BASE_URL/api/references/$REF_ID/generate" > generate.json
-          node -e 'const x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("job_id="+x.job_id); console.log("workflow_id="+x.workflow_id); require("fs").writeFileSync("workflow.id",x.workflow_id); require("fs").writeFileSync("job.id",x.job_id)'
-          WF_ID=$(cat workflow.id)
+          curl --fail-with-body -sS -X POST "$BASE_URL/api/references/$REF_ID/generate" > generate.json
+          node -e 'const x=require("./generate.json"); if(!x.job_id) throw Error(JSON.stringify(x)); console.log("job_id="+x.job_id); require("fs").writeFileSync("job.id",x.job_id)'
           JOB_ID=$(cat job.id)
           ready=false
           for i in $(seq 1 120); do
             sleep 10
-            curl -fsS "$BASE_URL/api/workflows/$WF_ID" > workflow.json
-            STATE=$(node -e 'const x=require("./workflow.json"); console.log(`${x.status}|${x.current_stage}|${x.progress}|${x.job?.status||"n/a"}`)')
+            curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
+            STATE=$(node -e 'const x=require("./job.json"); console.log(`${x.status}|${x.stage}`)')
             echo "$STATE"
             STATUS=$(printf '%s' "$STATE" | cut -d'|' -f1)
-            JOB_STATUS=$(printf '%s' "$STATE" | cut -d'|' -f4)
-            if [ "$STATUS" = "blocked" ] || [ "$JOB_STATUS" = "failed" ]; then
-              cat workflow.json
+            if [ "$STATUS" = "failed" ] || [ "$STATUS" = "blocked" ]; then
+              cat job.json
               exit 1
             fi
-            if [ "$JOB_STATUS" = "ready_upscale" ]; then ready=true; break; fi
+            if [ "$STATUS" = "ready_upscale" ]; then ready=true; break; fi
           done
           test "$ready" = true
-          curl -fsS "$BASE_URL/api/jobs/$JOB_ID" > job.json
           RAW_URL=$(node -e 'const x=require("./job.json"); if(x.status!=="ready_upscale" || !x.result?.raw_asset_url) throw Error(JSON.stringify(x)); process.stdout.write(x.result.raw_asset_url)')
-          curl -fsS -D raw.headers -o raw.png "$BASE_URL$RAW_URL"
+          curl --fail-with-body -sS -D raw.headers -o raw.png "$BASE_URL$RAW_URL"
           grep -qi '^content-type: image/png' raw.headers
           test -s raw.png
           node -e 'const x=require("./job.json"); console.log("raw artifact ready", JSON.stringify({status:x.status,stage:x.stage,raw_asset_url:x.result.raw_asset_url}))'
