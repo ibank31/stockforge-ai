@@ -59,6 +59,38 @@ test("valid primary asset remains usable when candidate list is omitted", async 
   assert.deepEqual(result.localization.primary_bbox, { x: 0.31, y: 0.24, width: 0.36, height: 0.49 });
 });
 
+test("primary asset can be recovered from an object primary_asset_candidate", async () => {
+  const env = mockEnv({ response: JSON.stringify({
+    reference_type: "RAW_ASSET",
+    confidence: 0.9,
+    asset_candidates: [],
+    primary_asset: "camera",
+    primary_asset_candidate: {
+      label: "camera",
+      confidence: 0.88,
+      bbox: { xmin: 0.1, ymin: 0.2, xmax: 0.7, ymax: 0.7 },
+    },
+  }) });
+  const result = await locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png");
+  assert.equal(result.primary_asset.label, "camera");
+  assert.deepEqual(result.localization.primary_bbox, { x: 0.1, y: 0.2, width: 0.6, height: 0.49999999999999994 });
+});
+
+test("best valid candidate can recover an invalid primary asset", async () => {
+  const env = mockEnv({ response: JSON.stringify({
+    reference_type: "SOCIAL_MEDIA_POST",
+    confidence: 0.9,
+    asset_candidates: [
+      { label: "irrelevant", confidence: 0.3, bbox_normalized: { x: 0.1, y: 0.1, width: 0.1, height: 0.1 } },
+      { label: "green travel mug", confidence: 0.91, bbox_normalized: { x: 0.2, y: 0.3, width: 0.3, height: 0.4 } },
+    ],
+    primary_asset: { label: "green travel mug", confidence: 0.2, bbox_normalized: null },
+  }) });
+  const result = await locatePrimaryAsset(env, Uint8Array.from([1]).buffer, "image/png");
+  assert.equal(result.primary_asset.label, "green travel mug");
+  assert.equal(result.primary_asset.confidence, 0.91);
+});
+
 test("vision image uses the native Workers AI image input", async () => {
   let captured;
   const env = { AI: { async run(model, input) {
