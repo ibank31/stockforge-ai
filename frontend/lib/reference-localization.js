@@ -78,12 +78,13 @@ function dataUrl(bytes, mime) {
 }
 
 async function runLocator(env, imageBytes, mimeType, retry = false) {
-  const imageUrl = dataUrl(imageBytes, mimeType);
+  const image = dataUrl(imageBytes, mimeType);
   return env.AI.run(MODEL, {
     messages: [
       { role: "system", content: "Strict visual locator. Return a valid JSON object only." },
-      { role: "user", content: [{ type: "text", text: prompt(retry) }, { type: "image_url", image_url: { url: imageUrl } }] },
+      { role: "user", content: prompt(retry) },
     ],
+    image,
     response_format: { type: "json_object" },
     max_tokens: 1800,
     temperature: retry ? 0 : 0.02,
