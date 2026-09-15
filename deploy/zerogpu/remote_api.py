@@ -74,3 +74,5 @@ with demo:
 
 if __name__ == "__main__":
     demo.queue(max_size=32).launch()
+
+# Production sync marker. No runtime behavior change.
