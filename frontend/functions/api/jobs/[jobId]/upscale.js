@@ -51,7 +51,7 @@ export async function onRequestPost(context) {
     if (!instanceId) throw new Error("Durable upscale workflow returned no workflow_instance_id");
     const existing = parseResult(job);
     const result = { ...existing, provider: "hf-zerogpu", raw_r2_key: job.raw_r2_key, raw_asset_url: `/api/assets/${jobId}?kind=raw&token=${job.asset_token}`, finalization: { mode: "upscale", workflow_instance_id: instanceId, status: "queued" } };
-    await env.DB.prepare(`UPDATE jobs_sf SET status=?,stage=?,result_json=?,last_workflow_id=?,last_workflow_created_at=?,updated_at=? WHERE id=? AND status='upscale_submitted'`).bind("upscale_submitted", "UPSCALING", JSON.stringify(result), instanceId, now(), jobId).run();
+    await env.DB.prepare(`UPDATE jobs_sf SET status=?,stage=?,result_json=?,last_workflow_id=?,last_workflow_created_at=?,updated_at=? WHERE id=? AND status='upscale_submitted'`).bind("upscale_submitted", "UPSCALING", JSON.stringify(result), instanceId, now(), now(), jobId).run();
     await recordEvent(env, jobId, "workflow_created", "UPSCALING", "upscale_submitted", "Cloudflare durable upscale workflow created.", { workflow_instance_id: instanceId });
     const wf = await env.DB.prepare(`SELECT id FROM workflows_sf WHERE reference_id=?`).bind(job.reference_id).first();
     return json({ workflow_id: wf?.id || null, job_id: jobId, status: "upscale_submitted", provider: "hf-zerogpu", pipeline_instance_id: instanceId, mode: "upscale" });
