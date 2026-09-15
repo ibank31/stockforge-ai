@@ -59,7 +59,7 @@ test("valid primary asset remains usable when candidate list is omitted", async 
   assert.deepEqual(result.localization.primary_bbox, { x: 0.31, y: 0.24, width: 0.36, height: 0.49 });
 });
 
-test("vision image is embedded in the multimodal chat message", async () => {
+test("vision image uses the native Workers AI image input", async () => {
   let captured;
   const env = { AI: { async run(model, input) {
     captured = { model, input };
@@ -67,11 +67,6 @@ test("vision image is embedded in the multimodal chat message", async () => {
   } } };
   await locatePrimaryAsset(env, Uint8Array.from([1,2,3]).buffer, "image/png");
   assert.equal(captured.model, "@cf/google/gemma-4-26b-a4b-it");
-  const userMessage = captured.input.messages.find(message => message.role === "user");
-  assert.ok(userMessage);
-  assert.ok(Array.isArray(userMessage.content));
-  const imagePart = userMessage.content.find(part => part.type === "image_url");
-  assert.ok(imagePart);
-  assert.match(imagePart.image_url.url, /^data:image\/png;base64,/);
-  assert.equal("image" in captured.input, false);
+  assert.match(captured.input.image, /^data:image\/png;base64,/);
+  assert.equal(captured.input.messages.find(message => message.role === "user").content.includes("spatial asset locator"), true);
 });
