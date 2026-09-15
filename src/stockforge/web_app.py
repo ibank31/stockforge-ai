@@ -31,6 +31,7 @@ from .reference_intelligence import (
     profile_reference_image,
 )
 from .v2_pipeline import V2PipelineError, build_v2_generation_plan
+from .workflow_control import WorkflowControl
 
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 UPLOAD_ROOT = Path("runtime/web-references")
@@ -100,7 +101,9 @@ def _ensure_job_store() -> JobManager:
             "INSERT OR IGNORE INTO projects (id, name, path) VALUES (?, ?, ?)",
             (PROJECT_ID, PROJECT_NAME, str(UPLOAD_ROOT.parent)),
         )
-    return JobManager(database)
+    manager = JobManager(database)
+    WorkflowControl(database).initialize()
+    return manager
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -161,7 +164,10 @@ async def upload_reference(file: UploadFile = File(...)) -> dict[str, Any]:
         crops = suggest_crop_candidates(destination, limit=5)
         record = {"reference_id": reference_id, "source_path": str(destination.resolve()), "profile": profile.to_dict()}
         _record_path(reference_id).write_text(json.dumps(record, indent=2), encoding="utf-8")
-        return {"reference_id": reference_id, "file": f"/files/{destination.name}", "profile": record["profile"], "crop_candidates": [item.to_dict() for item in crops], "decision": "REVIEW_REQUIRED", "notice": "Reference facts are measurable; commercial meaning must be supplied or verified separately."}
+        control = WorkflowControl(_ensure_job_store().database); control.initialize()
+        workflow = control.create(reference_id, metadata={"filename": file.filename or destination.name})
+        control.event(workflow["id"], stage="ANALYZING", message="Reference profiling completed; awaiting creative planning.")
+        return {"reference_id": reference_id, "workflow_id": workflow["id"], "file": f"/files/{destination.name}", "profile": record["profile"], "crop_candidates": [item.to_dict() for item in crops], "decision": "REVIEW_REQUIRED", "notice": "Reference facts are measurable; commercial meaning must be supplied or verified separately."}
     except HTTPException:
         destination.unlink(missing_ok=True)
         raise
@@ -203,6 +209,8 @@ def create_plan(reference_id: str, payload: OpportunityInput) -> dict[str, Any]:
         plan = build_v2_generation_plan(profile, opportunity, seed=payload.seed, model_id=payload.model_id)
         record["profile"] = profile.to_dict()
         record["plan"] = plan.to_dict()
+        control = WorkflowControl(_ensure_job_store().database); control.initialize(); workflow = control.get_for_reference(reference_id)
+        if workflow: control.event(workflow["id"], stage="PLANNING", message="Creative opportunity and anti-similarity plan are ready.")
         _record_path(reference_id).write_text(json.dumps(record, indent=2), encoding="utf-8")
         return {"reference_id": reference_id, "plan": plan.to_dict(), "decision": "READY_TO_GENERATE"}
     except (ReferenceIntelligenceError, V2PipelineError, ValueError) as exc:
@@ -216,14 +224,19 @@ def enqueue_generation(reference_id: str) -> dict[str, Any]:
     if not isinstance(plan, dict):
         raise HTTPException(409, "Create and review a creative plan before generating.")
     request = dict(plan["generation_request"])
+    control = WorkflowControl(_ensure_job_store().database); control.initialize(); workflow = control.get_for_reference(reference_id)
     request["parameters"] = {**request.get("parameters", {}), "reference_id": reference_id, "reference_path": record["source_path"], "creative_plan": plan}
+    if workflow: request["parameters"]["workflow_id"] = workflow["id"]
     try:
         job = _ensure_job_store().create(project_id=PROJECT_ID, job_type="v2_generation", payload=request, max_attempts=2)
     except (OSError, ValueError) as exc:
         raise HTTPException(500, str(exc)) from exc
     record["job_id"] = job.id
+    if workflow:
+        control.attach_job(workflow["id"], job.id)
+        control.event(workflow["id"], stage="QUEUED", message="Generation job queued.", job_id=job.id)
     _record_path(reference_id).write_text(json.dumps(record, indent=2), encoding="utf-8")
-    return {"reference_id": reference_id, "job_id": job.id, "status": job.status, "job_type": job.job_type, "decision": "QUEUED"}
+    return {"reference_id": reference_id, "workflow_id": workflow["id"] if workflow else None, "job_id": job.id, "status": job.status, "job_type": job.job_type, "decision": "QUEUED"}
 
 
 @app.post("/api/jobs/{job_id}/regenerate")
@@ -259,12 +272,31 @@ def regenerate_job(job_id: str) -> dict[str, Any]:
     return {"reference_id": parameters.get("reference_id"), "job_id": child.id, "parent_job_id": job_id, "regeneration_attempt": attempt + 1, "max_regeneration_attempts": maximum, "status": child.status, "decision": "REGENERATION_QUEUED"}
 
 
+@app.get("/api/workflows/{workflow_id}")
+def get_workflow(workflow_id: str) -> dict[str, Any]:
+    control = WorkflowControl(_ensure_job_store().database); control.initialize()
+    try: return control.get(workflow_id)
+    except KeyError as exc: raise HTTPException(404, str(exc)) from exc
+
+@app.get("/api/references/{reference_id}/workflow")
+def get_reference_workflow(reference_id: str) -> dict[str, Any]:
+    _find_reference(reference_id)
+    control = WorkflowControl(_ensure_job_store().database); control.initialize(); workflow = control.get_for_reference(reference_id)
+    if workflow is None: raise HTTPException(404, "Workflow not found.")
+    return workflow
+
+@app.get("/api/workflows/{workflow_id}/events")
+def get_workflow_events(workflow_id: str) -> dict[str, Any]:
+    workflow = get_workflow(workflow_id)
+    return {"workflow_id": workflow_id, "events": workflow["events"]}
+
+
 @app.get("/api/jobs/{job_id}")
 def get_job(job_id: str) -> dict[str, Any]:
-    try:
-        return _ensure_job_store().database.get_job(job_id).to_record()
-    except ValueError as exc:
-        raise HTTPException(404, str(exc)) from exc
+    manager = _ensure_job_store()
+    try: job = manager.database.get_job(job_id)
+    except ValueError as exc: raise HTTPException(404, str(exc)) from exc
+    record = job.to_record(); control = WorkflowControl(manager.database); control.initialize(); record["workflow"] = control.snapshot_for_job(job); return record
 
 
 def _update_job_result(job_id: str, result: dict[str, Any]) -> dict[str, Any]:
@@ -306,7 +338,10 @@ def inspect_job_output(job_id: str) -> dict[str, Any]:
             raise HTTPException(422, str(exc)) from exc
         reports.append({"artifact_id": artifact.id, "file": f"/api/artifacts/{artifact.id}", "report": report})
     status = "FAIL" if any(item["report"]["status"] == "fail" for item in reports) else ("WARN" if any(item["report"]["status"] == "warn" for item in reports) else "PASS")
-    return _update_job_result(job_id, {"technical_qa": {"status": status, "reports": reports, "human_review_required": True}})["result"]
+    updated = _update_job_result(job_id, {"technical_qa": {"status": status, "reports": reports, "human_review_required": True}})
+    control = WorkflowControl(manager.database); control.initialize(); workflow = control.snapshot_for_job(job)
+    if workflow: control.event(workflow["id"], stage="TECHNICAL_QA", message=f"Technical QA completed with status {status}.", job_id=job_id, details={"status": status})
+    return updated["result"]
 
 
 @app.get("/api/artifacts/{artifact_id}")
@@ -344,6 +379,8 @@ def approve_job_for_release(job_id: str) -> dict[str, Any]:
     if qa.get("status") == "FAIL":
         raise HTTPException(409, "Technical QA failed; approval is not allowed.")
     updated = _update_job_result(job_id, {"approval": {"status": "approved_for_release", "human_review_required": True, "notice": "Approved for package preparation only; manual marketplace upload remains required."}})
+    control = WorkflowControl(manager.database); control.initialize(); workflow = control.snapshot_for_job(job)
+    if workflow: control.event(workflow["id"], stage="FINALIZATION", progress=92, message="Human approval recorded; preparing release package.", job_id=job_id)
     return updated["result"]
 
 
@@ -364,6 +401,8 @@ def create_release_package(job_id: str) -> dict[str, Any]:
     except (ReleasePackageError, OSError, ValueError) as exc:
         raise HTTPException(422, str(exc)) from exc
     updated = _update_job_result(job_id, {"release_package": {**package.to_dict(), "download_url": f"/api/jobs/{job_id}/download"}})
+    control = WorkflowControl(manager.database); control.initialize(); workflow = control.snapshot_for_job(job)
+    if workflow: control.event(workflow["id"], stage="READY_UPLOAD_ADOBE", status="ready", progress=100, message="Release package is ready for manual Adobe Stock review and upload.", job_id=job_id)
     return updated["result"]["release_package"]
 
 

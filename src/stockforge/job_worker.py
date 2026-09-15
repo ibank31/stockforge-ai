@@ -8,6 +8,7 @@ from .job import Job
 from .job_manager import JobManager
 from .recovery_orchestrator import RecoveryGenerationOrchestrator
 from .post_generation_verification import verify_generated_candidate
+from .workflow_control import HeartbeatLoop, WorkflowControl
 
 class JobWorkerError(RuntimeError):
     pass
@@ -30,19 +31,38 @@ class GenerationJobWorker:
         job = self.job_manager.claim_next(self.worker_id)
         if job is None:
             return None
+        control = WorkflowControl(self.job_manager.database); control.initialize()
+        workflow_id = dict((job.payload or {}).get("parameters") or {}).get("workflow_id")
+        heartbeat = None
         try:
             request = GenerationRequest(**job.payload)
             orchestrator = self.orchestrator_factory(job)
-            outcome = orchestrator.run(request, job_id=job.id)
+            provider = getattr(orchestrator, "provider", None); descriptor = getattr(provider, "descriptor", None); provider_id = getattr(descriptor, "id", None)
+            if workflow_id:
+                control.event(workflow_id, stage="GENERATING", message="Generation worker claimed the job.", job_id=job.id, provider_id=provider_id)
+                heartbeat = HeartbeatLoop(control, workflow_id, stage="GENERATING", job_id=job.id, provider_id=provider_id); heartbeat.__enter__()
+            try:
+                outcome = orchestrator.run(request, job_id=job.id)
+            finally:
+                if heartbeat: heartbeat.__exit__(None, None, None); heartbeat = None
             result = {"execution_id": outcome.execution.id, "artifact_ids": list(outcome.execution.artifact_ids)}
+            provider_job_id = getattr(outcome.execution, "provider_job_id", None)
+            if workflow_id:
+                control.event(workflow_id, stage="INGESTING", message="Provider completed; artifacts were ingested.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id)
+                control.event(workflow_id, stage="SIMILARITY_GATE", message="Running post-generation similarity verification.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id)
             verification = self._verify_v2_output(request, outcome, orchestrator)
-            if verification is not None:
-                result["post_generation_verification"] = verification
+            if verification is not None: result["post_generation_verification"] = verification
             completed = self.job_manager.complete(job.id, result)
+            if workflow_id:
+                decision = verification.get("decision") if verification else None
+                if decision == "BLOCK": control.event(workflow_id, stage="HUMAN_REVIEW", status="blocked", message="Similarity gate blocked the candidate.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id, details=verification)
+                else: control.event(workflow_id, stage="HUMAN_REVIEW", status="human_review", message="Generation completed; human review is required.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id, details=verification or {})
             return WorkerResult(completed.id, completed.status, result)
         except Exception as exc:
+            if heartbeat: heartbeat.__exit__(None, None, None)
             error = str(exc) or exc.__class__.__name__
             failed = self.job_manager.fail(job.id, error)
+            if workflow_id: control.event(workflow_id, stage="GENERATING", status="failed" if failed.status == "failed" else "active", message=error, job_id=job.id, details={"retry": failed.status == "queued"})
             return WorkerResult(failed.id, failed.status, {"error": error, "retry": failed.status == "queued"})
 
     @staticmethod
