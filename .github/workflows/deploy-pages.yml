@@ -6,6 +6,7 @@ on:
     paths:
       - "frontend/**"
       - "deploy/pipeline-worker/**"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 jobs:
@@ -104,7 +105,10 @@ jobs:
           fixture = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
           Path('/tmp/reference.png').write_bytes(base64.b64decode(fixture, validate=True))
           PY
-          curl --fail-with-body -sS -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/references" > reference.json
+          HTTP_CODE=$(curl -sS -o reference.json -w '%{http_code}' -X POST -F 'file=@/tmp/reference.png;type=image/png' "$BASE_URL/api/references")
+          echo "reference HTTP=$HTTP_CODE"
+          cat reference.json
+          test "$HTTP_CODE" = "200"
           node -e 'const x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); console.log("reference_id="+x.reference_id); require("fs").writeFileSync("ref.id",x.reference_id)'
           REF_ID=$(cat ref.id)
           cat > plan.json <<'JSON'
