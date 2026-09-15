@@ -1,136 +1,146 @@
 # StockForge AI
 
-## StockForge V2 Mission
+## StockForge V2
 
-**StockForge V2 is a Microstock Intelligence and Asset Generation System.**
+**StockForge V2 is a remote-first Microstock Intelligence and Asset Generation System.**
 
-Its purpose is not to copy, trace, or recreate an uploaded reference asset.
+The system learns from a reference asset to identify commercial intent and market-relevant characteristics, then creates a genuinely new creative direction with explicit similarity-risk controls. It is not a tracing or copying system, and final commercial judgment remains human-reviewed.
 
-The system learns from a reference asset to identify its **commercial intent and market-relevant characteristics**, then creates a genuinely new creative direction with explicit similarity-risk controls.
+### Canonical end-to-end architecture
 
-### Core workflow
+```text
+page.dev / browser front door
+        ↓
+StockForge V2 web API / control plane
+        ↓
+Reference Intelligence
+        ↓
+Market / Creative Opportunity
+        ↓
+Creative Distance / Anti-Similarity
+        ↓
+Concept + Model-Specific Prompt
+        ↓
+Durable Job Queue
+        ↓
+Provider Router
+   ┌────┴───────────────┐
+   │                    │
+HF ZeroGPU          Kaggle worker
+primary renderer    secondary/finalizer
+   │                    │
+   └──────────┬─────────┘
+              ↓
+Artifact Ingestion
+              ↓
+Post-Generation Similarity Gate
+              ↓
+Technical QA
+              ↓
+Human Review
+              ↓
+READY_UPLOAD_ADOBE
+              ↓
+Manual Adobe upload
+```
+
+`main` is the canonical source of truth for this architecture. The browser front door is intentionally separated from provider internals. Termux may be used as an operator/client tool, but production generation does not depend on a local GPU, local ComfyUI, or a Termux process staying alive.
+
+## Core workflow
 
 ```text
 MARKET-PROVEN REFERENCE ASSET
         ↓
-UPLOAD TO STOCKFORGE V2
+UPLOAD
         ↓
 REFERENCE INTELLIGENCE
-(subject, category, commercial intent, composition,
-visual style, color, buyer relevance)
         ↓
-CREATIVE OPPORTUNITY ANALYSIS
+CREATIVE OPPORTUNITY
         ↓
-CREATIVE DISTANCE / ANTI-SIMILARITY
+ANTI-SIMILARITY PLAN
         ↓
 NEW CONCEPT
         ↓
 MODEL-SPECIFIC PROMPT
         ↓
-AI GENERATION
+REMOTE GENERATION
         ↓
 QUALITY + SIMILARITY GATES
         ↓
-FINALIZATION
+FINALIZATION / RELEASE PACKAGE
         ↓
-REVIEW-READY ASSET
+HUMAN REVIEW
         ↓
-HUMAN REVIEW → MARKETPLACE UPLOAD
+MANUAL MARKETPLACE UPLOAD
 ```
 
-### The fundamental rule
+### Fundamental rule
 
 > **Preserve market intent. Change creative expression.**
 
-A reference may help StockForge understand *why* an asset is commercially interesting. It must not become a template for producing a confusingly similar copy.
+A reference may help StockForge understand why an asset is commercially interesting. It must not become a template for producing a confusingly similar copy.
 
-StockForge V2 should actively explore a new creative space through changes such as:
+### Intelligence layers
 
-- subject or object selection
-- composition and spatial arrangement
-- camera angle or viewpoint
-- color direction
-- visual treatment
-- context and use case
-- buyer intent
-- uniqueness levers
-
-### Required intelligence layers
-
-The V2 architecture should evolve toward these layers:
-
-1. **Reference Intelligence** — extract structured, useful signals from uploaded reference images.
-2. **Market Intelligence** — combine evidence about demand, supply, crowding, and opportunity.
-3. **Creative Opportunity Engine** — identify viable directions instead of blindly reproducing references.
-4. **Anti-Similarity Engine** — evaluate exact, perceptual, semantic, compositional, and conceptual similarity risk where technically available.
+1. **Reference Intelligence** — extract structured signals from uploaded references.
+2. **Market Intelligence** — demand, supply, crowding, and opportunity evidence.
+3. **Creative Opportunity Engine** — select viable new directions.
+4. **Anti-Similarity Engine** — exact, perceptual, semantic, compositional, and conceptual checks where technically available.
 5. **Concept Engine** — turn intelligence into a distinct commercial concept.
-6. **Model-Specific Prompt Engine** — translate the concept for the selected generation model/provider.
-7. **Generation & Recovery** — preserve durable job identity, idempotency, and recovery guarantees.
-8. **Quality & Release Gates** — reject clear technical failures and route uncertain decisions to human review.
+6. **Model-Specific Prompt Engine** — translate the concept for the selected provider.
+7. **Generation & Recovery** — durable job identity, idempotency, provider-event recovery, and artifact lineage.
+8. **Quality & Release Gates** — technical rejection plus human review for uncertain originality and marketplace judgment.
 
-### Non-goals
+## Production routes
 
-StockForge V2 must not be designed as:
-
-- a competitor asset copier
-- an image tracing system
-- a prompt-only image generator with no intelligence layer
-- an automatic marketplace uploader
-- a system that auto-approves commercial originality
-
-The system may generate and analyze automatically, but **final commercial judgment remains human-reviewed**.
-
-## Agent and maintainer priority
-
-Before extending a subsystem, agents must first verify that it is connected to the active production call graph.
-
-A module that exists and passes unit tests is **not automatically an active V2 capability**.
-
-When implementing V2, prefer this order:
-
-1. Wire the intelligence layer into the real production path.
-2. Add safety and validation at the actual ingestion boundary.
-3. Add similarity controls before generation and after generation.
-4. Preserve provenance and lineage across every transformation.
-5. Keep job execution idempotent and recoverable.
-6. Avoid creating isolated “smart” modules that are never called by production.
-
-Historical or isolated code may be reused only after verifying that its assumptions match the V2 mission.
-
----
-
-## Current production scope
-
-StockForge currently operates as an Android-first digital-asset production automation platform with active PNG and JPEG output routes. V2 development expands the intelligence and reference-analysis architecture while preserving the existing production reliability boundaries.
-
-### Active output routes
+StockForge currently supports exactly two production output routes:
 
 | Route | Intended use | Final technical contract |
 |---|---|---|
-| **PNG** | Isolated objects, cutouts, stickers, overlays, and transparent utility assets | RGBA/true alpha, sRGB, isolated BiRefNet finalizer, technical alpha gate, and 100% visual edge review |
-| **JPEG** | Self-contained scenes, environments, hero compositions, illustrations with backgrounds, and copy-space visuals | RGB/sRGB, active resolution gate, protected RealESRGAN finalizer, and full-resolution visual review |
+| **PNG** | Isolated objects, cutouts, stickers, overlays, transparent utility assets | PNG, RGBA/true alpha, sRGB, isolated finalizer, technical alpha gate, full visual edge review |
+| **JPEG** | Scenes, environments, hero compositions, illustrations, backgrounds, copy-space visuals | JPEG, RGB/sRGB, resolution gate, protected finalizer, full-resolution visual review |
 
-StockForge does not automatically submit assets to Adobe or another marketplace.
+The route is selected from the buyer job and composition requirements, not from the source filename or extension.
 
-## Start here
+## Remote provider boundary
 
-Agents and maintainers must read these files in order:
+The default browser provider is **Hugging Face ZeroGPU**. The application adapter uses the Gradio queue contract: submit one durable StockForge job identity, receive a remote `event_id`, poll the corresponding SSE endpoint, download the returned file, and ingest it into the durable StockForge project.
 
-1. `README.md` — V2 mission, goals, and production direction.
-2. [`AGENTS.md`](AGENTS.md) — repository-wide operating rules.
-3. [`docs/ACTIVE_SCOPE.md`](docs/ACTIVE_SCOPE.md) — current production contract.
-4. [`docs/GPT_TO_TERMUX_CANONICAL_WORKFLOW.md`](docs/GPT_TO_TERMUX_CANONICAL_WORKFLOW.md) — active operational workflow.
-5. [`docs/STATUS.md`](docs/STATUS.md) — implementation snapshot and limitations.
+Remote Gradio event identities and materialized output references are persisted by the adapter, so a control-plane worker restart can resume a known remote event instead of silently creating a second submission.
 
-Historical material is under [`docs/archive/`](docs/archive/) and must not be treated as active instructions without explicit verification.
+The repository also contains Kaggle worker/finalizer integrations. They are not a reason to make local Termux or local GPU execution part of the production control plane.
 
-## Development
+## Browser API
 
-Install the package and development dependencies, then run the test suite from the repository root:
+The V2 web application provides:
+
+- reference upload and profiling;
+- crop application;
+- creative opportunity planning;
+- durable generation queue submission;
+- job status polling;
+- post-generation similarity verification;
+- technical QA;
+- human approval gate;
+- release-package creation.
+
+The API never performs automatic Adobe submission and never auto-approves commercial originality.
+
+The browser page embedded in `stockforge.web_app` is a reference implementation. The user's existing `page.dev` front door is external deployment configuration and is not hard-coded into the repository.
+
+## Development and CI
+
+Install the package with the required extras:
 
 ```bash
-python3 -m pip install -e '.[dev]'
+python3 -m pip install -e '.[dev,image,web]'
 python3 -m pytest -q
 ```
 
-When changing an active production flow, update the relevant scope and status documentation in the same commit. Documentation drift is how repositories become archaeological sites with CI.
+CI installs `dev`, `image`, and `web` extras and runs the complete test suite before the version check.
+
+## Repository operating rule
+
+Before extending a subsystem, verify that it belongs to the active production call graph. A module that exists and passes unit tests is not automatically an active V2 capability.
+
+When changing an active production flow, update the corresponding scope/status documentation in the same commit. Historical or isolated material may remain for auditability, but it is not an active instruction.
