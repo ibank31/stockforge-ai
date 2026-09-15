@@ -40,6 +40,8 @@ jobs:
           node --check 'frontend/functions/api/references/[referenceId]/generate.js'
           node --check frontend/functions/api/reference-intelligence.js
           node --check frontend/lib/reference-intelligence.js
+          node --check frontend/lib/reference-localization.js
+          node --check frontend/lib/reference-analysis-v2.js
       - name: Install Wrangler
         if: steps.credential.outputs.configured == 'true'
         run: npm install --global wrangler@4
