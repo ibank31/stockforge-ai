@@ -77,10 +77,24 @@ async function saveWorkflowState(env, referenceId, status, stage, progress, mess
     .run();
 }
 
+async function recordJobEvent(env, jobId, eventType, stage, status, message, details = null) {
+  await env.DB.prepare(`INSERT INTO job_events_sf(job_id,event_type,stage,status,message,details_json,created_at) VALUES(?,?,?,?,?,?,?)`)
+    .bind(jobId, eventType, stage || null, status || null, message || null, details ? JSON.stringify(details) : null, new Date().toISOString())
+    .run();
+}
+
 function parseMode(event) {
   const mode = String(event.payload?.mode || "generate");
   if (mode !== "generate" && mode !== "upscale") throw new Error(`Unsupported pipeline mode: ${mode}`);
   return mode;
+}
+
+function classifyFailure(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const transient = /(HTTP 429|HTTP 5\d\d|timeout|timed out|network|fetch failed|temporarily|queue|polling window|service unavailable|overloaded|rate limit)/i.test(message);
+  if (transient) return { retryable: 1, code: "TRANSIENT_PROVIDER" };
+  if (/no FileData|malformed|JSON\.parse|Unsupported pipeline mode|not found/i.test(message)) return { retryable: 0, code: "TERMINAL_PIPELINE" };
+  return { retryable: 1, code: "UNKNOWN_RETRYABLE" };
 }
 
 async function pollUntilComplete(env, step, apiName, eventId, maxAttempts, label) {
@@ -95,6 +109,34 @@ async function pollUntilComplete(env, step, apiName, eventId, maxAttempts, label
 
 export class StockForgePipeline extends WorkflowEntrypoint {
   async run(event, step) {
+    const jobId = String(event.payload?.jobId || "");
+    try {
+      return await this.runInternal(event, step);
+    } catch (error) {
+      const mode = String(event.payload?.mode || "generate");
+      const failure = classifyFailure(error);
+      const detail = (error instanceof Error ? error.message : String(error)).slice(0, 2000);
+      if (this.env.DB && jobId) {
+        const job = await this.env.DB.prepare(`SELECT status,reference_id FROM jobs_sf WHERE id=?`).bind(jobId).first();
+        if (job && !["ready_upscale", "succeeded", "approved", "blocked"].includes(job.status)) {
+          const stage = mode === "upscale" ? "FAILED_UPSCALE" : "FAILED_GENERATION";
+          await saveJob(this.env, jobId, {
+            status: "failed",
+            stage,
+            error: detail,
+            failed_mode: mode,
+            failure_code: failure.code,
+            retryable: failure.retryable,
+          });
+          await recordJobEvent(this.env, jobId, "workflow_failed", stage, "failed", detail, { mode, retryable: Boolean(failure.retryable), failure_code: failure.code });
+          if (job.reference_id) await saveWorkflowState(this.env, job.reference_id, "failed", stage, 100, `${detail}${failure.retryable ? " Retry is allowed." : " Retry is not allowed."}`);
+        }
+      }
+      throw error;
+    }
+  }
+
+  async runInternal(event, step) {
     const jobId = String(event.payload?.jobId || "");
     const mode = parseMode(event);
     if (!jobId) throw new Error("jobId is required");
@@ -124,7 +166,8 @@ export class StockForgePipeline extends WorkflowEntrypoint {
           !!plan.generation.randomize_seed,
           jobId,
         ]);
-        await saveJob(this.env, jobId, { status: "submitted", stage: "GENERATING", event_id: remote });
+        await saveJob(this.env, jobId, { status: "submitted", stage: "GENERATING", event_id: remote, error: null });
+        await recordJobEvent(this.env, jobId, "zerogpu_generation_submitted", "GENERATING", "submitted", "Generation submitted to HF ZeroGPU.", { event_id: remote });
         await saveWorkflowState(this.env, job.reference_id, "running", "GENERATING", 25, "Generation queued on HF ZeroGPU.");
         return remote;
       });
@@ -165,7 +208,11 @@ export class StockForgePipeline extends WorkflowEntrypoint {
           raw_r2_key: rawMeta.key,
           result_json: JSON.stringify(rawResult),
           error: null,
+          retryable: 0,
+          failed_mode: null,
+          failure_code: null,
         });
+        await recordJobEvent(this.env, jobId, "generation_complete", "READY_UPSCALE", "ready_upscale", "Generation complete. GPU released; 4x finalization is a separate request.", { raw_r2_key: rawMeta.key, gpu_seconds: rawMeta.gpu_seconds });
         await saveWorkflowState(this.env, job.reference_id, "ready", "READY_UPSCALE", 55, "Generation complete. GPU released; 4x finalization is a separate request.");
         return true;
       });
@@ -179,7 +226,8 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     }
 
     await step.do("mark upscale running", async () => {
-      await saveJob(this.env, jobId, { status: "upscale_submitted", stage: "UPSCALING", error: null });
+      await saveJob(this.env, jobId, { status: "upscale_submitted", stage: "UPSCALING", error: null, retryable: 0, failed_mode: null, failure_code: null });
+      await recordJobEvent(this.env, jobId, "upscale_started", "UPSCALING", "upscale_submitted", "4x finalization workflow started.");
       await saveWorkflowState(this.env, job.reference_id, "running", "UPSCALING", 70, "4x finalization queued on HF ZeroGPU.");
       return true;
     });
@@ -188,6 +236,8 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     const upscaleEvent = await step.do("submit ZeroGPU upscale", async () => {
       const remote = await gradioSubmit(this.env, "upscale_remote", [sourceUrl, `${jobId}-upscale`, 4]);
       await saveJob(this.env, jobId, {
+        status: "upscaling",
+        stage: "UPSCALING",
         result_json: JSON.stringify({
           provider: "hf-zerogpu",
           model: "Z-Image-Turbo",
@@ -197,6 +247,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
           next_stage: "UPSCALING",
         }),
       });
+      await recordJobEvent(this.env, jobId, "zerogpu_upscale_submitted", "UPSCALING", "upscaling", "Upscale submitted to HF ZeroGPU.", { event_id: remote });
       return remote;
     });
 
@@ -222,8 +273,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
 
     return await step.do("complete production pipeline", async () => {
       const duplicate = await this.env.DB.prepare(`SELECT id FROM jobs_sf WHERE artifact_sha256=? AND id<>? AND status IN ('succeeded','approved') LIMIT 1`)
-        .bind(finalMeta.sha256, jobId)
-        .first();
+        .bind(finalMeta.sha256, jobId).first();
       const mp = finalMeta.width && finalMeta.height ? (finalMeta.width * finalMeta.height) / 1000000 : 0;
       const result = {
         provider: "hf-zerogpu",
@@ -268,7 +318,11 @@ export class StockForgePipeline extends WorkflowEntrypoint {
         final_r2_key: finalMeta.key,
         result_json: JSON.stringify(result),
         error: duplicate ? `Exact duplicate of ${duplicate.id}` : (mp < 16 ? "Final master below 16 MP" : null),
+        retryable: 0,
+        failed_mode: null,
+        failure_code: duplicate ? "EXACT_DUPLICATE" : (mp < 16 ? "RESOLUTION_GATE" : null),
       });
+      await recordJobEvent(this.env, jobId, blocked ? "production_blocked" : "production_ready_review", duplicate ? "BLOCKED_DUPLICATE" : (mp < 16 ? "BLOCKED_RESOLUTION" : "READY_REVIEW"), blocked ? "blocked" : "succeeded", blocked ? (duplicate ? `Exact duplicate of ${duplicate.id}` : "Final master below 16 MP") : "4x finalization complete. Human visual/rights review remains mandatory.", { megapixels: mp, sha256: finalMeta.sha256 });
       await saveWorkflowState(
         this.env,
         job.reference_id,
