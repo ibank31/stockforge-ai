@@ -1,12 +1,25 @@
-from fastapi.testclient import TestClient
-
-from stockforge import web_app
+from pathlib import Path
 
 
-def test_home_contains_end_to_end_v2_workflow_controls():
-    response = TestClient(web_app.app).get("/")
-    assert response.status_code == 200
-    body = response.text
-    for marker in ("Upload &amp; analyze", "Analyze &amp; create plan", "Queue generation", "/api/jobs/", "similarity decision"):
-        assert marker in body
-    assert "human review" in body.lower()
+HTML = Path("frontend/index.html").read_text(encoding="utf-8")
+
+
+def test_reference_driven_opportunity_ui_has_no_hardcoded_tumbler():
+    assert "reusable insulated drink tumbler" not in HTML
+    assert "proposed_subject" not in HTML
+    assert "proposed_composition" not in HTML
+    assert "differentiation_rationale" not in HTML
+
+
+def test_reference_driven_opportunity_ui_selects_server_candidate():
+    assert "sfCandidates" in HTML
+    assert "selectedIndex" in HTML
+    assert "opportunity_index:selectedIndex" in HTML
+    assert "Select this opportunity" in HTML
+    assert "Build Synchronized Plan" in HTML
+
+
+def test_browser_flow_keeps_single_job_generation():
+    assert "Generate 1 Asset" in HTML
+    assert "exactly one generation job" in HTML
+    assert "No batch generation" in HTML
