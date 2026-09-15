@@ -3,3 +3,4 @@ Vision fallback contract checkpoint: multimodal Gemma.
 Opportunity difference contract checkpoint: four canonical dimensions.
 Remote dispatcher checkpoint: production deploy via workflow_dispatch.
 Full asset E2E checkpoint: generation to final 16MP master.
+Upscale dispatch fallback checkpoint: direct worker URL fallback.
