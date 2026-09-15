@@ -139,7 +139,7 @@ jobs:
           echo "reference HTTP=$HTTP_CODE"
           cat reference.json
           test "$HTTP_CODE" = "200"
-          node -e 'const x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); if(!x.workflow_id) throw Error(JSON.stringify(x)); if(!x.profile?.visual_summary) throw Error(JSON.stringify(x)); if(!Array.isArray(x.profile?.asset_opportunities) || x.profile.asset_opportunities.length!==5) throw Error(JSON.stringify(x)); if(x.profile.intelligence?.fallback_count!==0) throw Error(JSON.stringify(x)); console.log("reference intelligence passed", JSON.stringify({reference_id:x.reference_id,workflow_id:x.workflow_id,opportunities:x.profile.asset_opportunities.length})); require("fs").writeFileSync("ref.id",x.reference_id)'
+          node -e 'const fs=require("fs"),x=require("./reference.json"); if(!x.reference_id) throw Error(JSON.stringify(x)); if(!x.workflow_id) throw Error(JSON.stringify(x)); if(!x.profile?.visual_summary) throw Error(JSON.stringify(x)); if(!Array.isArray(x.profile?.asset_opportunities) || x.profile.asset_opportunities.length!==5) throw Error(JSON.stringify(x)); if(new Set(x.profile.asset_opportunities.map(o=>o.id)).size!==5) throw Error(JSON.stringify(x)); if(x.profile.intelligence?.fallback_count!==0) throw Error(JSON.stringify(x)); console.log("reference intelligence passed", JSON.stringify({reference_id:x.reference_id,workflow_id:x.workflow_id,opportunities:x.profile.asset_opportunities.length})); fs.writeFileSync("ref.id",x.reference_id)'
           REF_ID=$(cat ref.id)
           cat > plan.json <<'JSON'
           {
@@ -151,13 +151,13 @@ jobs:
           echo "plan HTTP=$PLAN_CODE"
           cat plan-response.json
           test "$PLAN_CODE" = "200"
-          node -e 'const x=require("./plan-response.json"); if(x.decision!=="READY_TO_GENERATE" || !x.plan) throw Error(JSON.stringify(x)); console.log("plan=READY_TO_GENERATE")'
+          node -e 'const x=require("./plan-response.json"); if(x.decision!=="READY_TO_GENERATE" || !x.plan) throw Error(JSON.stringify(x)); if(x.validation?.passed!==true || x.validation?.measured_changes<3 || x.validation?.declared_changes<3) throw Error(JSON.stringify(x)); console.log("plan=READY_TO_GENERATE")'
           GEN_CODE=$(curl -sS -o generate.json -w '%{http_code}' -X POST "$BASE_URL/api/references/$REF_ID/generate")
           echo "generate HTTP=$GEN_CODE"
           cat generate.json
           test "$GEN_CODE" = "200"
-          node -e 'const x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("generation request accepted", JSON.stringify({job_id:x.job_id,workflow_id:x.workflow_id,status:x.status||null,stage:x.stage||null})); require("fs").writeFileSync("job.id",x.job_id)'
+          node -e 'const fs=require("fs"),x=require("./generate.json"); if(!x.job_id || !x.workflow_id) throw Error(JSON.stringify(x)); console.log("generation request accepted", JSON.stringify({job_id:x.job_id,workflow_id:x.workflow_id,status:x.status||null,stage:x.stage||null})); fs.writeFileSync("job.id",x.job_id)'
           JOB_ID=$(cat job.id)
           curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
-          node -e 'const x=require("./job.json"); if(!x.id || x.id!==process.env.JOB_ID) throw Error(JSON.stringify(x)); if(["failed","blocked","cancelled"].includes(x.status)) throw Error(JSON.stringify(x)); console.log("generation boundary passed", JSON.stringify({status:x.status,stage:x.stage}))'
+          node -e 'const fs=require("fs"),x=require("./job.json"),id=fs.readFileSync("job.id","utf8").trim(); if(!x.id || x.id!==id) throw Error(JSON.stringify(x)); if(["failed","blocked","cancelled"].includes(x.status)) throw Error(JSON.stringify(x)); console.log("generation boundary passed", JSON.stringify({status:x.status,stage:x.stage}))'
           echo "REFERENCE INTELLIGENCE + PLAN + GENERATION E2E PASSED"
