@@ -1,44 +1,52 @@
 # StockForge V2 browser entrypoint
 
-The browser must communicate only with the StockForge control-plane API. It must never access SQLite, runtime files, GPU workers, or credentials directly.
+The browser communicates only with the StockForge control plane at `stockforge-ai.pages.dev`. It never accesses SQLite, R2 credentials, HF credentials, or GPU workers directly.
 
 ## Production boundary
 
 ```text
-Cloudflare Pages / browser
+Browser / page.dev
         ↓
-Pages Function /api/* proxy
+Cloudflare Pages Functions
         ↓
-StockForge V2 CPU control plane
+D1 + R2 + Workers AI
         ↓
-Durable job queue + worker
+Cloudflare Workflows
         ↓
-Remote provider worker
+HF ZeroGPU
+   ┌────┴────┐
+   ↓         ↓
+Generate   4x Upscale
+   └────┬────┘
         ↓
-Hugging Face ZeroGPU
+Final master → QA → metadata → human review
+        ↓
+READY_UPLOAD_ADOBE
 ```
 
-The production-ready front door is implemented under `frontend/`. The Pages Function at `frontend/functions/api/[[path]].js` forwards browser `/api/*` requests to the configured control plane and maps `/api/health` to the control plane's `/health` endpoint.
+Pages Functions provide the API and bind D1, R2, and Workers AI. Cloudflare Workflows provide durable execution so a browser can close without killing the production job. The Pages Function starts the Workflow through a Cloudflare service binding.
 
-The historical `cloudflared tunnel --url http://127.0.0.1:8000` command is a development/debug technique only. It is **not** the canonical production architecture because it makes the user's local machine the availability boundary.
+`ibank31/stockforge-zerogpu` is the only production GPU lane in the $0 architecture. Its machine interface exposes `generate_remote` and `upscale_remote`. Both are queued through the same ZeroGPU Space and remain subject to the account's free GPU quota.
 
-## Control-plane deployment requirements
+Kaggle is retained only for R&D, model benchmarking, diagnostics, and non-commercial experiments. It is deliberately excluded from the commercial production path.
 
-The deployed control plane must:
+## Required Cloudflare resources
 
-1. serve the StockForge V2 web API;
-2. run the durable queue worker loop or connect to an equivalent always-on worker;
-3. provide persistent writable storage for the SQLite job database, reference files, and provider state when deployed on infrastructure intended for production persistence;
-4. have network access to the configured remote provider;
-5. keep provider credentials in deployment secrets, never in source code;
-6. expose only the web API to the browser.
+- Pages project: `stockforge-ai`
+- D1 database: `stockforge`
+- R2 bucket: `stockforge-assets`
+- Workers AI binding: `AI`
+- Service binding: `STOCKFORGE_WORKFLOW` → Worker `stockforge-pipeline`
+- Workflow binding on the pipeline Worker: `STOCKFORGE_PIPELINE`
 
-The repository provides a Hugging Face Docker control-plane definition under `deploy/control-plane/` and a GitHub Actions deployment workflow. The deployment workflow targets `ibank31/stockforge-control-plane` when an HF token secret is configured.
+The GitHub Actions deployment workflow provisions the Pages project, D1 database, and R2 bucket and deploys the durable pipeline Worker plus Pages front door when Cloudflare deployment credentials are configured.
 
-The Cloudflare Pages Function accepts the environment variable `STOCKFORGE_CONTROL_PLANE_URL`; otherwise it uses the canonical control-plane hostname encoded as its safe default. Cloudflare Pages deployment is also automated through GitHub Actions when the required Cloudflare account/token secrets are configured.
+The repository does not claim that the external `page.dev` domain is live until a real deployment and endpoint verification succeeds.
 
-The repository does not hard-code the user's `page.dev` hostname as a claim of liveness. The external Pages project/domain is considered production-live only after a successful deployment and endpoint verification.
+## Free-first policy
+
+The production pipeline is designed to remain $0 within the active free quotas of Cloudflare and Hugging Face. It must fail closed rather than silently switch to a paid provider. Paid providers may be added later only as an explicitly enabled policy path.
 
 ## Local debugging only
 
-For local debugging, `uvicorn stockforge.web_app:app --host 127.0.0.1 --port 8000` is valid. A temporary Cloudflare quick tunnel may then be used for testing. This must not be used as the permanent production executor or job-control dependency.
+`uvicorn stockforge.web_app:app --host 127.0.0.1 --port 8000` and a temporary Cloudflare tunnel are debugging tools only. They are not production dependencies.
