@@ -99,3 +99,5 @@ jobs:
           BYTES=$(wc -c < final.jpg)
           test "$BYTES" -gt 100000
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
+
+# Explicit trigger commit for remote full E2E validation.
