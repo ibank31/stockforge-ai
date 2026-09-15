@@ -31,6 +31,7 @@ upscale = [
 [project.scripts]
 stockforge = "stockforge.cli:app"
 stockforge-web = "stockforge.web_runner:main"
+stockforge-web-worker = "stockforge.web_worker:main"
 
 [build-system]
 requires = ["hatchling>=1.25"]
