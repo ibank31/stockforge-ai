@@ -1,8 +1,8 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 
 const DEFAULT_HF_SPACE = "https://ibank31-stockforge-zerogpu.hf.space";
-const GENERATE_POLL_ATTEMPTS = 100;
-const UPSCALE_POLL_ATTEMPTS = 100;
+const GENERATE_POLL_ATTEMPTS = 180;
+const UPSCALE_POLL_ATTEMPTS = 360;
 
 function hfBase(env) {
   return (env.STOCKFORGE_HF_SPACE_URL || DEFAULT_HF_SPACE).replace(/\/$/, "");
@@ -97,9 +97,14 @@ function classifyFailure(error) {
   return { retryable: 1, code: "UNKNOWN_RETRYABLE" };
 }
 
+function pollDelaySeconds(label, attempt) {
+  if (label === "generation") return attempt < 12 ? 5 : 10;
+  return attempt < 12 ? 5 : 10;
+}
+
 async function pollUntilComplete(env, step, apiName, eventId, maxAttempts, label) {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    await step.sleep(`wait ${label} ${attempt}`, "3 seconds");
+    await step.sleep(`wait ${label} ${attempt}`, `${pollDelaySeconds(label, attempt)} seconds`);
     const poll = await step.do(`poll ${label} ${attempt}`, async () => gradioPoll(env, apiName, eventId));
     if (poll.state === "failed") throw new Error(poll.error || `ZeroGPU ${label} failed`);
     if (poll.state === "completed") return poll.values;
