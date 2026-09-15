@@ -15,7 +15,8 @@ export async function onRequestGet(context) {
     const job = await env.DB.prepare(`SELECT id,asset_token,status FROM jobs_sf WHERE id=?`).bind(jobId).first();
     if (!job) return json({ detail: "Job not found" }, 404);
     const url = new URL(request.url);
-    if (url.searchParams.get("token") !== job.asset_token) return json({ detail: "Manifest not found" }, 404);
+    const suppliedToken = url.searchParams.get("token");
+    if (job.status !== "approved" && suppliedToken !== job.asset_token) return json({ detail: "Manifest not found" }, 404);
     const kind = url.searchParams.get("kind") || "manifest";
     const selected = KIND_MAP[kind];
     if (!selected) return json({ detail: "Unknown manifest artifact" }, 400);
