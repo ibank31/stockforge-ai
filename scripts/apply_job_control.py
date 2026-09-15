@@ -1,0 +1,184 @@
+from pathlib import Path
+
+CONTROL = '''"""Durable workflow observability and control for StockForge browser jobs."""
+from __future__ import annotations
+
+import json
+import os
+import sqlite3
+import threading
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+STAGES = {"RECEIVED": 5, "ANALYZING": 12, "PLANNING": 20, "QUEUED": 28, "GENERATING": 55, "INGESTING": 68, "SIMILARITY_GATE": 78, "TECHNICAL_QA": 86, "FINALIZATION": 92, "HUMAN_REVIEW": 96, "READY_UPLOAD_ADOBE": 100}
+
+class WorkflowControl:
+    def __init__(self, database: Any) -> None:
+        self.database = database
+        self._lock = threading.Lock()
+
+    def initialize(self) -> None:
+        with self.database.connect() as conn:
+            conn.executescript("""
+            CREATE TABLE IF NOT EXISTS workflows (
+                id TEXT PRIMARY KEY, reference_id TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT 'active', current_stage TEXT NOT NULL,
+                progress INTEGER NOT NULL DEFAULT 0, provider_id TEXT, provider_job_id TEXT,
+                current_job_id TEXT, error TEXT, metadata_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                completed_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflows(status);
+            CREATE TABLE IF NOT EXISTS workflow_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, workflow_id TEXT NOT NULL, job_id TEXT,
+                stage TEXT NOT NULL, status TEXT NOT NULL, progress INTEGER NOT NULL, message TEXT NOT NULL,
+                provider_id TEXT, provider_job_id TEXT, details_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_workflow_events_workflow ON workflow_events(workflow_id, id);
+            """)
+
+    def create(self, reference_id: str, *, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+        workflow_id = str(uuid.uuid4())
+        with self.database.connect() as conn:
+            conn.execute("INSERT INTO workflows (id, reference_id, current_stage, progress, metadata_json) VALUES (?, ?, 'RECEIVED', ?, ?)", (workflow_id, reference_id, STAGES['RECEIVED'], json.dumps(metadata or {}, ensure_ascii=False, sort_keys=True)))
+        return self.event(workflow_id, stage="RECEIVED", message="Reference received.")
+
+    def get_for_reference(self, reference_id: str) -> dict[str, Any] | None:
+        with self.database.connect() as conn:
+            row = conn.execute("SELECT id FROM workflows WHERE reference_id = ?", (reference_id,)).fetchone()
+        return self.get(str(row["id"])) if row else None
+
+    def get(self, workflow_id: str) -> dict[str, Any]:
+        with self.database.connect() as conn:
+            row = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()
+            if row is None:
+                raise KeyError(f"Workflow not found: {workflow_id}")
+            rows = conn.execute("SELECT * FROM workflow_events WHERE workflow_id = ? ORDER BY id ASC LIMIT 200", (workflow_id,)).fetchall()
+        data = dict(row)
+        data["metadata"] = json.loads(data.pop("metadata_json") or "{}")
+        data["events"] = [self._event(r) for r in rows]
+        data["last_event"] = data["events"][-1] if data["events"] else None
+        data["stuck"] = self._stuck(data)
+        return data
+
+    def snapshot_for_job(self, job: Any) -> dict[str, Any] | None:
+        workflow_id = dict((job.payload or {}).get("parameters") or {}).get("workflow_id")
+        if not workflow_id:
+            return None
+        try:
+            return self.get(str(workflow_id))
+        except KeyError:
+            return None
+
+    def attach_job(self, workflow_id: str, job_id: str) -> None:
+        with self.database.connect() as conn:
+            conn.execute("UPDATE workflows SET current_job_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (job_id, workflow_id))
+
+    def event(self, workflow_id: str, *, stage: str, status: str = "active", progress: int | None = None, message: str, job_id: str | None = None, provider_id: str | None = None, provider_job_id: str | None = None, details: dict[str, Any] | None = None) -> dict[str, Any]:
+        if stage not in STAGES:
+            raise ValueError(f"Unknown workflow stage: {stage}")
+        progress = STAGES[stage] if progress is None else max(0, min(100, int(progress)))
+        terminal = status in {"ready", "blocked", "failed", "cancelled"}
+        with self._lock, self.database.connect() as conn:
+            conn.execute("""UPDATE workflows SET status = ?, current_stage = ?, progress = ?,
+                provider_id = COALESCE(?, provider_id), provider_job_id = COALESCE(?, provider_job_id),
+                current_job_id = COALESCE(?, current_job_id), error = CASE WHEN ? = 'failed' THEN ? ELSE error END,
+                updated_at = CURRENT_TIMESTAMP, completed_at = CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE completed_at END
+                WHERE id = ?""", (status, stage, progress, provider_id, provider_job_id, job_id, status, message, terminal, workflow_id))
+            conn.execute("INSERT INTO workflow_events (workflow_id, job_id, stage, status, progress, message, provider_id, provider_job_id, details_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (workflow_id, job_id, stage, status, progress, message, provider_id, provider_job_id, json.dumps(details or {}, ensure_ascii=False, sort_keys=True)))
+        return self.get(workflow_id)
+
+    def heartbeat(self, workflow_id: str, *, stage: str, job_id: str | None = None, provider_id: str | None = None, provider_job_id: str | None = None) -> None:
+        with self.database.connect() as conn:
+            conn.execute("UPDATE workflows SET current_stage = ?, progress = ?, provider_id = COALESCE(?, provider_id), provider_job_id = COALESCE(?, provider_job_id), current_job_id = COALESCE(?, current_job_id), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'active'", (stage, STAGES.get(stage, 0), provider_id, provider_job_id, job_id, workflow_id))
+
+    def _stuck(self, data: dict[str, Any]) -> bool:
+        if data.get("status") != "active":
+            return False
+        try:
+            stamp = datetime.fromisoformat(str(data["updated_at"]).replace("Z", "+00:00")).astimezone(timezone.utc)
+            threshold = max(30, int(os.getenv("STOCKFORGE_STUCK_SECONDS", "180")))
+            return (datetime.now(timezone.utc) - stamp).total_seconds() >= threshold
+        except (ValueError, TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def _event(row: sqlite3.Row) -> dict[str, Any]:
+        data = dict(row)
+        data["details"] = json.loads(data.pop("details_json") or "{}")
+        return data
+
+class HeartbeatLoop:
+    def __init__(self, control: WorkflowControl, workflow_id: str, *, stage: str, job_id: str, provider_id: str | None = None, interval: float = 15.0) -> None:
+        self.control, self.workflow_id, self.stage, self.job_id, self.provider_id = control, workflow_id, stage, job_id, provider_id
+        self.provider_job_id = None
+        self.interval = max(2.0, float(interval))
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+    def __enter__(self) -> "HeartbeatLoop":
+        self._thread.start(); return self
+    def __exit__(self, *_: object) -> None:
+        self._stop.set(); self._thread.join(timeout=self.interval + 1)
+    def set_provider_job_id(self, value: str | None) -> None:
+        self.provider_job_id = value
+    def _run(self) -> None:
+        while not self._stop.wait(self.interval):
+            try: self.control.heartbeat(self.workflow_id, stage=self.stage, job_id=self.job_id, provider_id=self.provider_id, provider_job_id=self.provider_job_id)
+            except Exception: pass
+'''
+
+Path("src/stockforge/workflow_control.py").write_text(CONTROL, encoding="utf-8")
+
+web = Path("src/stockforge/web_app.py")
+s = web.read_text(encoding="utf-8")
+s = s.replace("from .v2_pipeline import V2PipelineError, build_v2_generation_plan\n", "from .v2_pipeline import V2PipelineError, build_v2_generation_plan\nfrom .workflow_control import WorkflowControl\n", 1)
+s = s.replace("    return JobManager(database)\n", "    manager = JobManager(database)\n    WorkflowControl(database).initialize()\n    return manager\n", 1)
+needle = '        _record_path(reference_id).write_text(json.dumps(record, indent=2), encoding="utf-8")\n        return {"reference_id": reference_id, "file": f"/files/{destination.name}", "profile": record["profile"], "crop_candidates": [item.to_dict() for item in crops], "decision": "REVIEW_REQUIRED", "notice": "Reference facts are measurable; commercial meaning must be supplied or verified separately."}\n'
+replacement = '        _record_path(reference_id).write_text(json.dumps(record, indent=2), encoding="utf-8")\n        control = WorkflowControl(_ensure_job_store().database); control.initialize()\n        workflow = control.create(reference_id, metadata={"filename": file.filename or destination.name})\n        control.event(workflow["id"], stage="ANALYZING", message="Reference profiling completed; awaiting creative planning.")\n        return {"reference_id": reference_id, "workflow_id": workflow["id"], "file": f"/files/{destination.name}", "profile": record["profile"], "crop_candidates": [item.to_dict() for item in crops], "decision": "REVIEW_REQUIRED", "notice": "Reference facts are measurable; commercial meaning must be supplied or verified separately."}\n'
+if needle not in s: raise SystemExit("upload block not found")
+s = s.replace(needle, replacement, 1)
+s = s.replace('        record["profile"] = profile.to_dict()\n        record["plan"] = plan.to_dict()\n', '        record["profile"] = profile.to_dict()\n        record["plan"] = plan.to_dict()\n        control = WorkflowControl(_ensure_job_store().database); control.initialize(); workflow = control.get_for_reference(reference_id)\n        if workflow: control.event(workflow["id"], stage="PLANNING", message="Creative opportunity and anti-similarity plan are ready.")\n', 1)
+s = s.replace('    request = dict(plan["generation_request"])\n    request["parameters"] = {**request.get("parameters", {}), "reference_id": reference_id, "reference_path": record["source_path"], "creative_plan": plan}\n', '    request = dict(plan["generation_request"])\n    control = WorkflowControl(_ensure_job_store().database); control.initialize(); workflow = control.get_for_reference(reference_id)\n    request["parameters"] = {**request.get("parameters", {}), "reference_id": reference_id, "reference_path": record["source_path"], "creative_plan": plan}\n    if workflow: request["parameters"]["workflow_id"] = workflow["id"]\n', 1)
+s = s.replace('    record["job_id"] = job.id\n', '    record["job_id"] = job.id\n    if workflow:\n        control.attach_job(workflow["id"], job.id)\n        control.event(workflow["id"], stage="QUEUED", message="Generation job queued.", job_id=job.id)\n', 1)
+s = s.replace('    return {"reference_id": reference_id, "job_id": job.id, "status": job.status, "job_type": job.job_type, "decision": "QUEUED"}\n', '    return {"reference_id": reference_id, "workflow_id": workflow["id"] if workflow else None, "job_id": job.id, "status": job.status, "job_type": job.job_type, "decision": "QUEUED"}\n', 1)
+marker = '@app.get("/api/jobs/{job_id}")\ndef get_job(job_id: str) -> dict[str, Any]:\n'
+routes = '''@app.get("/api/workflows/{workflow_id}")\ndef get_workflow(workflow_id: str) -> dict[str, Any]:\n    control = WorkflowControl(_ensure_job_store().database); control.initialize()\n    try: return control.get(workflow_id)\n    except KeyError as exc: raise HTTPException(404, str(exc)) from exc\n\n@app.get("/api/references/{reference_id}/workflow")\ndef get_reference_workflow(reference_id: str) -> dict[str, Any]:\n    _find_reference(reference_id)\n    control = WorkflowControl(_ensure_job_store().database); control.initialize(); workflow = control.get_for_reference(reference_id)\n    if workflow is None: raise HTTPException(404, "Workflow not found.")\n    return workflow\n\n@app.get("/api/workflows/{workflow_id}/events")\ndef get_workflow_events(workflow_id: str) -> dict[str, Any]:\n    workflow = get_workflow(workflow_id)\n    return {"workflow_id": workflow_id, "events": workflow["events"]}\n\n\n'''
+if marker not in s: raise SystemExit("job route marker not found")
+s = s.replace(marker, routes + marker, 1)
+old = '@app.get("/api/jobs/{job_id}")\ndef get_job(job_id: str) -> dict[str, Any]:\n    try:\n        return _ensure_job_store().database.get_job(job_id).to_record()\n    except ValueError as exc:\n        raise HTTPException(404, str(exc)) from exc\n'
+new = '@app.get("/api/jobs/{job_id}")\ndef get_job(job_id: str) -> dict[str, Any]:\n    manager = _ensure_job_store()\n    try: job = manager.database.get_job(job_id)\n    except ValueError as exc: raise HTTPException(404, str(exc)) from exc\n    record = job.to_record(); control = WorkflowControl(manager.database); control.initialize(); record["workflow"] = control.snapshot_for_job(job); return record\n'
+if old not in s: raise SystemExit("get job block not found")
+s = s.replace(old, new, 1)
+# QA/release lifecycle transitions
+old = '    return _update_job_result(job_id, {"technical_qa": {"status": status, "reports": reports, "human_review_required": True}})["result"]\n'
+new = '    updated = _update_job_result(job_id, {"technical_qa": {"status": status, "reports": reports, "human_review_required": True}})\n    control = WorkflowControl(manager.database); control.initialize(); workflow = control.snapshot_for_job(job)\n    if workflow: control.event(workflow["id"], stage="TECHNICAL_QA", message=f"Technical QA completed with status {status}.", job_id=job_id, details={"status": status})\n    return updated["result"]\n'
+if old not in s: raise SystemExit("qa block not found")
+s = s.replace(old, new, 1)
+old = '    updated = _update_job_result(job_id, {"approval": {"status": "approved_for_release", "human_review_required": True, "notice": "Approved for package preparation only; manual marketplace upload remains required."}})\n    return updated["result"]\n'
+new = '    updated = _update_job_result(job_id, {"approval": {"status": "approved_for_release", "human_review_required": True, "notice": "Approved for package preparation only; manual marketplace upload remains required."}})\n    control = WorkflowControl(manager.database); control.initialize(); workflow = control.snapshot_for_job(job)\n    if workflow: control.event(workflow["id"], stage="FINALIZATION", progress=92, message="Human approval recorded; preparing release package.", job_id=job_id)\n    return updated["result"]\n'
+if old not in s: raise SystemExit("approval block not found")
+s = s.replace(old, new, 1)
+old = '    updated = _update_job_result(job_id, {"release_package": {**package.to_dict(), "download_url": f"/api/jobs/{job_id}/download"}})\n    return updated["result"]["release_package"]\n'
+new = '    updated = _update_job_result(job_id, {"release_package": {**package.to_dict(), "download_url": f"/api/jobs/{job_id}/download"}})\n    control = WorkflowControl(manager.database); control.initialize(); workflow = control.snapshot_for_job(job)\n    if workflow: control.event(workflow["id"], stage="READY_UPLOAD_ADOBE", status="ready", progress=100, message="Release package is ready for manual Adobe Stock review and upload.", job_id=job_id)\n    return updated["result"]["release_package"]\n'
+if old not in s: raise SystemExit("release block not found")
+s = s.replace(old, new, 1)
+
+web.write_text(s, encoding="utf-8")
+
+worker = Path("src/stockforge/job_worker.py")
+s = worker.read_text(encoding="utf-8")
+s = s.replace('from .post_generation_verification import verify_generated_candidate\n', 'from .post_generation_verification import verify_generated_candidate\nfrom .workflow_control import HeartbeatLoop, WorkflowControl\n', 1)
+start = s.index('    def run_once(self) -> WorkerResult | None:\n')
+end = s.index('    @staticmethod\n    def _verify_v2_output', start)
+replacement = '''    def run_once(self) -> WorkerResult | None:\n        job = self.job_manager.claim_next(self.worker_id)\n        if job is None:\n            return None\n        control = WorkflowControl(self.job_manager.database); control.initialize()\n        workflow_id = dict((job.payload or {}).get("parameters") or {}).get("workflow_id")\n        heartbeat = None\n        try:\n            request = GenerationRequest(**job.payload)\n            orchestrator = self.orchestrator_factory(job)\n            provider = getattr(orchestrator, "provider", None); descriptor = getattr(provider, "descriptor", None); provider_id = getattr(descriptor, "id", None)\n            if workflow_id:\n                control.event(workflow_id, stage="GENERATING", message="Generation worker claimed the job.", job_id=job.id, provider_id=provider_id)\n                heartbeat = HeartbeatLoop(control, workflow_id, stage="GENERATING", job_id=job.id, provider_id=provider_id); heartbeat.__enter__()\n            try:\n                outcome = orchestrator.run(request, job_id=job.id)\n            finally:\n                if heartbeat: heartbeat.__exit__(None, None, None); heartbeat = None\n            result = {"execution_id": outcome.execution.id, "artifact_ids": list(outcome.execution.artifact_ids)}\n            provider_job_id = getattr(outcome.execution, "provider_job_id", None)\n            if workflow_id:\n                control.event(workflow_id, stage="INGESTING", message="Provider completed; artifacts were ingested.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id)\n                control.event(workflow_id, stage="SIMILARITY_GATE", message="Running post-generation similarity verification.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id)\n            verification = self._verify_v2_output(request, outcome, orchestrator)\n            if verification is not None: result["post_generation_verification"] = verification\n            completed = self.job_manager.complete(job.id, result)\n            if workflow_id:\n                decision = verification.get("decision") if verification else None\n                if decision == "BLOCK": control.event(workflow_id, stage="HUMAN_REVIEW", status="blocked", message="Similarity gate blocked the candidate.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id, details=verification)\n                else: control.event(workflow_id, stage="HUMAN_REVIEW", status="human_review", message="Generation completed; human review is required.", job_id=job.id, provider_id=provider_id, provider_job_id=provider_job_id, details=verification or {})\n            return WorkerResult(completed.id, completed.status, result)\n        except Exception as exc:\n            if heartbeat: heartbeat.__exit__(None, None, None)\n            error = str(exc) or exc.__class__.__name__\n            failed = self.job_manager.fail(job.id, error)\n            if workflow_id: control.event(workflow_id, stage="GENERATING", status="failed" if failed.status == "failed" else "active", message=error, job_id=job.id, details={"retry": failed.status == "queued"})\n            return WorkerResult(failed.id, failed.status, {"error": error, "retry": failed.status == "queued"})\n\n'''
+worker.write_text(s[:start] + replacement + s[end:], encoding="utf-8")
+
+runner = Path("src/stockforge/web_runner.py")
+r = runner.read_text(encoding="utf-8")
+r = r.replace('from __future__ import annotations\n\n\ndef main() -> None:\n    import uvicorn\n\n    uvicorn.run("stockforge.web_app:app", host="127.0.0.1", port=8000, reload=False)\n', '''from __future__ import annotations\n\nimport os\nimport threading\nimport time\n\ndef _embedded_worker() -> None:\n    from .web_worker import run_once\n    interval = max(0.5, float(os.getenv("STOCKFORGE_WORKER_INTERVAL", "2")))\n    while True:\n        try:\n            result = run_once()\n            if result is None: time.sleep(interval)\n        except Exception: time.sleep(max(interval, 5.0))\n\ndef main() -> None:\n    import uvicorn\n    if os.getenv("STOCKFORGE_EMBEDDED_WORKER", "1").strip().lower() not in {"0", "false", "no"}:\n        threading.Thread(target=_embedded_worker, name="stockforge-embedded-worker", daemon=True).start()\n    uvicorn.run("stockforge.web_app:app", host="127.0.0.1", port=8000, reload=False)\n''')
+runner.write_text(r, encoding="utf-8")
+
+Path("tests/test_workflow_control.py").write_text('''from pathlib import Path\n\nfrom stockforge.job_database import JobDatabase\nfrom stockforge.job_manager import JobManager\nfrom stockforge.workflow_control import WorkflowControl\n\ndef test_workflow_persists_events_and_detects_stuck(monkeypatch, tmp_path: Path):\n    db = JobDatabase(tmp_path / "jobs.sqlite"); db.initialize(); control = WorkflowControl(db); control.initialize()\n    workflow = control.create("ref-1"); control.event(workflow["id"], stage="QUEUED", message="queued")\n    snapshot = control.get(workflow["id"]); assert snapshot["current_stage"] == "QUEUED"; assert snapshot["events"][-1]["message"] == "queued"\n    monkeypatch.setenv("STOCKFORGE_STUCK_SECONDS", "30")\n    with db.connect() as conn: conn.execute("UPDATE workflows SET updated_at = datetime('now', '-90 seconds') WHERE id = ?", (workflow["id"],))\n    assert control.get(workflow["id"])["stuck"] is True\n\ndef test_job_links_to_workflow(tmp_path: Path):\n    db = JobDatabase(tmp_path / "jobs.sqlite"); db.initialize(); control = WorkflowControl(db); control.initialize(); workflow = control.create("ref-2")\n    manager = JobManager(db); job = manager.create(project_id="00000000-0000-0000-0000-000000000001", job_type="v2_generation", payload={"prompt":"x", "parameters":{"workflow_id":workflow["id"]}})\n    assert control.snapshot_for_job(job)["id"] == workflow["id"]\n''', encoding="utf-8")
