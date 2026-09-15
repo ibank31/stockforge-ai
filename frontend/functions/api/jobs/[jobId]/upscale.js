@@ -24,7 +24,6 @@ export async function onRequestPost(context) {
       return json({ job_id: jobId, status: current.status, idempotent_reuse: true, pipeline_instance_id: parseResult(current).finalization?.workflow_instance_id || null });
     }
     await recordEvent(env, jobId, "upscale_claim", "UPSCALING", "upscale_submitted", "Finalization claim acquired.");
-    await env.DB.prepare(`UPDATE workflows_sf SET status=?,stage=?,progress=?,message=?,updated_at=? WHERE reference_id=?`).bind("running", "UPSCALING", 70, "4x finalization accepted; GPU work is running separately from generation.", t, job.reference_id).run();
     const payload = JSON.stringify({ job_id: jobId, mode: "upscale" });
     let workflowResponse;
     try {
@@ -32,14 +31,12 @@ export async function onRequestPost(context) {
     } catch (dispatchError) {
       const detail = dispatchError instanceof Error ? dispatchError.message : String(dispatchError);
       await env.DB.prepare(`UPDATE jobs_sf SET status=?,stage=?,error=?,failure_code=?,failed_mode=?,retryable=?,updated_at=? WHERE id=? AND status='upscale_submitted'`).bind("failed", "FAILED_DISPATCH", detail.slice(0, 2000), "DISPATCH_NETWORK", "upscale", 1, now(), jobId).run();
-      await env.DB.prepare(`UPDATE workflows_sf SET status=?,stage=?,progress=?,message=?,updated_at=? WHERE reference_id=?`).bind("ready", "READY_UPSCALE", 55, "Upscale dispatch network failure. The raw asset remains available for retry.", now(), job.reference_id).run();
       await recordEvent(env, jobId, "upscale_dispatch_network_failed", "FAILED_DISPATCH", "failed", detail, { pipeline_url: PIPELINE_URL });
       return json({ detail: "Unable to reach finalization pipeline", error: detail, pipeline_url: PIPELINE_URL, retryable: true }, 502);
     }
     if (!workflowResponse.ok) {
       const detail = await workflowResponse.text();
       await env.DB.prepare(`UPDATE jobs_sf SET status=?,stage=?,error=?,failure_code=?,failed_mode=?,retryable=?,updated_at=? WHERE id=? AND status='upscale_submitted'`).bind("failed", "FAILED_DISPATCH", detail.slice(0, 2000), "DISPATCH_ERROR", "upscale", 1, now(), jobId).run();
-      await env.DB.prepare(`UPDATE workflows_sf SET status=?,stage=?,progress=?,message=?,updated_at=? WHERE reference_id=?`).bind("ready", "READY_UPSCALE", 55, "Upscale start was rejected. The raw asset remains available for retry.", now(), job.reference_id).run();
       await recordEvent(env, jobId, "upscale_dispatch_failed", "FAILED_DISPATCH", "failed", "Unable to start finalization workflow.", { detail: detail.slice(0, 2000) });
       return json({ detail: "Unable to start finalization pipeline", error: detail, retryable: true }, 502);
     }
