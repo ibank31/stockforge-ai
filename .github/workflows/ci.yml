@@ -16,3 +16,19 @@ jobs:
       - run: uv sync --extra dev --extra image --extra web
       - run: uv run pytest -q
       - run: uv run stockforge version
+      - name: Validate ZeroGPU Python sources
+        run: python -m py_compile deploy/zerogpu/upscale.py deploy/zerogpu/remote_api.py
+      - name: Validate Cloudflare JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find frontend/functions frontend -type f -name '*.js' -print0)
+      - name: Validate deployment configs exist
+        run: |
+          test -f frontend/wrangler.toml
+          test -f frontend/migrations/0001_stockforge.sql
+          test -f deploy/pipeline-worker/wrangler.toml
+          test -f deploy/pipeline-worker/src/index.js
+      - run: true
