@@ -9,7 +9,7 @@ function env() {
     if (input.task === "query") return { answer: "green travel mug" };
     if (input.task === "detect") return { objects: [{ x_min: 0.27, y_min: 0.31, x_max: 0.51, y_max: 0.73 }] };
     throw new Error("unexpected task");
-  } };
+  } } };
 }
 
 test("Moondream dynamically identifies and localizes the primary asset", async () => {
