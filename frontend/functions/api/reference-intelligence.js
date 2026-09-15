@@ -3,9 +3,7 @@ import { buildReferenceAnalysis } from "../../lib/reference-intelligence.js";
 const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-function json(data, status = 200) {
-  return Response.json(data, { status, headers: { "cache-control": "no-store" } });
-}
+function json(data, status = 200) { return Response.json(data, { status, headers: { "cache-control": "no-store" } }); }
 function id(prefix) { return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`; }
 function token() { return crypto.randomUUID().replaceAll("-", ""); }
 
@@ -26,7 +24,6 @@ export async function onRequestPost(context) {
   try {
     if (!env.DB || !env.ASSET_STORE || !env.AI) return json({ detail: "Reference intelligence bindings are incomplete" }, 500);
     await initDb(env.DB);
-
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) return json({ detail: "file is required" }, 400);
@@ -40,8 +37,9 @@ export async function onRequestPost(context) {
     const r2Key = `references/${referenceId}${extension}`;
     const bytes = await file.arrayBuffer();
     const hash = await sha256Hex(bytes);
-
     const analysis = await buildReferenceAnalysis(env, bytes, file.type);
+    if (!Array.isArray(analysis.asset_opportunities) || analysis.asset_opportunities.length !== 5) throw new Error("OPPORTUNITY_QUALITY_FAILED: expected exactly five opportunities");
+    analysis.asset_opportunities = analysis.asset_opportunities.map((item, index) => ({ ...item, id: `opp_${index + 1}` }));
     const timestamp = new Date().toISOString();
 
     await env.ASSET_STORE.put(r2Key, bytes, { httpMetadata: { contentType: file.type } });
@@ -52,13 +50,7 @@ export async function onRequestPost(context) {
         .bind(workflowId, referenceId, "ready", "ANALYZED", 100, "Reference intelligence passed multimodal forensics and five-opportunity quality gates; human review required.", timestamp),
     ]);
 
-    return json({
-      reference_id: referenceId,
-      workflow_id: workflowId,
-      file: `/api/assets/${referenceId}?kind=reference&token=${accessToken}`,
-      profile: analysis,
-      decision: "REVIEW_REQUIRED",
-    });
+    return json({ reference_id: referenceId, workflow_id: workflowId, file: `/api/assets/${referenceId}?kind=reference&token=${accessToken}`, profile: analysis, decision: "REVIEW_REQUIRED" });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const status = /^(VISUAL_FORENSICS_FAILED|OPPORTUNITY_QUALITY_FAILED|REFERENCE_AI_UNAVAILABLE)/.test(message) ? 422 : 500;
