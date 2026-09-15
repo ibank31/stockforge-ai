@@ -148,3 +148,4 @@ jobs:
           node -e 'const fs=require("fs"),x=require("./job.json"),id=fs.readFileSync("job.id","utf8").trim(); if(!x.id || x.id!==id) throw Error(JSON.stringify(x)); if(["failed","blocked","cancelled"].includes(x.status)) throw Error(JSON.stringify(x)); console.log("generation boundary passed", JSON.stringify({status:x.status,stage:x.stage}))'
           echo "REFERENCE INTELLIGENCE + PLAN + GENERATION E2E PASSED"
       # E2E_PROD trigger checkpoint: enforce test execution on this commit.
+      # Final vision-pipeline E2E trigger.
