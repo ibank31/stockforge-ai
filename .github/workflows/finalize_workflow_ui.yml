@@ -1,0 +1,25 @@
+name: Finalize workflow UI wiring
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Apply final wiring
+        run: python scripts/finish_workflow_ui.py
+      - name: Commit and remove helper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm scripts/finish_workflow_ui.py .github/workflows/finalize_workflow_ui.yml
+          git add src/stockforge/web_app.py
+          git commit -m 'fix: complete workflow monitor and regeneration wiring'
+          git push origin HEAD:main
