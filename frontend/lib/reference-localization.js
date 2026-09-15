@@ -14,9 +14,13 @@ function parse(value) {
 function responseText(value) {
   if (typeof value === "string") return value;
   if (!value || typeof value !== "object") return "";
+  // Workers AI JSON mode can return `response` as an object, not a JSON string.
+  // Preserve that object so normalize() can consume it directly.
+  if (value.primary_asset || value.asset_candidates || value.reference_type) return value;
   for (const candidate of [value.response, value.result, value.output_text, value.choices?.[0]?.message?.content, value.choices?.[0]?.text]) {
     if (typeof candidate === "string" && candidate.trim()) return candidate;
     if (candidate && typeof candidate === "object") {
+      if (candidate.primary_asset || candidate.asset_candidates || candidate.reference_type) return candidate;
       const nested = responseText(candidate);
       if (nested) return nested;
     }
