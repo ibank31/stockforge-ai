@@ -9,21 +9,23 @@ hardware: zerogpu
 
 # StockForge ZeroGPU Runtime
 
-Remote GPU generation worker for the StockForge V2 production call graph.
+Remote GPU executor for the StockForge V2 production call graph.
 
-## Role
+## Production boundary
 
-The Space is deliberately separate from the StockForge control plane. The
-browser and page.dev front door do not call this Space directly. The StockForge
-control plane calls the stable Gradio `generate_remote` endpoint and records the
-provider/event identity in its durable job flow.
+```text
+page.dev
+   ↓
+Cloudflare Pages Functions / Workflow
+   ↓
+HF ZeroGPU
+   ├── generate_remote
+   └── upscale_remote
+```
 
-Termux is not required for this worker to execute. It is an optional operator
-surface only.
+The browser never calls this Space directly. Termux is not required for production execution.
 
-## Remote contract
-
-The machine-to-machine endpoint is:
+## Remote generation contract
 
 ```text
 POST /gradio_api/call/generate_remote
@@ -37,7 +39,7 @@ SSE completion
 Gradio FileData output
 ```
 
-The request carries seven values:
+Arguments:
 
 ```text
 prompt
@@ -49,29 +51,41 @@ randomize_seed
 stockforge_job_id
 ```
 
-`stockforge_job_id` is the durable StockForge execution identity. The worker
-uses it for idempotent caching of completed results.
+## Remote upscale contract
 
-## Current model path
+```text
+POST /gradio_api/call/upscale_remote
+        ↓
+{event_id}
+        ↓
+GET /gradio_api/call/upscale_remote/{event_id}
+        ↓
+SSE completion
+        ↓
+4x RealESRGAN image + dimensions
+```
 
-The first runtime uses the Z-Image-Turbo pipeline configuration from
-`Tongyi-MAI/Z-Image-Turbo`, with the StockForge FP8/AE files from
-`ibank31/stockforge-models` where configured by the model manifest.
+Arguments:
+
+```text
+source_url
+stockforge_job_id
+scale=4
+```
+
+The finalizer uses `RealESRGAN_x4plus` and emits RGB raster output. The production target is a 16 MP-or-greater final master for the current raster lane.
+
+## Current generation model
+
+The first production runtime uses the Z-Image-Turbo pipeline configuration from `Tongyi-MAI/Z-Image-Turbo`, with StockForge model assets from `ibank31/stockforge-models` where configured by the model manifest.
 
 ## Quota strategy
 
-- ZeroGPU `large` is the intended free-first runtime.
+- ZeroGPU is the free-first production compute lane.
+- Generation and upscale share the same Space and therefore the same account quota.
 - Default generation is 1024×1024 at 8 steps.
-- Prompt validation and seed handling happen outside the GPU function where applicable.
-- Model loading is kept outside the generation call when the runtime permits it.
-- `torch.compile` is not required by the baseline runtime.
+- The control plane tracks job state outside the Space, so closing the browser does not cancel the workflow.
 
-ZeroGPU quota is limited. The control plane must therefore retain durable job
-state and may use another explicitly configured provider when the production
-routing policy selects it.
+## Commercial boundary
 
-## Production rule
-
-This directory defines the remote GPU boundary. It is not a local executor
-instruction and must not reintroduce a Termux dependency into the production
-call graph.
+The worker may process commercial output only with models whose licenses and marketplace policy records have been validated by StockForge. Kaggle is not part of this production path.
