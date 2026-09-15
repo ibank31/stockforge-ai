@@ -9,9 +9,11 @@ The system learns from a reference asset to identify commercial intent and marke
 ### Canonical end-to-end architecture
 
 ```text
-page.dev / browser front door
+Cloudflare Pages / browser front door
         ↓
-StockForge V2 web API / control plane
+Pages Function /api/* proxy
+        ↓
+StockForge V2 CPU control plane
         ↓
 Reference Intelligence
         ↓
@@ -21,7 +23,7 @@ Creative Distance / Anti-Similarity
         ↓
 Concept + Model-Specific Prompt
         ↓
-Durable Job Queue
+Durable Job Queue + Worker
         ↓
 Provider Router
    ┌────┴───────────────┐
@@ -110,6 +112,28 @@ Remote Gradio event identities and materialized output references are persisted 
 
 The repository also contains Kaggle worker/finalizer integrations. They are not a reason to make local Termux or local GPU execution part of the production control plane.
 
+## Browser deployment
+
+The production browser entrypoint is designed as a Cloudflare Pages static front door plus a same-origin Pages Function proxy:
+
+```text
+https://stockforge-ai.pages.dev
+        ↓
+/frontend/index.html
+        ↓
+/frontend/functions/api/[[path]].js
+        ↓
+STOCKFORGE_CONTROL_PLANE_URL
+        ↓
+HF CPU control-plane Space
+        ↓
+HF ZeroGPU generation Space
+```
+
+The Pages Function keeps provider URLs, runtime storage, SQLite, and credentials out of the browser. The control-plane target can be overridden with the Cloudflare Pages environment variable `STOCKFORGE_CONTROL_PLANE_URL`.
+
+GitHub Actions provide deployment hooks for both the HF control-plane Space and the Cloudflare Pages front door. Those workflows intentionally skip remote deployment when their corresponding secrets are not configured. A skipped workflow is not proof that the public browser is live.
+
 ## Browser API
 
 The V2 web application provides:
@@ -126,7 +150,7 @@ The V2 web application provides:
 
 The API never performs automatic Adobe submission and never auto-approves commercial originality.
 
-The browser page embedded in `stockforge.web_app` is a reference implementation. The user's existing `page.dev` front door is external deployment configuration and is not hard-coded into the repository.
+The embedded `stockforge.web_app` page remains a reference implementation. The deployable production front door is under `frontend/`; public `page.dev` behavior remains external deployment state and must be verified through deployment evidence.
 
 ## Development and CI
 
