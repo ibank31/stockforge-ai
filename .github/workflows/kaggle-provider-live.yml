@@ -1,0 +1,81 @@
+name: Kaggle Provider Live Test
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  kaggle-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+    steps:
+      - name: Validate credential
+        run: test -n "$KAGGLE_API_TOKEN"
+      - name: Prepare worker payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image, ImageDraw
+          import base64,hashlib,json,urllib.request
+          im=Image.new('RGB',(768,768),'white'); d=ImageDraw.Draw(im)
+          d.rectangle((96,96,672,672),outline='black',width=8); d.ellipse((240,180,528,468),outline='black',width=8); d.line((180,570,588,570),fill='black',width=8)
+          im.save('source.jpg',format='JPEG',quality=95,subsampling='4:4:4')
+          src=open('source.jpg','rb').read(); sha=hashlib.sha256(src).hexdigest()
+          req={'schema_version':1,'kind':'stockforge.master_finalizer_request','request_id':'kaggle-provider-live-test','status':'prepared_no_gpu','source':{'relative_path':'source.jpg','sha256':sha,'width':768,'height':768,'format':'JPEG','color_mode':'RGB'},'target':{'mode':'ai_upscale','scale':4,'format':'jpeg','color_space':'sRGB','expected_width':3072,'expected_height':3072,'minimum_megapixels':9},'destination':'masters/kaggle-provider-live-test-master.jpg'}
+          worker=urllib.request.urlopen('https://raw.githubusercontent.com/ibank31/stockforge-ai/main/deploy/kaggle-finalizer/worker.py',timeout=30).read().decode()
+          enc=lambda b: base64.b64encode(b).decode()
+          injected='REQUEST_B64 = '+json.dumps(enc(json.dumps(req,separators=(',',':')).encode()))+'\nSOURCE_NAME = "source.jpg"\nSOURCE_B64 = '+json.dumps(enc(src))+'\n'
+          open('kernel.py','w').write(injected+worker)
+          PY
+      - name: Submit Kaggle GPU kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > payload.json
+          import json
+          s=open('kernel.py',encoding='utf-8').read()
+          print(json.dumps({'slug':'stockforge-finalizer-live','newTitle':'StockForge Finalizer Live Test','text':s,'language':'python','kernelType':'script','isPrivate':True,'enableGpu':True,'enableInternet':True,'machineShape':'NvidiaTeslaT4'}))
+          PY
+          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' -X POST 'https://www.kaggle.com/api/v1/kernels/push' --data-binary @payload.json > submit.json
+          python - <<'PY'
+          import json
+          x=json.load(open('submit.json')); print(json.dumps({k:x.get(k) for k in ('ref','versionNumber','version_number','status')},sort_keys=True))
+          PY
+      - name: Poll Kaggle
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' 'https://www.kaggle.com/api/v1/kernels/status?userName=ibank31&kernelSlug=stockforge-finalizer-live' > status.json
+            python - <<'PY'
+          import json
+          x=json.load(open('status.json')); s=x.get('status') or x.get('state') or x.get('result',{}).get('status'); print('state=',s)
+          open('done','w').write('ok') if s in ('COMPLETE','COMPLETE_SUCCESS','SUCCEEDED','SUCCESS') else None
+          if s in ('ERROR','FAILED','FAILURE','CANCELLED'): raise SystemExit(2)
+          PY
+            test -f done && break || true
+            sleep 10
+          done
+          test -f done
+      - name: Download and verify outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" 'https://www.kaggle.com/api/v1/kernels/output/download/ibank31/stockforge-finalizer-live/result.json' -o result.json
+          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" 'https://www.kaggle.com/api/v1/kernels/output/download/ibank31/stockforge-finalizer-live/master.jpg' -o master.jpg
+          python - <<'PY'
+          from PIL import Image
+          import json,os
+          r=json.load(open('result.json')); im=Image.open('master.jpg')
+          assert r['provider']=='kaggle-realesrgan' and r['model_id']=='RealESRGAN_x4plus' and r['scale']==4
+          assert r['master']['width']==3072 and r['master']['height']==3072
+          assert im.format=='JPEG' and im.mode=='RGB' and im.size==(3072,3072) and os.path.getsize('master.jpg')>100000
+          print('KAGGLE_PROVIDER_LIVE_TEST_PASSED', {'size_bytes':os.path.getsize('master.jpg'),'dimensions':im.size})
+          PY
