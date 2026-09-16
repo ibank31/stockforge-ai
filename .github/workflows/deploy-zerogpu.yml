@@ -12,7 +12,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_HUB_TOKEN || secrets.HUGGINGFACE_TOKEN }}
       HF_SPACE: ibank31/stockforge-zerogpu
@@ -33,6 +33,7 @@ jobs:
         if: steps.credential.outputs.configured == 'true'
         run: python -m pip install --disable-pip-version-check --no-cache-dir "huggingface_hub>=0.30,<1.0"
       - name: Sync ZeroGPU Space
+        id: sync
         if: steps.credential.outputs.configured == 'true'
         run: |
           python - <<'PY'
@@ -48,6 +49,7 @@ jobs:
           print("ZeroGPU Space synced")
           PY
       - name: Live ZeroGPU production smoke
+        id: smoke
         if: steps.credential.outputs.configured == 'true' && contains(github.event.head_commit.message, 'ZERO_GPU_LIVE_SMOKE')
         timeout-minutes: 12
         run: |
@@ -102,3 +104,29 @@ jobs:
                   raise RuntimeError(f"Finalizer did not produce JPEG: {im.format}")
           print("ZERO_GPU_LIVE_SMOKE PASSED")
           PY
+      - name: Record deployment status in repository
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outputs.configured || 'false' }}
+          SYNC_OUTCOME: ${{ steps.sync.outcome || 'skipped' }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome || 'skipped' }}
+          SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          status = {
+              "commit": os.environ["SHA"],
+              "credential_configured": os.environ["CREDENTIAL"],
+              "space_sync": os.environ["SYNC_OUTCOME"],
+              "live_smoke": os.environ["SMOKE_OUTCOME"],
+          }
+          Path(".github/stockforge-zero-gpu-status.json").write_text(json.dumps(status, indent=2) + "\n")
+          print(json.dumps(status, indent=2))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/stockforge-zero-gpu-status.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: record ZeroGPU deployment status [skip ci]"
+          git push
