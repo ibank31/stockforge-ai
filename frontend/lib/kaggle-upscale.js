@@ -43,7 +43,7 @@ export async function submitKaggleUpscale(env, sourceUrl, stockforgeJobId, width
   };
   const injected = `REQUEST_B64 = ${JSON.stringify(base64Bytes(new TextEncoder().encode(JSON.stringify(request))))}\nSOURCE_NAME = "source.jpg"\nSOURCE_B64 = ${JSON.stringify(base64Bytes(sourceBytes))}\n`;
   const script = injected + worker;
-  const payload = { slug, newTitle: "StockForge Finalizer", text: script, language: "python", kernelType: "script", isPrivate: true, enableGpu: true, enableInternet: true, machineShape: String(env.KAGGLE_MACHINE_SHAPE || "NvidiaTeslaT4") };
+  const payload = { slug: `${owner}/${slug}`, newTitle: "StockForge Finalizer", text: script, language: "python", kernelType: "script", isPrivate: true, enableGpu: true, enableInternet: true, machineShape: String(env.KAGGLE_MACHINE_SHAPE || "NvidiaTeslaT4") };
   const response = await kaggle(env, "/kernels/push", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
   const result = await response.json();
   return { owner, slug, provider_job_id: `${owner}/${slug}`, version_number: result.versionNumber ?? result.version_number ?? null, ref: result.ref || `${owner}/${slug}` };
