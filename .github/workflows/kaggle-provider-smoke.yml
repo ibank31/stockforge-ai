@@ -1,0 +1,135 @@
+name: Kaggle Provider Smoke Test
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  kaggle-smoke:
+    if: github.event_name == 'push' && github.event.head_commit.message == 'KAGGLE_SMOKE_TEST'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_KERNEL_OWNER: iqbalteguh
+      KAGGLE_KERNEL_SLUG: stockforge-finalizer-smoke
+      KAGGLE_MACHINE_SHAPE: NvidiaTeslaT4
+    steps:
+      - name: Validate Kaggle credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          echo "KAGGLE_API_TOKEN is configured"
+
+      - name: Build smoke-test payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from PIL import Image, ImageDraw
+          import hashlib, json, base64
+          image = Image.new('RGB', (768, 768), 'white')
+          draw = ImageDraw.Draw(image)
+          draw.rectangle((96, 96, 672, 672), outline='black', width=8)
+          draw.ellipse((240, 180, 528, 468), outline='black', width=8)
+          draw.line((180, 570, 588, 570), fill='black', width=8)
+          image.save('source.jpg', format='JPEG', quality=95, subsampling='4:4:4')
+          source = open('source.jpg','rb').read()
+          sha = hashlib.sha256(source).hexdigest()
+          request = {
+              'schema_version': 1,
+              'kind': 'stockforge.master_finalizer_request',
+              'request_id': 'kaggle-provider-smoke-test',
+              'status': 'prepared_no_gpu',
+              'source': {'relative_path':'source.jpg','sha256':sha,'width':768,'height':768,'format':'JPEG','color_mode':'RGB'},
+              'target': {'mode':'ai_upscale','scale':4,'format':'jpeg','color_space':'sRGB','expected_width':3072,'expected_height':3072,'minimum_megapixels':9},
+              'destination':'masters/kaggle-provider-smoke-test-master.jpg'
+          }
+          worker_url='https://raw.githubusercontent.com/ibank31/stockforge-ai/main/deploy/kaggle-finalizer/worker.py'
+          import urllib.request
+          worker=urllib.request.urlopen(worker_url, timeout=30).read().decode()
+          injected='REQUEST_B64 = '+json.dumps(base64.b64encode(json.dumps(request,separators=(',',':')).encode()).decode())+'\nSOURCE_NAME = "source.jpg"\nSOURCE_B64 = '+json.dumps(base64.b64encode(source).decode())+'\n'
+          open('kernel.py','w',encoding='utf-8').write(injected+worker)
+          print('payload prepared', {'source_bytes':len(source),'sha256':sha,'expected':'3072x3072'})
+          PY
+
+      - name: Submit private Kaggle GPU kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          response=$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $KAGGLE_API_TOKEN" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -X POST 'https://www.kaggle.com/api/v1/kernels/push' \
+            --data-binary @<(python - <<'PY'
+          import json
+          script=open('kernel.py',encoding='utf-8').read()
+          print(json.dumps({'slug':'stockforge-finalizer-smoke','newTitle':'StockForge Finalizer Smoke','text':script,'language':'python','kernelType':'script','isPrivate':True,'enableGpu':True,'enableInternet':True,'machineShape':'NvidiaTeslaT4'}))
+          PY
+          ))
+          printf '%s\n' "$response" > submit.json
+          python - <<'PY'
+          import json
+          x=json.load(open('submit.json'))
+          print('Kaggle submit response:', json.dumps({k:x.get(k) for k in ('ref','versionNumber','version_number','status')}, sort_keys=True))
+          PY
+
+      - name: Poll Kaggle kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            response=$(curl -sS --fail-with-body \
+              -H "Authorization: Bearer $KAGGLE_API_TOKEN" \
+              -H 'Accept: application/json' \
+              'https://www.kaggle.com/api/v1/kernels/status?userName=iqbalteguh&kernelSlug=stockforge-finalizer-smoke')
+            printf '%s\n' "$response" > status.json
+            python - <<'PY'
+          import json
+          x=json.load(open('status.json'))
+          state=x.get('status') or x.get('state') or x.get('result',{}).get('status')
+          print('poll state=',state)
+          if state in ('COMPLETE','COMPLETE_SUCCESS','SUCCEEDED','SUCCESS'):
+              open('done','w').write('ok')
+          if state in ('ERROR','FAILED','FAILURE','CANCELLED'):
+              print(json.dumps(x,indent=2)); raise SystemExit(2)
+          PY
+            test -f done && break || true
+            sleep 10
+          done
+          test -f done
+
+      - name: Download and verify Kaggle outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sS --fail-with-body \
+            -H "Authorization: Bearer $KAGGLE_API_TOKEN" \
+            -H 'Accept: application/json' \
+            'https://www.kaggle.com/api/v1/kernels/output/download/iqbalteguh/stockforge-finalizer-smoke/result.json' \
+            -o result.json
+          curl -sS --fail-with-body \
+            -H "Authorization: Bearer $KAGGLE_API_TOKEN" \
+            -H 'Accept: */*' \
+            'https://www.kaggle.com/api/v1/kernels/output/download/iqbalteguh/stockforge-finalizer-smoke/master.jpg' \
+            -o master.jpg
+          python - <<'PY'
+          from PIL import Image
+          import json, os
+          result=json.load(open('result.json'))
+          image=Image.open('master.jpg')
+          assert result['status']=='visual_review_required', result
+          assert result['provider']=='kaggle-realesrgan', result
+          assert result['model_id']=='RealESRGAN_x4plus', result
+          assert result['scale']==4, result
+          assert tuple(result['master']['width'] for _ in [0]) == (3072,), result
+          assert result['master']['height']==3072, result
+          assert image.format=='JPEG' and image.mode=='RGB' and image.size==(3072,3072)
+          assert os.path.getsize('master.jpg') > 100000
+          print('KAGGLE PROVIDER SMOKE TEST PASSED', json.dumps({'size_bytes':os.path.getsize('master.jpg'),'dimensions':image.size,'provider':result['provider'],'model':result['model_id'],'scale':result['scale']}))
+          PY
