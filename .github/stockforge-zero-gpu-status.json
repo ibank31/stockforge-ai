@@ -1,6 +1,6 @@
 {
-  "commit": "5ece626f13160dfc2703682cb57c08b9065e05a6",
-  "credential_configured": "false",
-  "space_sync": "skipped",
+  "commit": "163e681673388d05533cb0d66515bea5692bdb16",
+  "credential_configured": "true",
+  "space_sync": "success",
   "live_smoke": "skipped"
 }
