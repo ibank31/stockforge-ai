@@ -91,7 +91,7 @@ jobs:
               if im.width < 1200 or im.height < 1200:
                   raise RuntimeError(f"Unexpected raw image dimensions: {im.size}")
 
-          finalized = client.predict(source_path.as_posix(), "zero-gpu-smoke-final", api_name="/upscale")
+          finalized = client.predict(source_path.as_posix(), "zero-gpu-smoke-final", api_name="/upscale_remote")
           print("UPSCALE RESULT:", finalized)
           final_path = Path(str(finalized[0]))
           if not final_path.exists():
