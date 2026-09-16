@@ -16,7 +16,7 @@ def test_pipeline_calls_actual_app_remote_upscale_signature():
 
 def test_space_app_exposes_two_argument_remote_upscale():
     assert 'def upscale_remote(source_path, job_id=""):' in SPACE_APP
-    assert 'api_name="/upscale_remote"' in SPACE_APP
+    assert ('api_name="/upscale_remote"' in SPACE_APP) or ("api_name='/upscale_remote'" in SPACE_APP)
 
 
 def test_live_smoke_uses_machine_endpoint_not_ui_endpoint():
