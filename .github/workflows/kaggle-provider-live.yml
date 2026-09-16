@@ -47,6 +47,7 @@ jobs:
           python - <<'PY'
           import json
           x=json.load(open('submit.json'))
+          if x.get('error'): raise SystemExit(f"Kaggle push rejected: {x['error']}")
           ref=x.get('ref') or ''
           parts=[p for p in ref.split('/') if p]
           if len(parts) < 2: raise SystemExit(f'Kaggle push returned invalid ref: {ref!r}')
@@ -59,18 +60,22 @@ jobs:
         run: |
           set -euo pipefail
           IFS=/ read -r KAGGLE_OWNER KAGGLE_SLUG < kaggle_ref
+          complete=0
           for i in $(seq 1 90); do
             curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' "https://www.kaggle.com/api/v1/kernels/status?userName=${KAGGLE_OWNER}&kernelSlug=${KAGGLE_SLUG}" > status.json
-            python - <<'PY'
-          import json
-          x=json.load(open('status.json')); s=x.get('status') or x.get('state') or x.get('result',{}).get('status'); print('state=',s)
-          open('done','w').write('ok') if s in ('COMPLETE','COMPLETE_SUCCESS','SUCCEEDED','SUCCESS') else None
-          if s in ('ERROR','FAILED','FAILURE','CANCELLED'): raise SystemExit(2)
+            if python - <<'PY'
+          import json,sys
+          x=json.load(open('status.json'))
+          s=str(x.get('status') or x.get('state') or x.get('result',{}).get('status') or '').upper()
+          print('state=',s)
+          if s in {'ERROR','FAILED','FAILURE','CANCELLED','CANCEL_REQUESTED','CANCEL_ACKNOWLEDGED'}:
+              print(json.dumps(x)[:4000]); sys.exit(2)
+          sys.exit(0 if s == 'COMPLETE' else 1)
           PY
-            test -f done && break || true
+            then complete=1; break; else rc=$?; test "$rc" -eq 1 || exit "$rc"; fi
             sleep 10
           done
-          test -f done
+          test "$complete" -eq 1
       - name: Download and verify outputs
         shell: bash
         run: |
