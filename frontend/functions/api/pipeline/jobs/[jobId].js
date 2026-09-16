@@ -1,4 +1,4 @@
-import { getKaggleStatus, downloadKaggleOutput } from "../../../../../lib/kaggle-upscale.js";
+import { getKaggleStatus, downloadKaggleOutput } from "../../../../lib/kaggle-upscale.js";
 
 function json(data, status = 200) { return Response.json(data, { status, headers: { "cache-control": "no-store" } }); }
 async function sha256Hex(arrayBuffer) { const digest = await crypto.subtle.digest("SHA-256", arrayBuffer); return [...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, "0")).join(""); }
