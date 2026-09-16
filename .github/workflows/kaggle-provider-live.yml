@@ -46,14 +46,21 @@ jobs:
           curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' -X POST 'https://www.kaggle.com/api/v1/kernels/push' --data-binary @payload.json > submit.json
           python - <<'PY'
           import json
-          x=json.load(open('submit.json')); print(json.dumps({k:x.get(k) for k in ('ref','versionNumber','version_number','status','slug')},sort_keys=True))
+          x=json.load(open('submit.json'))
+          ref=x.get('ref') or ''
+          parts=[p for p in ref.split('/') if p]
+          if len(parts) < 2: raise SystemExit(f'Kaggle push returned invalid ref: {ref!r}')
+          owner,slug=parts[-2],parts[-1]
+          open('kaggle_ref','w').write(owner+'/'+slug)
+          print(json.dumps({'ref':ref,'provider_job_id':owner+'/'+slug,'versionNumber':x.get('versionNumber')},sort_keys=True))
           PY
       - name: Poll Kaggle
         shell: bash
         run: |
           set -euo pipefail
+          IFS=/ read -r KAGGLE_OWNER KAGGLE_SLUG < kaggle_ref
           for i in $(seq 1 90); do
-            curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' 'https://www.kaggle.com/api/v1/kernels/status?userName=ibank31&kernelSlug=stockforge-finalizer-live' > status.json
+            curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' "https://www.kaggle.com/api/v1/kernels/status?userName=${KAGGLE_OWNER}&kernelSlug=${KAGGLE_SLUG}" > status.json
             python - <<'PY'
           import json
           x=json.load(open('status.json')); s=x.get('status') or x.get('state') or x.get('result',{}).get('status'); print('state=',s)
@@ -68,8 +75,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" 'https://www.kaggle.com/api/v1/kernels/output/download/ibank31/stockforge-finalizer-live/result.json' -o result.json
-          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" 'https://www.kaggle.com/api/v1/kernels/output/download/ibank31/stockforge-finalizer-live/master.jpg' -o master.jpg
+          IFS=/ read -r KAGGLE_OWNER KAGGLE_SLUG < kaggle_ref
+          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" "https://www.kaggle.com/api/v1/kernels/output/download/${KAGGLE_OWNER}/${KAGGLE_SLUG}/result.json" -o result.json
+          curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" "https://www.kaggle.com/api/v1/kernels/output/download/${KAGGLE_OWNER}/${KAGGLE_SLUG}/master.jpg" -o master.jpg
           python - <<'PY'
           from PIL import Image
           import json,os
