@@ -77,3 +77,4 @@ jobs:
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
 
 # RUN_FULL_E2E trigger checkpoint: second intentional diagnostic commit; runtime behavior unchanged.
+# RUN_FULL_E2E live execution checkpoint 2026-09-16.
