@@ -59,3 +59,10 @@ def test_production_deploy_provisions_huggingface_secret():
     assert 'HF_TOKEN:' in PAGES_DEPLOY
     assert 'Check Hugging Face ZeroGPU credential' in PAGES_DEPLOY
     assert 'wrangler secret put STOCKFORGE_HF_TOKEN' in PAGES_DEPLOY
+
+
+def test_zero_gpu_deploy_verifies_uploaded_source_hashes():
+    assert 'CommitOperationAdd' in DEPLOY
+    assert 'api.create_commit(' in DEPLOY
+    assert 'hf_hub_download' in DEPLOY
+    assert 'ZeroGPU source verification failed' in DEPLOY

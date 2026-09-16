@@ -38,15 +38,42 @@ jobs:
         run: |
           python - <<'PY'
           import os
-          from huggingface_hub import HfApi
+          import hashlib
+          import tempfile
+          from pathlib import Path
+          from huggingface_hub import CommitOperationAdd, HfApi, hf_hub_download
           api = HfApi(token=os.environ["HF_TOKEN"])
-          api.upload_folder(
-              folder_path="deploy/zerogpu",
+          root = Path("deploy/zerogpu")
+          files = [path for path in sorted(root.rglob("*")) if path.is_file() and "__pycache__" not in path.parts]
+          operations = [
+              CommitOperationAdd(
+                  path_in_repo=str(path.relative_to(root)),
+                  path_or_fileobj=str(path),
+              )
+              for path in files
+          ]
+          api.create_commit(
               repo_id=os.environ["HF_SPACE"],
               repo_type="space",
+              operations=operations,
               commit_message="sync ZeroGPU generation and upscale worker from main",
           )
-          print("ZeroGPU Space synced")
+          with tempfile.TemporaryDirectory() as temp_dir:
+              for name in ("app.py", "README.md"):
+                  remote = Path(hf_hub_download(
+                      repo_id=os.environ["HF_SPACE"],
+                      filename=name,
+                      repo_type="space",
+                      revision="main",
+                      token=os.environ["HF_TOKEN"],
+                      local_dir=temp_dir,
+                  ))
+                  local_hash = hashlib.sha256(Path("deploy/zerogpu", name).read_bytes()).hexdigest()
+                  remote_hash = hashlib.sha256(remote.read_bytes()).hexdigest()
+                  print(f"{name}: local_sha256={local_hash} remote_sha256={remote_hash}")
+                  if local_hash != remote_hash:
+                      raise SystemExit(f"ZeroGPU source verification failed for {name}")
+          print(f"ZeroGPU Space synced and verified ({len(files)} files)")
           PY
       - name: Live ZeroGPU production smoke
         id: smoke
