@@ -17,7 +17,7 @@ jobs:
       - run: uv run pytest -q
       - run: uv run stockforge version
       - name: Validate ZeroGPU Python sources
-        run: python -m py_compile deploy/zerogpu/upscale.py deploy/zerogpu/remote_api.py
+        run: python -m py_compile deploy/zerogpu/app.py deploy/zerogpu/upscale.py deploy/zerogpu/remote_api.py
       - name: Validate JavaScript sources
         shell: bash
         run: |
@@ -62,3 +62,6 @@ jobs:
           grep -q 'job_events_sf' frontend/functions/api/jobs/'[jobId]'/events.js
           grep -q 'READY_UPLOAD_ADOBE' frontend/functions/api/jobs/'[jobId]'/release.js
           grep -q 'category' frontend/functions/api/jobs/'[jobId]'/release.js
+          grep -q 'ibank31-stockforge-zerogpu.hf.space' deploy/pipeline-worker/wrangler.toml
+          grep -q 'Qwen-Image-2512' deploy/zerogpu/app.py
+          grep -q 'RealESRGAN_x4plus' deploy/zerogpu/app.py
