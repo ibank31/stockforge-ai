@@ -1,1 +1,1 @@
-Production E2E trigger: deterministic opportunity IDs and generation boundary regression.
+Production E2E trigger: forensic intake, screenshot separation, generation and 16MP finalization regression.
