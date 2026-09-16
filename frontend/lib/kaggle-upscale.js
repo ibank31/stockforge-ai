@@ -23,7 +23,13 @@ async function sha256Hex(bytes) {
 }
 
 export async function submitKaggleUpscale(env, sourceUrl, stockforgeJobId, width, height) {
-  const configuredSlug = String(env.KAGGLE_KERNEL_SLUG || "stockforge-finalizer").trim();
+  const configured = String(env.KAGGLE_KERNEL_SLUG || "stockforge-finalizer").trim();
+  const configuredParts = configured.split("/").filter(Boolean);
+  const configuredOwner = String(env.KAGGLE_KERNEL_OWNER || (configuredParts.length > 1 ? configuredParts[configuredParts.length - 2] : "iqbalteguh")).trim();
+  const configuredSlug = configuredParts[configuredParts.length - 1] || "stockforge-finalizer";
+  const suffix = String(stockforgeJobId || "job").replace(/[^a-z0-9-]/gi, "-").toLowerCase().slice(-10);
+  const slug = `${configuredSlug}-${suffix}`.slice(0, 50).replace(/-+$/g, "");
+  const fullSlug = `${configuredOwner}/${slug}`;
   const sourceResponse = await fetch(sourceUrl, { headers: { "user-agent": "StockForge-Kaggle-Provider/1.0" } });
   if (!sourceResponse.ok) throw new Error(`Unable to fetch raw asset for Kaggle: HTTP ${sourceResponse.status}`);
   const sourceBytes = new Uint8Array(await sourceResponse.arrayBuffer());
@@ -42,16 +48,19 @@ export async function submitKaggleUpscale(env, sourceUrl, stockforgeJobId, width
   };
   const injected = `REQUEST_B64 = ${JSON.stringify(base64Bytes(new TextEncoder().encode(JSON.stringify(request))))}\nSOURCE_NAME = "source.jpg"\nSOURCE_B64 = ${JSON.stringify(base64Bytes(sourceBytes))}\n`;
   const script = injected + worker;
-  const title = configuredSlug.split("/").pop().replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-  const payload = { slug: configuredSlug, newTitle: title, text: script, language: "python", kernelType: "script", isPrivate: true, enableGpu: true, enableInternet: true, machineShape: String(env.KAGGLE_MACHINE_SHAPE || "NvidiaTeslaT4") };
+  const title = slug.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  const payload = { slug: fullSlug, newTitle: title, text: script, language: "python", kernelType: "script", isPrivate: true, enableGpu: true, enableInternet: true, machineShape: String(env.KAGGLE_MACHINE_SHAPE || "NvidiaTeslaT4") };
   const response = await kaggle(env, "/kernels/push", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
   const result = await response.json();
+  if (result.error) throw new Error(`Kaggle push rejected: ${result.error}`);
+  const invalid = ["invalidDatasetSources", "invalidCompetitionSources", "invalidKernelSources", "invalidModelSources"].flatMap(key => Array.isArray(result[key]) && result[key].length ? [`${key}: ${JSON.stringify(result[key])}`] : []);
+  if (invalid.length) throw new Error(`Kaggle push rejected invalid sources: ${invalid.join("; ")}`);
   const ref = String(result.ref || "");
   const parts = ref.split("/").filter(Boolean);
   if (parts.length < 2) throw new Error(`Kaggle push returned invalid ref: ${ref || "<empty>"}`);
   const owner = parts[parts.length - 2];
-  const slug = parts[parts.length - 1];
-  return { owner, slug, provider_job_id: `${owner}/${slug}`, version_number: result.versionNumber ?? result.version_number ?? null, ref };
+  const actualSlug = parts[parts.length - 1];
+  return { owner, slug: actualSlug, provider_job_id: `${owner}/${actualSlug}`, version_number: result.versionNumber ?? result.version_number ?? null, ref };
 }
 
 export async function getKaggleStatus(env, providerJobId) {
@@ -62,6 +71,6 @@ export async function getKaggleStatus(env, providerJobId) {
 }
 export async function downloadKaggleOutput(env, providerJobId, fileName) {
   const [owner, slug] = String(providerJobId || "").split("/");
-  const response = await kaggle(env, `/kernels/output/download/${encodeURIComponent(owner)}/${encodeURIComponent(slug)}/${encodeURIComponent(fileName)}`, { headers: { Accept: "*/*" } });
-  return response;
+  if (!owner || !slug) throw new Error("Invalid Kaggle provider job id");
+  return await kaggle(env, `/kernels/output/download/${encodeURIComponent(owner)}/${encodeURIComponent(slug)}/${encodeURIComponent(fileName)}`, { headers: { Accept: "*/*" } });
 }
