@@ -127,8 +127,7 @@ jobs:
           assert result['provider']=='kaggle-realesrgan', result
           assert result['model_id']=='RealESRGAN_x4plus', result
           assert result['scale']==4, result
-          assert tuple(result['master']['width'] for _ in [0]) == (3072,), result
-          assert result['master']['height']==3072, result
+          assert result['master']['width']==3072 and result['master']['height']==3072, result
           assert image.format=='JPEG' and image.mode=='RGB' and image.size==(3072,3072)
           assert os.path.getsize('master.jpg') > 100000
           print('KAGGLE PROVIDER SMOKE TEST PASSED', json.dumps({'size_bytes':os.path.getsize('master.jpg'),'dimensions':image.size,'provider':result['provider'],'model':result['model_id'],'scale':result['scale']}))
