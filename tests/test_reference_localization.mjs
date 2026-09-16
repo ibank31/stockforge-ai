@@ -36,6 +36,13 @@ function forensicEnv() {
   } } };
 }
 
+function assertNear(actual, expected, epsilon = 1e-9) {
+  assert.ok(Math.abs(actual - expected) <= epsilon, `${actual} is not within ${epsilon} of ${expected}`);
+}
+function assertBbox(actual, expected) {
+  for (const key of ["x", "y", "width", "height"]) assertNear(actual[key], expected[key]);
+}
+
 test("Gemma visual forensics isolates the embedded marketplace asset and preserves medium", async () => {
   const e = forensicEnv();
   const result = await locatePrimaryAsset(e, Uint8Array.from([1,2,3]).buffer, "image/png");
@@ -44,7 +51,7 @@ test("Gemma visual forensics isolates the embedded marketplace asset and preserv
   assert.equal(result.primary_asset.label, "illustrated mountain landscape");
   assert.equal(result.primary_asset.medium, "digital_illustration");
   assert.equal(result.primary_asset.realism, "stylized");
-  assert.deepEqual(result.localization.primary_bbox, { x: 0.31, y: 0.51, width: 0.35, height: 0.18 });
+  assertBbox(result.localization.primary_bbox, { x: 0.31, y: 0.51, width: 0.35, height: 0.18 });
   assert.equal(result.localization.method, "gemma_vision_forensics");
   assert.equal(result.localization.annotation_aware, true);
   assert.equal(result.presentation_elements.length, 4);
@@ -64,7 +71,7 @@ test("Gemma forensic candidates reject generic labels and oversized screenshot b
   }) } }] }; } } };
   const result = await locatePrimaryAsset(e, Uint8Array.from([1]).buffer, "image/jpeg");
   assert.equal(result.primary_asset.label, "orange backpack");
-  assert.deepEqual(result.primary_asset.bbox_normalized, { x: 0.25, y: 0.55, width: 0.35, height: 0.22 });
+  assertBbox(result.primary_asset.bbox_normalized, { x: 0.25, y: 0.55, width: 0.35, height: 0.22 });
 });
 
 test("Moondream remains a fallback when forensic vision is unavailable", async () => {
@@ -78,7 +85,7 @@ test("Moondream remains a fallback when forensic vision is unavailable", async (
   } } };
   const result = await locatePrimaryAsset(e, Uint8Array.from([1,2,3]).buffer, "image/png");
   assert.equal(result.primary_asset.label, "green travel mug");
-  assert.deepEqual(result.localization.primary_bbox, { x: 0.27, y: 0.31, width: 0.24, height: 0.42 });
+  assertBbox(result.localization.primary_bbox, { x: 0.27, y: 0.31, width: 0.24, height: 0.42 });
   assert.equal(result.localization.method, "moondream_query_detect");
 });
 
