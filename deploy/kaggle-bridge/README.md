@@ -16,3 +16,5 @@ Optional variables:
 - `STOCKFORGE_KAGGLE_ACCELERATOR` (default `NvidiaTeslaT4`)
 
 The bridge is intentionally one-job-at-a-time at the application level. Batch orchestration is not part of this stage.
+
+Deployment smoke target: `/health`.
