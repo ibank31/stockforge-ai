@@ -39,9 +39,10 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY' > payload.json
-          import json
+          import json,os
           s=open('kernel.py',encoding='utf-8').read()
-          print(json.dumps({'slug':'iqbalteguh/stockforge-finalizer-live-test','newTitle':'StockForge Finalizer Live Test','text':s,'language':'python','kernelType':'script','isPrivate':True,'enableGpu':True,'enableInternet':True,'machineShape':'NvidiaTeslaT4'}))
+          slug='stockforge-finalizer-live-${{ github.run_id }}'
+          print(json.dumps({'slug':'iqbalteguh/'+slug,'newTitle':'StockForge Finalizer Live ${{ github.run_id }}','text':s,'language':'python','kernelType':'script','isPrivate':True,'enableGpu':True,'enableInternet':True,'machineShape':'NvidiaTeslaT4'}))
           PY
           curl -sS --fail-with-body -H "Authorization: Bearer $KAGGLE_API_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' -X POST 'https://www.kaggle.com/api/v1/kernels/push' --data-binary @payload.json > submit.json
           python - <<'PY'
