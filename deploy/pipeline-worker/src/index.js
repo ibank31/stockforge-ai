@@ -19,6 +19,12 @@ function baseOf(env, fallback = false) {
   const value = fallback ? (env.STOCKFORGE_FALLBACK_BASE || FALLBACK_BASE) : (env.STOCKFORGE_HF_SPACE_URL || HF_BASE);
   return String(value).replace(/\/$/, "");
 }
+function authHeaders(env, extra = {}) {
+  const headers = { ...extra };
+  const token = String(env.STOCKFORGE_HF_TOKEN || "").trim();
+  if (token) headers.authorization = `Bearer ${token}`;
+  return headers;
+}
 function qwenCanvas(width, height) {
   const w = Number(width) || 1328;
   const h = Number(height) || 1328;
@@ -41,10 +47,10 @@ function extensionForMime(mime) {
   return "jpg";
 }
 
-async function remoteSubmit(base, apiName, data) {
+async function remoteSubmit(base, apiName, data, env) {
   const response = await fetch(`${base}/gradio_api/call/${apiName}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders(env, { "content-type": "application/json" }),
     body: JSON.stringify({ data }),
   });
   if (!response.ok) throw new Error(`Remote ${apiName} submit failed: HTTP ${response.status}`);
@@ -53,8 +59,10 @@ async function remoteSubmit(base, apiName, data) {
   return body.event_id;
 }
 
-async function remotePoll(base, apiName, eventId) {
-  const response = await fetch(`${base}/gradio_api/call/${apiName}/${eventId}`, { headers: { "cache-control": "no-cache" } });
+async function remotePoll(base, apiName, eventId, env) {
+  const response = await fetch(`${base}/gradio_api/call/${apiName}/${eventId}`, {
+    headers: authHeaders(env, { "cache-control": "no-cache" }),
+  });
   if (!response.ok) throw new Error(`Remote ${apiName} poll failed: HTTP ${response.status}`);
   const text = await response.text();
   let event = "message";
@@ -70,10 +78,12 @@ async function remotePoll(base, apiName, eventId) {
     }
   }
   if (data.length) last = { event, data: data.join("\n") };
-  if (!last) return { state: "running" };
-  if (last.event === "complete") return { state: "completed", values: JSON.parse(last.data) };
-  if (last.event === "error" || last.event === "exception") return { state: "failed", error: last.data || last.event };
-  return { state: "running" };
+  if (!last) return { state: "running", event: "heartbeat" };
+  if (last.event === "complete") return { state: "completed", values: JSON.parse(last.data), event: last.event };
+  if (last.event === "error" || last.event === "exception") return { state: "failed", error: last.data || last.event, event: last.event };
+  let detail = last.data || null;
+  try { detail = JSON.parse(last.data); } catch {}
+  return { state: "running", event: last.event, detail };
 }
 
 function parseOutput(values) {
@@ -122,10 +132,11 @@ async function runRemote(env, step, apiName, data, maxAttempts, label, jobId) {
 
   for (const candidate of candidates) {
     try {
-      const eventId = await step.do(`${label} submit ${candidate.provider}`, () => remoteSubmit(candidate.base, apiName, data));
+      const eventId = await step.do(`${label} submit ${candidate.provider}`, () => remoteSubmit(candidate.base, apiName, data, env));
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         await step.sleep(`${label} wait ${attempt} ${candidate.provider}`, `${attempt < 12 ? 5 : 10} seconds`);
-        const poll = await step.do(`${label} poll ${attempt} ${candidate.provider}`, () => remotePoll(candidate.base, apiName, eventId));
+        const poll = await step.do(`${label} poll ${attempt} ${candidate.provider}`, () => remotePoll(candidate.base, apiName, eventId, env));
+        if (poll.event === "heartbeat") continue;
         if (poll.state === "failed") throw new Error(poll.error || `Remote ${label} failed`);
         if (poll.state === "completed") return { values: poll.values, provider: candidate.provider, event_id: eventId };
       }
