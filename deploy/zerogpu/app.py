@@ -288,7 +288,12 @@ def generate(prompt, width=1328, height=1328, steps=4, seed=0, randomize_seed=Tr
 def generate_remote(prompt, width=1328, height=1328, steps=4, seed=0, randomize_seed=True, stockforge_job_id=""):
     if not str(stockforge_job_id or "").strip():
         raise gr.Error("stockforge_job_id is required")
-    return generate(prompt, width, height, steps, seed, randomize_seed)
+    try:
+        return generate(prompt, width, height, steps, seed, randomize_seed)
+    except Exception as exc:
+        detail = f"{type(exc).__name__}: {str(exc)}"[:1000]
+        print(f"[StockForge] generation failed: {detail}", flush=True)
+        raise gr.Error(detail) from exc
 
 
 def upscale_remote(source_path, job_id=""):
@@ -301,7 +306,12 @@ def upscale_remote(source_path, job_id=""):
         cache.mkdir(parents=True, exist_ok=True)
         local = cache / f"{job_id or 'source'}-source.bin"
         urllib.request.urlretrieve(source_path, local)
-    return upscale_gpu(str(local), str(job_id or ""))
+    try:
+        return upscale_gpu(str(local), str(job_id or ""))
+    except Exception as exc:
+        detail = f"{type(exc).__name__}: {str(exc)}"[:1000]
+        print(f"[StockForge] upscale failed: {detail}", flush=True)
+        raise gr.Error(detail) from exc
 
 
 def runtime_health():
