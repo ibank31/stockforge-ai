@@ -1,0 +1,1 @@
+Automatic deployment trigger for the Qwen-Image-2512 / Real-ESRGAN ZeroGPU runtime.
