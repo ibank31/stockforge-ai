@@ -231,7 +231,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     });
 
     const sourceUrl = `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/api/assets/${jobId}?kind=raw&token=${job.asset_token}`;
-    const remote = await runRemote(this.env, step, "upscale_remote", [sourceUrl, `${jobId}-upscale`, 4], UPSCALE_POLL_ATTEMPTS, "upscale", jobId);
+    const remote = await runRemote(this.env, step, "upscale_remote", [sourceUrl, `${jobId}-upscale`], UPSCALE_POLL_ATTEMPTS, "upscale", jobId);
     const finalMeta = await step.do("ingest final master", async () => {
       const file = parseOutput(remote.values);
       const response = await fetch(file.url);
