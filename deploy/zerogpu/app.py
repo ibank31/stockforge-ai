@@ -200,6 +200,7 @@ def _generate_with_qwen(prompt, width, height, seed, randomize_seed):
     return image, seed
 
 
+# Generation boundary: produce a standalone asset portfolio candidate, not a domain-specific compiler artifact.
 @spaces.GPU(duration=150, size="large")
 def generate_gpu(prompt, width=1328, height=1328, steps=4, seed=0, randomize_seed=True):
     started = time.perf_counter()
