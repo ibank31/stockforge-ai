@@ -17,6 +17,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_HUB_TOKEN || secrets.HUGGINGFACE_TOKEN }}
       KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
       PAGES_PROJECT: stockforge-ai
       PIPELINE_WORKER: stockforge-pipeline
@@ -29,6 +30,11 @@ jobs:
         id: credential
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then echo "configured=true" >> "$GITHUB_OUTPUT"; else echo "configured=false" >> "$GITHUB_OUTPUT"; echo "Cloudflare deployment credentials are missing; skipping remote deployment."; fi
+      - name: Check Hugging Face ZeroGPU credential
+        id: hf_credential
+        if: steps.credential.outputs.configured == 'true'
+        run: |
+          if [ -n "$HF_TOKEN" ]; then echo "configured=true" >> "$GITHUB_OUTPUT"; echo "Hugging Face ZeroGPU credential configured"; else echo "configured=false" >> "$GITHUB_OUTPUT"; echo "Hugging Face ZeroGPU credential is missing"; exit 1; fi
       - name: Validate runtime JavaScript
         run: |
           node --check deploy/pipeline-worker/src/index.js
@@ -65,6 +71,9 @@ jobs:
           test -n "$D1_ID"
           sed -i "s/REPLACED_BY_DEPLOY_WORKFLOW/$D1_ID/" frontend/wrangler.toml
           sed -i "s/REPLACED_BY_DEPLOY_WORKFLOW/$D1_ID/" deploy/pipeline-worker/wrangler.toml
+      - name: Provision Hugging Face ZeroGPU secret
+        if: steps.credential.outputs.configured == 'true' && steps.hf_credential.outputs.configured == 'true'
+        run: printf '%s' "$HF_TOKEN" | wrangler secret put STOCKFORGE_HF_TOKEN --config deploy/pipeline-worker/wrangler.toml
       - name: Apply D1 schema
         if: steps.credential.outputs.configured == 'true'
         run: wrangler d1 migrations apply "$D1_NAME" --remote --config frontend/wrangler.toml
