@@ -231,7 +231,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     });
 
     const sourceUrl = `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/api/assets/${jobId}?kind=raw&token=${job.asset_token}`;
-    const remote = await runRemote(this.env, step, "upscale_remote", [sourceUrl, `${jobId}-upscale`, 1, jobId], UPSCALE_POLL_ATTEMPTS, "upscale", jobId);
+    const remote = await runRemote(this.env, step, "upscale_remote", [sourceUrl, `${jobId}-upscale`, 4], UPSCALE_POLL_ATTEMPTS, "upscale", jobId);
     const finalMeta = await step.do("ingest final master", async () => {
       const file = parseOutput(remote.values);
       const response = await fetch(file.url);
@@ -290,7 +290,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
       };
       const blocked = Boolean(duplicate || qa.status === "FAIL");
       await saveJob(this.env, jobId, { status: blocked ? "blocked" : "succeeded", stage: duplicate ? "BLOCKED_DUPLICATE" : (qa.status === "FAIL" ? "BLOCKED_TECHNICAL_QA" : "READY_REVIEW"), artifact_sha256: finalMeta.sha256, final_r2_key: finalMeta.key, result_json: JSON.stringify(result), error: duplicate ? `Exact duplicate of ${duplicate.id}` : (qa.status === "FAIL" ? "Final asset failed technical QA" : null), retryable: 0, failed_mode: null, failure_code: duplicate ? "EXACT_DUPLICATE" : (qa.status === "FAIL" ? "TECHNICAL_QA" : null) });
-      await recordJobEvent(this.env, jobId, blocked ? "production_blocked" : "production_ready_review", blocked ? "BLOCKED" : "READY_REVIEW", blocked ? "blocked" : "succeeded", blocked ? (duplicate ? `Exact duplicate of ${duplicate.id}` : "Final asset failed technical QA") : "Finalization complete. Human visual/rights review remains mandatory.", { provider: remote.provider, model: result.final.model, megapixels: mp, bytes: finalMeta.bytes });
+      await recordJobEvent(this.env, jobId, blocked ? "production_blocked" : "production_ready_review", blocked ? "BLOCKED" : "READY_REVIEW", blocked ? "blocked" : "succeeded", blocked ? (duplicate ? `Exact duplicate of ${duplicate.id}` : "Final asset failed technical QA") : "Finalization complete. Human visual/rights review remains mandatory.", { provider: remote.provider, model: result.model, megapixels: mp, bytes: finalMeta.bytes });
       await saveWorkflowState(this.env, job.reference_id, blocked ? "blocked" : "ready", blocked ? "QUALITY_GATE" : "READY_REVIEW", 100, blocked ? "Asset blocked by a production quality gate." : "Asset ready for human review.");
       return result;
     });
