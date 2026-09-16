@@ -3,7 +3,7 @@
 sdk: gradio
 sdk_version: 6.25.0
 python_version: "3.12"
-app_file: remote_api.py
+app_file: app.py
 hardware: zerogpu
 ---
 

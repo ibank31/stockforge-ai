@@ -201,7 +201,7 @@ def _generate_with_qwen(prompt, width, height, seed, randomize_seed):
 
 
 # Generation boundary: produce a standalone asset portfolio candidate, not a domain-specific compiler artifact.
-@spaces.GPU(duration=150, size="large")
+@spaces.GPU(duration=120, size="large")
 def generate_gpu(prompt, width=1328, height=1328, steps=4, seed=0, randomize_seed=True):
     started = time.perf_counter()
     width, height = _canonical_canvas(width, height)
@@ -261,7 +261,7 @@ def _upscale_image(source_path):
     return Image.fromarray(output[:, :, ::-1].astype("uint8"), "RGB")
 
 
-@spaces.GPU(duration=100, size="large")
+@spaces.GPU(duration=120, size="large")
 def upscale_gpu(source_path, job_id=""):
     started = time.perf_counter()
     final_dir = ROOT / "outputs"
