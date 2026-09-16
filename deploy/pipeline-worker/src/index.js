@@ -1,29 +1,73 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 
-const DEFAULT_REMOTE_BASE = "https://stockforge-ai.pages.dev";
+const HF_BASE = "https://ibank31-stockforge-zerogpu.hf.space";
+const FALLBACK_BASE = "https://stockforge-ai.pages.dev";
 const GENERATE_POLL_ATTEMPTS = 180;
 const UPSCALE_POLL_ATTEMPTS = 360;
+const QWEN_CANVASES = [
+  [1328, 1328],
+  [1664, 928],
+  [928, 1664],
+  [1472, 1104],
+  [1104, 1472],
+  [1584, 1056],
+  [1056, 1584],
+];
 
-function remoteBase(env) { return (env.STOCKFORGE_HF_SPACE_URL || DEFAULT_REMOTE_BASE).replace(/\/$/, ""); }
+function now() { return new Date().toISOString(); }
+function baseOf(env, fallback = false) {
+  const value = fallback ? (env.STOCKFORGE_FALLBACK_BASE || FALLBACK_BASE) : (env.STOCKFORGE_HF_SPACE_URL || HF_BASE);
+  return String(value).replace(/\/$/, "");
+}
+function qwenCanvas(width, height) {
+  const w = Number(width) || 1328;
+  const h = Number(height) || 1328;
+  const aspect = w / Math.max(1, h);
+  return QWEN_CANVASES.reduce((best, current) => {
+    const bestDelta = Math.abs(best[0] / best[1] - aspect);
+    const currentDelta = Math.abs(current[0] / current[1] - aspect);
+    return currentDelta < bestDelta ? current : best;
+  }, QWEN_CANVASES[0]);
+}
+function mimeFromBytes(bytes) {
+  if (bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return "image/jpeg";
+  if (bytes.length >= 8 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71) return "image/png";
+  if (bytes.length >= 12 && bytes[0] === 82 && bytes[1] === 73 && bytes[2] === 70 && bytes[8] === 87 && bytes[9] === 69 && bytes[10] === 66 && bytes[11] === 80) return "image/webp";
+  return "application/octet-stream";
+}
+function extensionForMime(mime) {
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  return "jpg";
+}
 
-async function remoteSubmit(env, apiName, data) {
-  const response = await fetch(`${remoteBase(env)}/gradio_api/call/${apiName}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ data }) });
+async function remoteSubmit(base, apiName, data) {
+  const response = await fetch(`${base}/gradio_api/call/${apiName}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ data }),
+  });
   if (!response.ok) throw new Error(`Remote ${apiName} submit failed: HTTP ${response.status}`);
   const body = await response.json();
   if (!body.event_id) throw new Error(`Remote ${apiName} returned no event_id`);
   return body.event_id;
 }
 
-async function remotePoll(env, apiName, eventId) {
-  const response = await fetch(`${remoteBase(env)}/gradio_api/call/${apiName}/${eventId}`, { headers: { "cache-control": "no-cache" } });
+async function remotePoll(base, apiName, eventId) {
+  const response = await fetch(`${base}/gradio_api/call/${apiName}/${eventId}`, { headers: { "cache-control": "no-cache" } });
   if (!response.ok) throw new Error(`Remote ${apiName} poll failed: HTTP ${response.status}`);
   const text = await response.text();
   let event = "message";
   let data = [];
   let last = null;
   for (const line of text.split(/\r?\n/)) {
-    if (line.startsWith("event:")) { if (data.length) last = { event, data: data.join("\n") }; event = line.slice(6).trim(); data = []; }
-    else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^\s/, ""));
+    if (line.startsWith("event:")) {
+      if (data.length) last = { event, data: data.join("\n") };
+      event = line.slice(6).trim();
+      data = [];
+    } else if (line.startsWith("data:")) {
+      data.push(line.slice(5).replace(/^\s/, ""));
+    }
   }
   if (data.length) last = { event, data: data.join("\n") };
   if (!last) return { state: "running" };
@@ -46,47 +90,79 @@ async function sha256Hex(arrayBuffer) {
 
 async function saveJob(env, jobId, patch) {
   const sets = Object.keys(patch).map((key) => `${key}=?`).join(", ");
-  await env.DB.prepare(`UPDATE jobs_sf SET ${sets}, updated_at=? WHERE id=?`).bind(...Object.values(patch), new Date().toISOString(), jobId).run();
+  await env.DB.prepare(`UPDATE jobs_sf SET ${sets}, updated_at=? WHERE id=?`)
+    .bind(...Object.values(patch), now(), jobId).run();
 }
 async function saveWorkflowState(env, referenceId, status, stage, progress, message) {
-  await env.DB.prepare(`UPDATE workflows_sf SET status=?,stage=?,progress=?,message=?,updated_at=? WHERE reference_id=?`).bind(status, stage, progress, message || null, new Date().toISOString(), referenceId).run();
+  await env.DB.prepare(`UPDATE workflows_sf SET status=?,stage=?,progress=?,message=?,updated_at=? WHERE reference_id=?`)
+    .bind(status, stage, progress, message || null, now(), referenceId).run();
 }
 async function recordJobEvent(env, jobId, eventType, stage, status, message, details = null) {
-  await env.DB.prepare(`INSERT INTO job_events_sf(job_id,event_type,stage,status,message,details_json,created_at) VALUES(?,?,?,?,?,?,?)`).bind(jobId, eventType, stage || null, status || null, message || null, details ? JSON.stringify(details) : null, new Date().toISOString()).run();
+  await env.DB.prepare(`INSERT INTO job_events_sf(job_id,event_type,stage,status,message,details_json,created_at) VALUES(?,?,?,?,?,?,?)`)
+    .bind(jobId, eventType, stage || null, status || null, message || null, details ? JSON.stringify(details) : null, now()).run();
 }
-function parseMode(event) { const mode = String(event.payload?.mode || "generate"); if (mode !== "generate" && mode !== "upscale") throw new Error(`Unsupported pipeline mode: ${mode}`); return mode; }
+function parseMode(event) {
+  const mode = String(event.payload?.mode || "generate");
+  if (mode !== "generate" && mode !== "upscale") throw new Error(`Unsupported pipeline mode: ${mode}`);
+  return mode;
+}
 function classifyFailure(error) {
   const message = error instanceof Error ? error.message : String(error);
-  const transient = /(HTTP 429|HTTP 5\d\d|timeout|timed out|network|fetch failed|temporarily|queue|polling window|service unavailable|overloaded|rate limit)/i.test(message);
-  if (transient) return { retryable: 1, code: "TRANSIENT_PROVIDER" };
-  if (/no FileData|malformed|JSON\.parse|Unsupported pipeline mode|not found/i.test(message)) return { retryable: 0, code: "TERMINAL_PIPELINE" };
+  const retryable = /(HTTP 429|HTTP 5\\d\\d|timeout|timed out|network|fetch failed|temporarily|queue|service unavailable|overloaded|rate limit|quota)/i.test(message);
+  if (retryable) return { retryable: 1, code: "TRANSIENT_PROVIDER" };
+  if (/no FileData|malformed|JSON\\.parse|Unsupported pipeline mode|not found/i.test(message)) return { retryable: 0, code: "TERMINAL_PIPELINE" };
   return { retryable: 1, code: "UNKNOWN_RETRYABLE" };
 }
-async function pollUntilComplete(env, step, apiName, eventId, maxAttempts, label) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    await step.sleep(`wait ${label} ${attempt}`, `${attempt < 12 ? 5 : 10} seconds`);
-    const poll = await step.do(`poll ${label} ${attempt}`, async () => remotePoll(env, apiName, eventId));
-    if (poll.state === "failed") throw new Error(poll.error || `Remote ${label} failed`);
-    if (poll.state === "completed") return poll.values;
+
+async function runRemote(env, step, apiName, data, maxAttempts, label) {
+  const primary = baseOf(env, false);
+  const fallback = baseOf(env, true);
+  let provider = "hf-zerogpu";
+  let base = primary;
+  let eventId;
+  let lastError;
+
+  for (const candidate of [
+    { base: primary, provider: "hf-zerogpu" },
+    ...(fallback !== primary ? [{ base: fallback, provider: "cloudflare-workers-ai-fallback" }] : []),
+  ]) {
+    try {
+      provider = candidate.provider;
+      base = candidate.base;
+      eventId = await step.do(`${label} submit ${provider}`, () => remoteSubmit(base, apiName, data));
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        await step.sleep(`${label} wait ${attempt} ${provider}`, `${attempt < 12 ? 5 : 10} seconds`);
+        const poll = await step.do(`${label} poll ${attempt} ${provider}`, () => remotePoll(base, apiName, eventId));
+        if (poll.state === "failed") throw new Error(poll.error || `Remote ${label} failed`);
+        if (poll.state === "completed") return { values: poll.values, provider, base, event_id: eventId };
+      }
+      throw new Error(`Remote ${label} exceeded the workflow polling window`);
+    } catch (error) {
+      lastError = error;
+      if (candidate.provider === "hf-zerogpu") {
+        await recordJobEvent(env, String(data?.[6] || data?.[1] || "unknown"), "provider_fallback", label.toUpperCase(), "fallback", "HF ZeroGPU path failed; free Cloudflare fallback will be attempted.", { error: String(error), from: "hf-zerogpu", to: "cloudflare-workers-ai-fallback" });
+      }
+    }
   }
-  throw new Error(`Remote ${label} exceeded the workflow polling window`);
+  throw lastError || new Error(`Remote ${label} failed`);
 }
 
 export class StockForgePipeline extends WorkflowEntrypoint {
   async run(event, step) {
     const jobId = String(event.payload?.jobId || "");
-    try { return await this.runInternal(event, step); }
-    catch (error) {
-      const mode = String(event.payload?.mode || "generate");
+    const mode = parseMode(event);
+    try {
+      return await this.runInternal(event, step);
+    } catch (error) {
       const failure = classifyFailure(error);
       const detail = (error instanceof Error ? error.message : String(error)).slice(0, 2000);
       if (this.env.DB && jobId) {
-        const job = await this.env.DB.prepare(`SELECT status,reference_id FROM jobs_sf WHERE id=?`).bind(jobId).first();
-        if (job && !["ready_upscale", "succeeded", "approved", "blocked"].includes(job.status)) {
+        const row = await this.env.DB.prepare(`SELECT status,reference_id FROM jobs_sf WHERE id=?`).bind(jobId).first();
+        if (row && !["ready_upscale", "succeeded", "approved", "blocked"].includes(row.status)) {
           const stage = mode === "upscale" ? "FAILED_UPSCALE" : "FAILED_GENERATION";
           await saveJob(this.env, jobId, { status: "failed", stage, error: detail, failed_mode: mode, failure_code: failure.code, retryable: failure.retryable });
           await recordJobEvent(this.env, jobId, "workflow_failed", stage, "failed", detail, { mode, retryable: Boolean(failure.retryable), failure_code: failure.code });
-          if (job.reference_id) await saveWorkflowState(this.env, job.reference_id, "failed", stage, 100, `${detail}${failure.retryable ? " Retry is allowed." : " Retry is not allowed."}`);
+          if (row.reference_id) await saveWorkflowState(this.env, row.reference_id, "failed", stage, 100, `${detail}${failure.retryable ? " Retry is allowed." : " Retry is not allowed."}`);
         }
       }
       throw error;
@@ -98,6 +174,7 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     const mode = parseMode(event);
     if (!jobId) throw new Error("jobId is required");
     if (!this.env.DB || !this.env.ASSET_STORE) throw new Error("D1/R2 bindings are missing");
+
     const job = await step.do("load generation job", async () => {
       const row = await this.env.DB.prepare(`SELECT * FROM jobs_sf WHERE id=?`).bind(jobId).first();
       if (!row) throw new Error(`Generation job ${jobId} not found`);
@@ -110,95 +187,163 @@ export class StockForgePipeline extends WorkflowEntrypoint {
     });
 
     if (mode === "generate") {
-      const generationEvent = await step.do("submit free Cloudflare AI generation", async () => {
-        if (job.event_id) return job.event_id;
-        const remote = await remoteSubmit(this.env, "generate_remote", [plan.generation_prompt, 2048, 2048, 4, plan.generation.seed || 0, !!plan.generation.randomize_seed, jobId]);
-        await saveJob(this.env, jobId, { status: "submitted", stage: "GENERATING", event_id: remote, error: null });
-        await recordJobEvent(this.env, jobId, "compute_generation_submitted", "GENERATING", "submitted", "Generation submitted to Cloudflare Workers AI.", { event_id: remote, provider: "cloudflare-workers-ai", model: "stable-diffusion-xl-lightning" });
-        await saveWorkflowState(this.env, job.reference_id, "running", "GENERATING", 25, "Generation queued on Cloudflare Workers AI.");
-        return remote;
-      });
-      const generationValues = await pollUntilComplete(this.env, step, "generate_remote", generationEvent, GENERATE_POLL_ATTEMPTS, "generation");
+      const [width, height] = qwenCanvas(plan.generation?.width, plan.generation?.height);
+      const remote = await runRemote(
+        this.env,
+        step,
+        "generate_remote",
+        [plan.generation_prompt, width, height, 4, plan.generation?.seed || 0, !!plan.generation?.randomize_seed, jobId],
+        GENERATE_POLL_ATTEMPTS,
+        "generation",
+      );
       const rawMeta = await step.do("ingest generated artifact", async () => {
-        const file = parseOutput(generationValues);
+        const file = parseOutput(remote.values);
         const response = await fetch(file.url);
         if (!response.ok) throw new Error(`Unable to fetch generated artifact: HTTP ${response.status}`);
         const body = await response.arrayBuffer();
-        const key = `artifacts/${jobId}/raw.jpg`;
-        await this.env.ASSET_STORE.put(key, body, { httpMetadata: { contentType: "image/jpeg" } });
-        return { key, sha256: await sha256Hex(body), seed: generationValues?.[1] ?? null, gpu_seconds: generationValues?.[2] ?? 0, bytes: body.byteLength };
+        const bytes = new Uint8Array(body);
+        const mime = mimeFromBytes(bytes);
+        const ext = extensionForMime(mime);
+        const key = `artifacts/${jobId}/raw.${ext}`;
+        await this.env.ASSET_STORE.put(key, body, { httpMetadata: { contentType: mime === "application/octet-stream" ? "image/png" : mime } });
+        return {
+          key,
+          sha256: await sha256Hex(body),
+          bytes: body.byteLength,
+          mime,
+          width,
+          height,
+        };
       });
-      const rawResult = { provider: "cloudflare-workers-ai", model: "stable-diffusion-xl-lightning", raw_r2_key: rawMeta.key, raw_sha256: rawMeta.sha256, raw_asset_url: `/api/assets/${jobId}?kind=raw&token=${job.asset_token}`, seed: rawMeta.seed, gpu_seconds: rawMeta.gpu_seconds, size_bytes: rawMeta.bytes, next_stage: "READY_UPSCALE" };
+      const rawResult = {
+        provider: remote.provider,
+        model: remote.provider === "hf-zerogpu" ? "Qwen-Image-2512 + Lightning 4-step" : "stable-diffusion-xl-lightning",
+        raw_r2_key: rawMeta.key,
+        raw_sha256: rawMeta.sha256,
+        raw_asset_url: `/api/assets/${jobId}?kind=raw&token=${job.asset_token}`,
+        size_bytes: rawMeta.bytes,
+        mime: rawMeta.mime,
+        generation: { canvas: [width, height], seed: remote.values?.[1] ?? null, gpu_seconds: remote.values?.[2] ?? 0 },
+        next_stage: "READY_UPSCALE",
+      };
       await step.do("release generation compute", async () => {
-        await saveJob(this.env, jobId, { status: "ready_upscale", stage: "READY_UPSCALE", raw_r2_key: rawMeta.key, result_json: JSON.stringify(rawResult), error: null, retryable: 0, failed_mode: null, failure_code: null });
-        await recordJobEvent(this.env, jobId, "generation_complete", "READY_UPSCALE", "ready_upscale", "Generation complete. Compute released; finalization is separate.", { raw_r2_key: rawMeta.key, gpu_seconds: rawMeta.gpu_seconds });
+        await saveJob(this.env, jobId, {
+          status: "ready_upscale",
+          stage: "READY_UPSCALE",
+          raw_r2_key: rawMeta.key,
+          result_json: JSON.stringify(rawResult),
+          error: null,
+          retryable: 0,
+          failed_mode: null,
+          failure_code: null,
+        });
+        await recordJobEvent(this.env, jobId, "generation_complete", "READY_UPSCALE", "ready_upscale", "Generation complete. Compute released; finalization is separate.", { provider: remote.provider, model: rawResult.model, canvas: [width, height] });
         await saveWorkflowState(this.env, job.reference_id, "ready", "READY_UPSCALE", 55, "Generation complete. Finalization is a separate request.");
-        return true;
       });
       return rawResult;
     }
 
     if (!job.raw_r2_key) throw new Error("Raw artifact is not ready for finalization");
     if (job.status === "succeeded" || job.status === "approved") return job.result_json ? JSON.parse(job.result_json) : {};
+
     await step.do("mark finalization running", async () => {
       await saveJob(this.env, jobId, { status: "upscale_submitted", stage: "UPSCALING", error: null, retryable: 0, failed_mode: null, failure_code: null });
-      await recordJobEvent(this.env, jobId, "upscale_started", "UPSCALING", "upscale_submitted", "Finalization workflow started on Cloudflare Workers AI.");
-      await saveWorkflowState(this.env, job.reference_id, "running", "UPSCALING", 70, "Finalization queued on Cloudflare Workers AI.");
-      return true;
+      await recordJobEvent(this.env, jobId, "upscale_started", "UPSCALING", "upscale_submitted", "Finalization workflow started.");
+      await saveWorkflowState(this.env, job.reference_id, "running", "UPSCALING", 70, "Finalization queued.");
     });
+
     const sourceUrl = `${this.env.PUBLIC_BASE_URL.replace(/\/$/, "")}/api/assets/${jobId}?kind=raw&token=${job.asset_token}`;
-    const upscaleEvent = await step.do("submit free Cloudflare AI finalization", async () => {
-      const remote = await remoteSubmit(this.env, "upscale_remote", [sourceUrl, `${jobId}-upscale`, 1]);
-      await saveJob(this.env, jobId, { status: "upscaling", stage: "UPSCALING", result_json: JSON.stringify({ provider: "cloudflare-workers-ai", model: "stable-diffusion-xl-lightning", raw_r2_key: job.raw_r2_key, raw_asset_url: `/api/assets/${jobId}?kind=raw&token=${job.asset_token}`, upscale_event_id: remote, next_stage: "UPSCALING" }) });
-      await recordJobEvent(this.env, jobId, "compute_upscale_submitted", "UPSCALING", "upscaling", "Finalization submitted to Cloudflare Workers AI.", { event_id: remote, provider: "cloudflare-workers-ai" });
-      return remote;
-    });
-    const upscaleValues = await pollUntilComplete(this.env, step, "upscale_remote", upscaleEvent, UPSCALE_POLL_ATTEMPTS, "upscale");
+    const remote = await runRemote(this.env, step, "upscale_remote", [sourceUrl, `${jobId}-upscale"`], UPSCALE_POLL_ATTEMPTS, "upscale");
     const finalMeta = await step.do("ingest final master", async () => {
-      const file = parseOutput(upscaleValues);
+      const file = parseOutput(remote.values);
       const response = await fetch(file.url);
       if (!response.ok) throw new Error(`Unable to fetch final artifact: HTTP ${response.status}`);
       const body = await response.arrayBuffer();
-      const key = `artifacts/${jobId}/final.jpg`;
-      const hash = await sha256Hex(body);
+      const bytes = new Uint8Array(body);
+      const mime = mimeFromBytes(bytes);
+      const key = "artifacts/" + jobId + "/final.jpg";
       await this.env.ASSET_STORE.put(key, body, { httpMetadata: { contentType: "image/jpeg" } });
-      return { key, sha256: hash, width: upscaleValues?.[2] ?? 2048, height: upscaleValues?.[3] ?? 2048, scale: upscaleValues?.[1] ?? 1, bytes: body.byteLength };
+      return {
+        key,
+        sha256: await sha256Hex(body),
+        width: Number(remote.values?.[1]) || Number(remote.values?.[2]) || 2048,
+        height: Number(remote.values?.[2]) || Number(remote.values?.[3]) || 2048,
+        scale: Number(remote.values?.[3]) || 4,
+        bytes: body.byteLength,
+        mime,
+      };
     });
+
     return await step.do("complete production pipeline", async () => {
       const duplicate = await this.env.DB.prepare(`SELECT id FROM jobs_sf WHERE artifact_sha256=? AND id<>? AND status IN ('succeeded','approved') LIMIT 1`).bind(finalMeta.sha256, jobId).first();
       const mp = finalMeta.width && finalMeta.height ? (finalMeta.width * finalMeta.height) / 1000000 : 0;
+      const qa = {
+        status: mp >= 4 && mp <= 100 && finalMeta.bytes <= 45 * 1024 * 1024 && finalMeta.mime === "image/jpeg" ? "PASS_WITH_VISUAL_REVIEW" : "FAIL",
+        format: finalMeta.mime === "image/jpeg" ? "JPEG" : finalMeta.mime,
+        color_space: "sRGB",
+        dimensions: { width: finalMeta.width, height: finalMeta.height },
+        megapixels: Number(mp.toFixed(4)),
+        resolution_gate: mp >= 4 && mp <= 100,
+        file_size_gate: finalMeta.bytes <= 45 * 1024 * 1024,
+      };
       const result = {
-        provider: "cloudflare-workers-ai",
-        model: "stable-diffusion-xl-lightning",
+        provider: remote.provider,
+        model: remote.provider === "hf-zerogpu" ? "Real-ESRGAN_x4plus" : "cloudflare-free-fallback-resizer",
         raw_r2_key: job.raw_r2_key,
         raw_asset_url: `/api/assets/${jobId}?kind=raw&token=${job.asset_token}`,
-        final: { provider: "cloudflare-workers-ai", model: "stable-diffusion-xl-lightning", scale: finalMeta.scale, width: finalMeta.width, height: finalMeta.height, megapixels: Number(mp.toFixed(4)), size_bytes: finalMeta.bytes, sha256: finalMeta.sha256, final_r2_key: finalMeta.key, final_asset_url: `/api/assets/${jobId}?kind=final&token=${job.asset_token}` },
-        similarity_gate: { automated_duplicate: duplicate ? "BLOCK" : "PASS", duplicate_of_job: duplicate?.id || null, semantic_reference_similarity: "HUMAN_REVIEW_REQUIRED", decision: duplicate ? "BLOCK" : "REVIEW_REQUIRED", human_review_required: true },
-        technical_qa: { status: mp >= 4 ? "PASS_WITH_VISUAL_REVIEW" : "FAIL", format: "JPEG", color_space: "sRGB", dimensions: { width: finalMeta.width, height: finalMeta.height }, megapixels: Number(mp.toFixed(4)), resolution_gate: mp >= 4 },
+        final: {
+          provider: remote.provider,
+          model: resultModel(remote.provider),
+          scale: finalMeta.scale,
+          width: finalMeta.width,
+          height: finalMeta.height,
+          megapixels: Number(mp.toFixed(4)),
+          size_bytes: finalMeta.bytes,
+          sha256: finalMeta.sha256,
+          final_r2_key: finalMeta.key,
+          final_asset_url: `/api/assets/${jobId}?kind=final&token=${job.asset_token}`,
+        },
+        similarity_gate: {
+          automated_duplicate: duplicate ? "BLOCK" : "PASS",
+          duplicate_of_job: duplicate?.id || null,
+          semantic_reference_similarity: "HUMAN_REVIEW_REQUIRED",
+          decision: duplicate ? "BLOCK" : "REVIEW_REQUIRED",
+          human_review_required: true,
+        },
+        technical_qa: qa,
         human_review_required: true,
         marketplace_submission: "manual_only",
       };
-      const blocked = Boolean(duplicate || mp < 4);
-      await saveJob(this.env, jobId, { status: blocked ? "blocked" : "succeeded", stage: duplicate ? "BLOCKED_DUPLICATE" : (mp < 4 ? "BLOCKED_RESOLUTION" : "READY_REVIEW"), artifact_sha256: finalMeta.sha256, final_r2_key: finalMeta.key, result_json: JSON.stringify(result), error: duplicate ? `Exact duplicate of ${duplicate.id}` : (mp < 4 ? "Final master below 4 MP" : null), retryable: 0, failed_mode: null, failure_code: duplicate ? "EXACT_DUPLICATE" : (mp < 4 ? "RESOLUTION_GATE" : null) });
-      await recordJobEvent(this.env, jobId, blocked ? "production_blocked" : "production_ready_review", duplicate ? "BLOCKED_DUPLICATE" : (mp < 4 ? "BLOCKED_RESOLUTION" : "READY_REVIEW"), blocked ? "blocked" : "succeeded", blocked ? (duplicate ? `Exact duplicate of ${duplicate.id}` : "Final master below 4 MP") : "Finalization complete. Human visual/rights review remains mandatory.", { megapixels: mp, sha256: finalMeta.sha256 });
-      await saveWorkflowState(this.env, job.reference_id, blocked ? "blocked" : "ready", duplicate ? "SIMILARITY_BLOCK" : (mp < 4 ? "TECHNICAL_QA_FAIL" : "READY_REVIEW"), 100, duplicate ? "Exact duplicate detected; human intervention required." : (mp < 4 ? "Final master is below the 4 MP production gate." : "Finalization complete. Human visual/rights review remains mandatory."));
+      const blocked = Boolean(duplicate || qa.status === "FAIL");
+      await saveJob(this.env, jobId, {
+        status: blocked ? "blocked" : "succeeded",
+        stage: duplicate ? "BLOCKED_DUPLICATE" : (qa.status === "FAIL" ? "BLOCKED_TECHNICAL_QA" : "READY_REVIEW"),
+        artifact_sha256: finalMeta.sha256,
+        final_r2_key: finalMeta.key,
+        result_json: JSON.stringify(result),
+        error: duplicate ? `Exact duplicate of ${duplicate.id}` : (qa.status === "FAIL" ? "Final asset failed technical QA" : null),
+        retryable: 0,
+        failed_mode: null,
+        failure_code: duplicate ? "EXACT_DUPLICATE" : (qa.status === "FAIL" ? "TECHNICAL_QA" : null),
+      });
+      await recordJobEvent(env, jobId, blocked ? "production_blocked" : "production_ready_review", blocked ? "BLOCKED" : "READY_REVIEW", blocked ? "blocked" : "succeeded", blocked ? (duplicate ? `Exact duplicate of ${duplicate.id}` : "Final asset failed technical QA") : "Finalization complete. Human visual/rights review remains mandatory.", { provider: remote.provider, model: result.final.model, megapixels: mp, bytes: finalMeta.bytes });
+      await saveWorkflowState(this.env, job.reference_id, blocked ? "blocked" : "ready", blocked ? "QUALITY_GATE" : "READY_REVIEW", 100, blocked ? "Asset blocked by a production quality gate." : "Asset ready for human review.");
       return result;
     });
   }
 }
 
+function resultModel(provider) {
+  return provider === "hf-zerogpu" ? "Real-ESRGAN_x4plus" : "cloudflare-free-fallback-resizer";
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method !== "POST" || url.pathname !== "/start") return new Response("Not Found", { status: 404 });
-    if (!env.STOCKFORGE_PIPELINE) return Response.json({ detail: "Workflow binding missing" }, { status: 500 });
-    const body = await request.json();
-    const jobId = String(body?.job_id || "");
-    const mode = String(body?.mode || "generate");
-    const workflowId = String(body?.workflow_id || (mode === "generate" ? jobId : `${jobId}-upscale-${crypto.randomUUID().replaceAll("-", "")}`));
-    if (!jobId) return Response.json({ detail: "job_id is required" }, { status: 400 });
-    if (mode !== "generate" && mode !== "upscale") return Response.json({ detail: "mode must be generate or upscale" }, { status: 400 });
-    const instance = await env.STOCKFORGE_PIPELINE.create({ id: workflowId, params: { jobId, mode } });
-    return Response.json({ workflow_instance_id: instance.id, status: "queued", mode }, { headers: { "cache-control": "no-store" } });
+    if (url.pathname !== "/start") return new Response("Not Found", { status: 404 });
+    if (!env.STOCKFORGE_PIPELINE) return Response.json({ detail: "STOCKFORGE_PIPELINE binding is missing" }, { status: 500 });
+    const payload = await request.json();
+    const instance = await env.STOCKFORGE_PIPELINE.create({ params: payload });
+    return Response.json({ workflow_instance_id: await instance.id });
   },
 };
