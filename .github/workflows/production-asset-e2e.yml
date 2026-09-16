@@ -76,4 +76,4 @@ jobs:
           FINAL_URL=$(cat final.url); curl --fail-with-body -sS "$BASE_URL$FINAL_URL" -o final.jpg; test -s final.jpg; file final.jpg; BYTES=$(wc -c < final.jpg); test "$BYTES" -gt 100000
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
 
-# RUN_FULL_E2E trigger checkpoint.
+# RUN_FULL_E2E trigger checkpoint: intentional diagnostic commit, no runtime behavior change.
