@@ -95,4 +95,4 @@ jobs:
           test "$BYTES" -gt 100000
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
 
-# Fresh full-E2E trigger after forensic intake and free compute fallback.
+# RUN_FULL_E2E trigger checkpoint.
