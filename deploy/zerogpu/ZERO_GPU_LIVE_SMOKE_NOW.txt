@@ -1,0 +1,1 @@
+Trigger a real ZeroGPU generation and 4x finalizer smoke after deployment sync.
