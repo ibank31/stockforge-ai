@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PIPELINE = (ROOT / "deploy/pipeline-worker/src/index.js").read_text()
 SPACE_APP = (ROOT / "deploy/zerogpu/app.py").read_text()
 DEPLOY = (ROOT / ".github/workflows/deploy-zerogpu.yml").read_text()
+PAGES_DEPLOY = (ROOT / ".github/workflows/deploy-pages.yml").read_text()
 
 
 def test_pipeline_calls_actual_app_remote_upscale_signature():
@@ -29,3 +30,15 @@ def test_generation_lane_is_qwen_2512():
     assert 'QWEN_DIFFUSION_FILE = "qwen_image_2512_fp8_e4m3fn.safetensors"' in SPACE_APP
     assert 'QWEN_LORA_FILE = "Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors"' in SPACE_APP
     assert 'steps=4' in SPACE_APP
+
+
+def test_pipeline_authenticates_to_huggingface_space():
+    assert 'STOCKFORGE_HF_TOKEN' in PIPELINE
+    assert 'authorization' in PIPELINE.lower()
+    assert 'Bearer ${token}' in PIPELINE
+
+
+def test_production_deploy_provisions_huggingface_secret():
+    assert 'HF_TOKEN:' in PAGES_DEPLOY
+    assert 'Check Hugging Face ZeroGPU credential' in PAGES_DEPLOY
+    assert 'wrangler secret put STOCKFORGE_HF_TOKEN' in PAGES_DEPLOY
