@@ -6,6 +6,7 @@ compatibility_date = "2026-09-15"
 STOCKFORGE_HF_SPACE_URL = "https://ibank31-stockforge-zerogpu.hf.space"
 STOCKFORGE_FALLBACK_BASE = "https://stockforge-ai.pages.dev"
 PUBLIC_BASE_URL = "https://stockforge-ai.pages.dev"
+STOCKFORGE_KAGGLE_BRIDGE_URL = "https://ibank31-stockforge-kaggle-bridge.hf.space"
 
 [[d1_databases]]
 binding = "DB"
