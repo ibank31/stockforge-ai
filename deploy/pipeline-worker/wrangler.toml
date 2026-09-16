@@ -3,7 +3,8 @@ main = "src/index.js"
 compatibility_date = "2026-09-15"
 
 [vars]
-STOCKFORGE_HF_SPACE_URL = "https://stockforge-ai.pages.dev"
+STOCKFORGE_HF_SPACE_URL = "https://ibank31-stockforge-zerogpu.hf.space"
+STOCKFORGE_FALLBACK_BASE = "https://stockforge-ai.pages.dev"
 PUBLIC_BASE_URL = "https://stockforge-ai.pages.dev"
 
 [[d1_databases]]
