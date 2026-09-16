@@ -119,10 +119,10 @@ function validDna(x) {
 function classificationPrompt() {
   return `You are a forensic intake classifier for a commercial PNG asset factory.
 Analyze the supplied image as evidence, not as a generation template.
-The image may be a social-media post, email screenshot, marketplace screenshot, product page, or raw asset.
+The image may be a social-media post, email screenshot, marketplace screenshot, product page, poster, presentation, collage, or raw asset.
 Your first task is to separate presentation/context/evidence from the likely asset itself.
-A dark background, email shell, social-media chrome, congratulation text, earnings amount, username, platform logo, reaction UI, watermark, or page framing can be PRESENTATION or EVIDENCE and must not automatically be treated as part of the asset.
-Do not assume the source background belongs to the asset. For this PNG workflow the target production background is transparent unless the asset itself is clearly a full-canvas graphic.
+A dark or white background, email shell, social-media chrome, congratulation text, earnings amount, username, platform logo, reaction UI, watermark, page framing, buttons, or other UI can be PRESENTATION or EVIDENCE and must not automatically be treated as part of the asset.
+The actual reusable asset may be much smaller than the screenshot canvas. If there is one illustration/photo embedded inside a page, identify that artwork/photo as the primary asset rather than the page.
 Never invent a brand, platform, sales claim, metadata, location, ownership, or hidden object.
 Return ONLY valid JSON using exactly:
 {
@@ -172,13 +172,13 @@ REFERENCE CLASSIFICATION:
 ${JSON.stringify(classification)}`;
 }
 
-async function runModel(env, dataUrl, prompt) {
+async function runModel(env, imageBase64, mimeType, prompt) {
   const result = await env.AI.run(FORENSICS_MODEL, {
     messages: [
       { role: "system", content: "You are a strict visual forensics system. Output JSON only." },
       { role: "user", content: prompt },
     ],
-    image: dataUrl,
+    image: imageBase64,
     max_tokens: 1600,
     temperature: 0.05,
     chat_template_kwargs: { enable_thinking: false },
@@ -191,13 +191,13 @@ async function runModel(env, dataUrl, prompt) {
 
 export async function runReferenceForensics(env, imageBytes, mimeType) {
   if (!env.AI) throw new Error("REFERENCE_AI_UNAVAILABLE");
-  const dataUrl = `data:${mimeType};base64,${bytesToBase64(imageBytes)}`;
-  const classification = normalizeClassification(await runModel(env, dataUrl, classificationPrompt()));
+  const imageBase64 = bytesToBase64(imageBytes);
+  const classification = normalizeClassification(await runModel(env, imageBase64, mimeType, classificationPrompt()));
   if (!validClassification(classification)) throw new Error("REFERENCE_CLASSIFICATION_FAILED");
-  const dna = normalizeDna(await runModel(env, dataUrl, dnaPrompt(classification)));
+  const dna = normalizeDna(await runModel(env, imageBase64, mimeType, dnaPrompt(classification)));
   if (!validDna(dna)) throw new Error("ASSET_DNA_EXTRACTION_FAILED");
   return {
-    schema_version: 1,
+    schema_version: 2,
     stage: "REFERENCE_FORENSICS",
     reference_classification: classification,
     asset_dna: dna,
