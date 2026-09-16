@@ -100,4 +100,4 @@ jobs:
           test "$BYTES" -gt 100000
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
 
-# Trigger a fresh full production E2E after the corrected D1 binding fix.
+# Fresh full-E2E trigger after forensic intake and medium-separation changes.
