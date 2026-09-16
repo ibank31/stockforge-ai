@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "deploy/zerogpu/**"
+      - ".github/workflows/deploy-zerogpu.yml"
   workflow_dispatch:
 
 jobs:
@@ -15,6 +16,7 @@ jobs:
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_HUB_TOKEN || secrets.HUGGINGFACE_TOKEN }}
       HF_SPACE: ibank31/stockforge-zerogpu
+      SPACE_URL: https://ibank31-stockforge-zerogpu.hf.space
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +27,7 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "HF deployment credential is missing; skipping Space sync."
+            echo "HF deployment credential is missing; Space sync will be skipped."
           fi
       - name: Install Hugging Face Hub
         if: steps.credential.outputs.configured == 'true'
@@ -44,4 +46,59 @@ jobs:
               commit_message="sync ZeroGPU generation and upscale worker from main",
           )
           print("ZeroGPU Space synced")
+          PY
+      - name: Live ZeroGPU production smoke
+        if: steps.credential.outputs.configured == 'true' && contains(github.event.head_commit.message, 'ZERO_GPU_LIVE_SMOKE')
+        timeout-minutes: 12
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir "gradio_client>=1.9,<2.0" pillow
+          python - <<'PY'
+          import os, time
+          from pathlib import Path
+          from gradio_client import Client
+          from PIL import Image
+
+          space = os.environ["SPACE_URL"]
+          client = None
+          last = None
+          for attempt in range(1, 25):
+              try:
+                  client = Client(space, verbose=False)
+                  print(f"Space client ready on attempt {attempt}")
+                  break
+              except Exception as exc:
+                  last = exc
+                  print(f"Space not ready yet ({attempt}/24): {type(exc).__name__}: {exc}")
+                  time.sleep(15)
+          if client is None:
+              raise RuntimeError(f"ZeroGPU Space did not become ready: {last}")
+
+          prompt = (
+              "premium commercial stock asset photograph of one original ceramic travel mug, "
+              "clean studio lighting, realistic materials, simple isolated composition, "
+              "no brand, no logo, no text, no watermark, visually polished for a stock marketplace"
+          )
+          generated = client.predict(prompt, 1328, 1328, 4, 123456, False, "zero-gpu-smoke", api_name="/generate_remote")
+          print("GENERATION RESULT:", generated)
+          source = generated[0]
+          source_path = Path(str(source))
+          if not source_path.exists():
+              raise RuntimeError(f"Generation output file missing: {source_path}")
+          with Image.open(source_path) as im:
+              print("RAW IMAGE:", im.size, im.mode)
+              if im.width < 1200 or im.height < 1200:
+                  raise RuntimeError(f"Unexpected raw image dimensions: {im.size}")
+
+          finalized = client.predict(source_path.as_posix(), "zero-gpu-smoke-final", api_name="/upscale")
+          print("UPSCALE RESULT:", finalized)
+          final_path = Path(str(finalized[0]))
+          if not final_path.exists():
+              raise RuntimeError(f"Final output file missing: {final_path}")
+          with Image.open(final_path) as im:
+              print("FINAL IMAGE:", im.size, im.mode, im.format)
+              if im.width < 4000 or im.height < 4000:
+                  raise RuntimeError(f"Finalizer did not produce >=4K output: {im.size}")
+              if im.format != "JPEG":
+                  raise RuntimeError(f"Finalizer did not produce JPEG: {im.format}")
+          print("ZERO_GPU_LIVE_SMOKE PASSED")
           PY
