@@ -10,10 +10,14 @@ permissions:
 
 jobs:
   dispatch:
-    if: github.event.head_commit.message == 'E2E_PROD'
+    if: startsWith(github.event.head_commit.message, 'RUN_FULL_E2E')
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch production deploy workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+      - name: Dispatch full production asset E2E
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run production-asset-e2e.yml --repo "$GITHUB_REPOSITORY" --ref main
