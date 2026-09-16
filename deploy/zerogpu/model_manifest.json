@@ -1,27 +1,35 @@
 {
-  "version": "5.1",
-  "repository": "Comfy-Org/Qwen-Image_ComfyUI",
-  "revision": "main",
-  "models": {
-    "qwen_image": {
-      "file": "qwen_image_fp8_e4m3fn.safetensors",
-      "size": 20400000000,
-      "source_path": "split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors"
+  "version": "6.0",
+  "generation": {
+    "repository": "Comfy-Org/Qwen-Image_ComfyUI",
+    "revision": "main",
+    "model": "Qwen-Image-2512 FP8",
+    "diffusion_model": {
+      "file": "qwen_image_2512_fp8_e4m3fn.safetensors",
+      "source_path": "split_files/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors"
     },
-    "qwen_text_encoder": {
+    "text_encoder": {
       "file": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
-      "size": 9380000000,
       "source_path": "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
     },
-    "qwen_vae": {
+    "vae": {
       "file": "qwen_image_vae.safetensors",
-      "size": 254000000,
       "source_path": "split_files/vae/qwen_image_vae.safetensors"
     },
-    "qwen_lightning_lora": {
-      "repository": "lightx2v/Qwen-Image-Lightning",
-      "file": "Qwen-Image-Lightning-8steps-V1.0.safetensors",
-      "size": 850000000
-    }
+    "lightning_lora": {
+      "repository": "lightx2v/Qwen-Image-2512-Lightning",
+      "file": "Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors"
+    },
+    "steps": 4
+  },
+  "finalization": {
+    "model": "Real-ESRGAN_x4plus",
+    "source": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+    "scale": 4,
+    "format": "JPEG sRGB"
+  },
+  "license": {
+    "qwen_image_2512": "Apache-2.0",
+    "qwen_image_2512_lightning": "Apache-2.0"
   }
 }
