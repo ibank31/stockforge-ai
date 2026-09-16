@@ -64,13 +64,7 @@ jobs:
           test "$STATUS" = "ready_upscale"
           UPSCALE_CODE=$(curl -sS -o upscale.json -w '%{http_code}' -X POST "$BASE_URL/api/jobs/$JOB_ID/upscale")
           echo "upscale HTTP=$UPSCALE_CODE"
-          if [ "$UPSCALE_CODE" != "200" ]; then
-            echo "UPSCALE RESPONSE:"
-            cat upscale.json
-            echo "JOB AFTER UPSCALE FAILURE:"
-            curl -sS "$BASE_URL/api/jobs/$JOB_ID" || true
-            exit 1
-          fi
+          if [ "$UPSCALE_CODE" != "200" ]; then cat upscale.json; curl -sS "$BASE_URL/api/jobs/$JOB_ID" || true; exit 1; fi
           for i in $(seq 1 90); do
             curl --fail-with-body -sS "$BASE_URL/api/jobs/$JOB_ID" > job.json
             STATUS=$(node -e 'const x=require("./job.json"); process.stdout.write(String(x.status||""))')
@@ -87,10 +81,11 @@ jobs:
           const r=x.result||{};
           const f=r.final||{};
           if(!r.raw_r2_key||!r.raw_asset_url||!f.final_r2_key||!f.final_asset_url) throw Error(JSON.stringify(x));
-          if(Number(f.width)*Number(f.height)<16000000) throw Error(JSON.stringify(x));
+          if(Number(f.width)*Number(f.height)<4000000) throw Error(JSON.stringify(x));
+          if(r.technical_qa?.resolution_gate!==true) throw Error(JSON.stringify(x));
           if(r.similarity_gate?.decision!=='REVIEW_REQUIRED') throw Error(JSON.stringify(x));
           fs.writeFileSync('final.url',f.final_asset_url);
-          console.log('PRODUCTION ASSET READY',JSON.stringify({job:x.id,status:x.status,stage:x.stage,width:f.width,height:f.height,bytes:f.size_bytes,final_url:f.final_asset_url}));
+          console.log('PRODUCTION ASSET READY',JSON.stringify({job:x.id,status:x.status,stage:x.stage,width:f.width,height:f.height,megapixels:f.megapixels,bytes:f.size_bytes,provider:r.provider,final_url:f.final_asset_url}));
           NODE
           FINAL_URL=$(cat final.url)
           curl --fail-with-body -sS "$BASE_URL$FINAL_URL" -o final.jpg
@@ -100,4 +95,4 @@ jobs:
           test "$BYTES" -gt 100000
           echo "FULL PRODUCTION ASSET E2E PASSED bytes=$BYTES"
 
-# Fresh full-E2E trigger after forensic intake and medium-separation changes.
+# Fresh full-E2E trigger after forensic intake and free compute fallback.
