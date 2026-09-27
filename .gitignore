@@ -9,3 +9,4 @@ stockforge-workspace/
 .DS_Store
 .idea/
 .vscode/
+*.sqlite

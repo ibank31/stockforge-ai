@@ -24,7 +24,7 @@ def brief(tmp_path: Path):
     return build_generation_brief(profile, opportunity)
 
 
-@pytest.mark.parametrize("model_id", ["z-image-turbo", "flux", "gemini-image"])
+@pytest.mark.parametrize("model_id", ["z-image-turbo", "flux", "gemini-image", "qwen-image-2512", "qwen-image"])
 def test_adapters_render_same_brief_for_supported_models(brief, model_id):
     rendered = render_generation_prompt(brief, model_id)
     assert rendered.model_id == model_id

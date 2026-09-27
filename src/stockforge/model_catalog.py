@@ -69,6 +69,28 @@ IMAGE_MODEL_CATALOG: tuple[ImageModelRecord, ...] = (
         source_url="https://huggingface.co/Qwen/Qwen-Image",
     ),
     ImageModelRecord(
+        profile="qwen-image-2512",
+        model_id="qwen-image-2512",
+        model_version="2025-12-25",
+        readiness="verified_free",
+        license_id="Apache-2.0",
+        primary_use="Primary production renderer on the StockForge ZeroGPU worker (FP8 + Lightning 4-step LoRA).",
+        expected_steps=4,
+        free_path="Existing Hugging Face ZeroGPU Space; daily usage remains quota-limited.",
+        activation_requirements=(),
+        limitations=(
+            "Verified 2026-09: Qwen-Image family sits in the top open-weights quality cluster; "
+            "the absolute arena leader is only marginally ahead, so a model swap buys little.",
+            "Larger open models (HiDream-I1 17B, full Qwen-Image 20B) do not fit free ZeroGPU VRAM; "
+            "FP8 quantization is what makes this lane possible at zero cost.",
+            "FLUX.1 [dev] is quality-competitive but carries a non-commercial license; "
+            "it must never be used for assets intended for marketplace sale.",
+            "Apache-2.0 keeps this lane commercially cleared for microstock.",
+            "It is preview-only until technical, distinctness, and human review pass.",
+        ),
+        source_url="https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
+    ),
+    ImageModelRecord(
         profile="flux-1-schnell",
         model_id="flux-1-schnell",
         model_version="2026-01-02",

@@ -59,6 +59,26 @@ The system must never auto-approve commercial originality or auto-submit to Adob
 
 Credentials must never be committed or exposed. Blind retries, arbitrary provider substitution, and cross-route finalizer substitution are prohibited.
 
+## Production prompt lane
+
+The V2 prompt pipeline now renders directly for the production ZeroGPU lane via
+`QwenImage2512Adapter` (`qwen-image-2512`, alias `qwen-image`). Previously the
+adapter registry only covered `z-image-turbo`, `flux`, and `gemini-image`, so
+the production model had no model-specific prompt rendering. The adapter uses
+descriptive sentences (Qwen2.5-VL text encoder preference) and carries the
+brief's differentiation rationale, market intent, and anti-similarity
+constraints. 2026-09 review confirmed the Qwen-Image-2512 FP8 + Lightning
+4-step lane remains the optimal free production choice: top open-weights
+quality cluster, Apache-2.0 commercially cleared, and the only configuration
+that fits free ZeroGPU VRAM and quota limits.
+
+## Credential hygiene
+
+The ZeroGPU worker no longer hard-codes a Hugging Face token. `HF_TOKEN` is
+resolved from the `HF_TOKEN` / `STOCKFORGE_HF_TOKEN` environment at runtime;
+configure it as a Space secret for quota attribution. Any token previously
+committed to the repository must be revoked and rotated.
+
 ## Branch truth
 
 `main` is the single canonical development line. Feature branches and closed pull requests may remain as historical Git refs, but they are not active implementation sources.

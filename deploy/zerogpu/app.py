@@ -19,7 +19,7 @@ from comfy_diffusion.nodes import run_node
 
 
 ROOT = Path(os.getenv("STOCKFORGE_MODEL_DIR", "/tmp/stockforge-models"))
-HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
+HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("STOCKFORGE_HF_TOKEN")
 
 # Official ComfyUI-compatible Qwen-Image-2512 components.
 QWEN_REPO = "Comfy-Org/Qwen-Image_ComfyUI"
